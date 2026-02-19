@@ -130,114 +130,114 @@ export function TopBar() {
       <div className="flex items-center justify-between gap-4 px-4 py-3 md:px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center flex-shrink-0">
-          <img 
-            src="/assets/logo.png" 
-            alt="Ocean Hotspot" 
+          <img
+            src="/logo.png"
+            alt="Ocean Hotspot"
             className="h-10 w-auto"
           />
         </Link>
         {/* Category Dropdown + Search Bar - Hidden for Admin and Seller */}
         {!isAdmin && !isSeller && (
           <div className="hidden md:flex flex-1 max-w-3xl items-center mx-4">
-            {/* Category Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="outline"
-                  className="rounded-l-full rounded-r-none border-r-0 h-12 px-4 bg-muted hover:bg-muted/80"
-                >
-                  <Menu className="h-4 w-4 mr-2" />
-                  <span className="hidden lg:inline">All Categories</span>
-                  <ChevronDown className="h-4 w-4 ml-1" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-56 bg-background z-50">
-                <DropdownMenuItem asChild>
-                  <Link 
-                    href="/browse" 
-                    className="cursor-pointer"
-                    onClick={() => router.push("/browse")}
-                  >
-                    All Products
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                {categories.map((cat) => (
-                  <DropdownMenuItem key={cat.code} asChild>
+            {/* Unified Amazon-style search bar */}
+            <div className="flex flex-1 items-stretch h-11 rounded-md border-2 border-border focus-within:border-primary transition-colors overflow-hidden bg-background">
+              {/* Category Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="flex items-center gap-1 px-3 bg-muted hover:bg-muted/80 border-r border-border text-sm font-medium whitespace-nowrap shrink-0 transition-colors">
+                    <Menu className="h-4 w-4" />
+                    <span className="hidden lg:inline ml-1">All Categories</span>
+                    <ChevronDown className="h-3 w-3 ml-1" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start" className="w-56 bg-background z-50">
+                  <DropdownMenuItem asChild>
                     <Link
-                      href={`/browse?domain=${encodeURIComponent(cat.code)}`}
+                      href="/browse"
                       className="cursor-pointer"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        router.push(`/browse?domain=${encodeURIComponent(cat.code)}`);
-                      }}
+                      onClick={() => router.push("/browse")}
                     >
-                      {cat.label}
+                      All Products
                     </Link>
                   </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
+                  <DropdownMenuSeparator />
+                  {categories.map((cat) => (
+                    <DropdownMenuItem key={cat.code} asChild>
+                      <Link
+                        href={`/browse?domain=${encodeURIComponent(cat.code)}`}
+                        className="cursor-pointer"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          router.push(`/browse?domain=${encodeURIComponent(cat.code)}`);
+                        }}
+                      >
+                        {cat.label}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-            {/* Search Input with Autocomplete */}
-            <form onSubmit={handleSearch} className="flex-1 relative">
-              <Popover open={showSuggestions && suggestions.length > 0} onOpenChange={setShowSuggestions}>
-                <PopoverTrigger asChild>
-                  <input
-                    type="text"
-                    placeholder="What are you looking for?"
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      setShowSuggestions(true);
-                    }}
-                    onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                    className="w-full py-3 px-5 pr-12 border-2 border-light-grey border-l-0 rounded-r-full text-base font-sans transition-colors focus:outline-none focus:border-o42-blue bg-background"
-                  />
-                </PopoverTrigger>
-                <PopoverContent
-                  className="w-[var(--radix-popover-trigger-width)] p-0 bg-background"
-                  align="start"
-                  onOpenAutoFocus={(e) => e.preventDefault()}
+              {/* Search Input + Button */}
+              <form onSubmit={handleSearch} className="flex flex-1 items-stretch">
+                <Popover open={showSuggestions && suggestions.length > 0} onOpenChange={setShowSuggestions}>
+                  <PopoverTrigger asChild>
+                    <input
+                      type="text"
+                      placeholder="What are you looking for?"
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setShowSuggestions(true);
+                      }}
+                      onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                      className="flex-1 w-full px-4 text-base bg-transparent focus:outline-none"
+                    />
+                  </PopoverTrigger>
+                  <PopoverContent
+                    className="w-[var(--radix-popover-trigger-width)] p-0 bg-background"
+                    align="start"
+                    onOpenAutoFocus={(e) => e.preventDefault()}
+                  >
+                    <Command>
+                      <CommandList>
+                        {loadingSuggestions ? (
+                          <div className="py-6 text-center text-sm text-muted-foreground">
+                            Searching...
+                          </div>
+                        ) : suggestions.length === 0 ? (
+                          <CommandEmpty>No products found.</CommandEmpty>
+                        ) : (
+                          <CommandGroup heading="Suggestions">
+                            {suggestions.map((suggestion) => (
+                              <CommandItem
+                                key={suggestion.id}
+                                onSelect={() => handleSuggestionClick(suggestion.id)}
+                                className="cursor-pointer"
+                              >
+                                <Search className="mr-2 h-4 w-4 text-muted-foreground" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="truncate">{suggestion.title}</p>
+                                  <p className="text-xs text-primary font-medium">
+                                    {formatPrice(suggestion.currency, suggestion.price)}
+                                  </p>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        )}
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <button
+                  type="submit"
+                  className="px-4 bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center transition-colors shrink-0"
                 >
-                  <Command>
-                    <CommandList>
-                      {loadingSuggestions ? (
-                        <div className="py-6 text-center text-sm text-muted-foreground">
-                          Searching...
-                        </div>
-                      ) : suggestions.length === 0 ? (
-                        <CommandEmpty>No products found.</CommandEmpty>
-                      ) : (
-                        <CommandGroup heading="Suggestions">
-                          {suggestions.map((suggestion) => (
-                            <CommandItem
-                              key={suggestion.id}
-                              onSelect={() => handleSuggestionClick(suggestion.id)}
-                              className="cursor-pointer"
-                            >
-                              <Search className="mr-2 h-4 w-4 text-muted-foreground" />
-                              <div className="flex-1 min-w-0">
-                                <p className="truncate">{suggestion.title}</p>
-                                <p className="text-xs text-primary font-medium">
-                                  {formatPrice(suggestion.currency, suggestion.price)}
-                                </p>
-                              </div>
-                            </CommandItem>
-                          ))}
-                        </CommandGroup>
-                      )}
-                    </CommandList>
-                  </Command>
-                </PopoverContent>
-              </Popover>
-              <button
-                type="submit"
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 w-10 h-10 bg-o42-blue rounded-full text-primary-foreground flex items-center justify-center hover:bg-primary/90 transition-colors z-10"
-              >
-                <Search className="w-5 h-5" />
-              </button>
-            </form>
+                  <Search className="w-5 h-5" />
+                </button>
+              </form>
+            </div>
           </div>
         )}
 
@@ -374,7 +374,7 @@ export function TopBar() {
                   </Button>
                   <p className="text-sm text-muted-foreground text-center">
                     New customer?{" "}
-                    <Link href="/signup" className="text-o42-blue hover:underline font-medium">
+                    <Link href="/join" className="text-o42-blue hover:underline font-medium">
                       Register here
                     </Link>
                   </p>

@@ -126,32 +126,20 @@ const OrderDetails = () => {
   }, [authLoading, user, orderId, router]);
 
   const handleCancelOrder = async () => {
-    if (!orderId) return;
+    if (!orderId || !user) return;
     setCancelling(true);
 
     try {
-      const response = await supabase.functions.invoke("cancel-order", {
-        body: {
-          order_id: orderId,
-          reason: cancelReason || "Cancelled by buyer",
-        },
-      });
+      const { error } = await supabase
+        .from("orders")
+        .update({ status: "cancelled" })
+        .eq("id", orderId)
+        .eq("buyer_id", user.id);
 
-      if (response.error) {
+      if (error) {
         toast({
           title: "Cancellation Failed",
-          description: response.error.message || "Failed to cancel order",
-          variant: "destructive",
-        });
-        setCancelling(false);
-        return;
-      }
-
-      const result = response.data;
-      if (result?.error) {
-        toast({
-          title: "Cancellation Failed",
-          description: result.error,
+          description: error.message || "Failed to cancel order",
           variant: "destructive",
         });
         setCancelling(false);
@@ -160,7 +148,7 @@ const OrderDetails = () => {
 
       toast({
         title: "Order Cancelled",
-        description: "Your order has been cancelled and a full refund has been initiated. You will receive a confirmation email.",
+        description: "Your order has been cancelled. If a payment was made, a refund will be initiated.",
       });
 
       setShowCancelDialog(false);

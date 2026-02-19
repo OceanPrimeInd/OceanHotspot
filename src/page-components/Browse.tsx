@@ -251,28 +251,10 @@ const Browse = () => {
                 Discover everything maritime. Browse our curated selection of products and services.
               </p>
 
-              {/* Search */}
-              <div className="relative max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Search products..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 h-12"
-                />
-              </div>
-
               {/* Search info */}
               {searchQuery.trim() && !searchError && totalFound > 0 && (
                 <p className="text-sm text-muted-foreground mt-3">
-                  Found {totalFound} results
-                </p>
-              )}
-
-              {searchError && (
-                <p className="text-sm text-destructive mt-3">
-                  {searchError} - Showing filtered results instead.
+                  Found {totalFound} results for &ldquo;{searchQuery}&rdquo;
                 </p>
               )}
 

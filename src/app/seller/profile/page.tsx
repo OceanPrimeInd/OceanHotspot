@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import PageComponent from "@/page-components/seller/Profile";
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: "Seller Profile",
   description: "Manage your seller profile.",
 };

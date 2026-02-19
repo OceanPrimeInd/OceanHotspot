@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import PageComponent from "@/page-components/seller/Login";
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: "Seller Sign In",
   description: "Sign in to your seller account.",
 };

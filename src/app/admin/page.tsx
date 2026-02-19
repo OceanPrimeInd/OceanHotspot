@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import PageComponent from "@/page-components/admin/Dashboard";
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: "Admin Dashboard",
   description: "Ocean Hotspot admin dashboard.",
 };

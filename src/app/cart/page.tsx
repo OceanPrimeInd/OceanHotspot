@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import PageComponent from "@/page-components/Cart";
 
 export const metadata: Metadata = {
+  robots: { index: false, follow: false },
   title: "Shopping Cart",
 };
 

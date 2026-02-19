@@ -1,22 +1,4 @@
 User-agent: *
 Allow: /
 
-# Disallow private/authenticated routes
-Disallow: /admin
-Disallow: /seller/dashboard
-Disallow: /seller/products
-Disallow: /seller/orders
-Disallow: /seller/messages
-Disallow: /seller/profile
-Disallow: /seller/returns
-Disallow: /seller/enquiries
-Disallow: /seller/bulk-upload
-Disallow: /account/
-Disallow: /cart
-Disallow: /cart-checkout
-Disallow: /checkout/
-Disallow: /my-orders
-Disallow: /my-returns
-Disallow: /my-disputes
-
 Sitemap: https://oceanhotspot.com/sitemap.xml

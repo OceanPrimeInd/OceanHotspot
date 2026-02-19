@@ -14,6 +14,11 @@ export const metadata: Metadata = {
   authors: [{ name: "Ocean Hotspot" }],
   creator: "Ocean Hotspot",
   metadataBase: new URL("https://oceanhotspot.com"),
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/favicon.png",
+  },
   openGraph: {
     type: "website",
     locale: "en_GB",
