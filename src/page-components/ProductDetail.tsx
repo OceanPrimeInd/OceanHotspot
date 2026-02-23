@@ -56,6 +56,7 @@ interface Product {
   image_url: string | null;
   images: string[] | null;
   vat_treatment: string | null;
+  vat_rate: number | null;
   availability_status: string | null;
   condition: string | null;
   brand: string | null;
@@ -116,6 +117,7 @@ const ProductDetail = () => {
       image_url: product.image_url,
       seller_id: product.seller_id,
       vat_treatment: product.vat_treatment,
+      vat_rate: product.vat_rate ?? 20,
     });
     setAddedToCart(true);
     toast({
@@ -358,7 +360,10 @@ const ProductDetail = () => {
               {formatPrice(product.currency, product.price)}
             </p>
             {product.vat_treatment === "plus_vat" && (
-              <p className="text-sm text-muted-foreground mb-6">+ VAT</p>
+              <p className="text-sm text-muted-foreground mb-6">+ VAT ({product.vat_rate ?? 20}%)</p>
+            )}
+            {product.vat_treatment === "vat_included" && (
+              <p className="text-sm text-muted-foreground mb-6">inc. VAT ({product.vat_rate ?? 20}%)</p>
             )}
 
             <div className="prose prose-slate max-w-none mb-8">

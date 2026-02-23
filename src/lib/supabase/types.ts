@@ -427,6 +427,27 @@ export type Database = {
           },
         ]
       }
+      newsletter_subscribers: {
+        Row: {
+          id: string
+          email: string
+          subscribed_at: string
+          is_active: boolean | null
+        }
+        Insert: {
+          id?: string
+          email: string
+          subscribed_at?: string
+          is_active?: boolean | null
+        }
+        Update: {
+          id?: string
+          email?: string
+          subscribed_at?: string
+          is_active?: boolean | null
+        }
+        Relationships: []
+      }
       orders: {
         Row: {
           billing_address: Json | null
@@ -585,6 +606,7 @@ export type Database = {
           title: string
           updated_at: string | null
           vat_treatment: string | null
+          vat_rate: number | null
           status: string | null
           admin_notes: string | null
           reviewed_by: string | null
@@ -616,6 +638,7 @@ export type Database = {
           title: string
           updated_at?: string | null
           vat_treatment?: string | null
+          vat_rate?: number | null
           status?: string | null
           admin_notes?: string | null
           reviewed_by?: string | null
@@ -647,6 +670,7 @@ export type Database = {
           title?: string
           updated_at?: string | null
           vat_treatment?: string | null
+          vat_rate?: number | null
           status?: string | null
           admin_notes?: string | null
           reviewed_by?: string | null
@@ -1119,6 +1143,10 @@ export type Database = {
           rank: number
           title: string
         }[]
+      }
+      subscribe_newsletter: {
+        Args: { subscriber_email: string }
+        Returns: undefined
       }
     }
     Enums: {

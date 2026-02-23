@@ -10,6 +10,7 @@ export interface CartItem {
   image_url: string | null;
   seller_id: string;
   vat_treatment: string | null;
+  vat_rate: number; // 0, 5, or 20
   quantity: number;
 }
 
@@ -82,8 +83,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
 
   const total = items.reduce((sum, item) => {
-    const vat = item.vat_treatment === "plus_vat" ? item.price * 0.2 : 0;
-    return sum + (item.price + vat) * item.quantity;
+    const rate = (item.vat_rate ?? 20) / 100;
+    if (item.vat_treatment === "plus_vat") {
+      return sum + item.price * (1 + rate) * item.quantity;
+    }
+    // vat_included: price is already gross; vat_exempt: no VAT
+    return sum + item.price * item.quantity;
   }, 0);
 
   return (

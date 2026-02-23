@@ -180,8 +180,13 @@ const CartCheckout = () => {
               {/* Items list */}
               <div className="space-y-4 mb-6 max-h-64 overflow-y-auto">
                 {items.map((item) => {
-                  const itemVat = item.vat_treatment === "plus_vat" ? item.price * 0.2 : 0;
-                  const itemTotal = (item.price + itemVat) * item.quantity;
+                  const itemVat = item.vat_treatment === "plus_vat"
+                    ? item.price * ((item.vat_rate ?? 20) / 100)
+                    : item.vat_treatment === "vat_included"
+                    ? item.price - item.price / (1 + (item.vat_rate ?? 20) / 100)
+                    : 0;
+                  const itemNetPrice = item.vat_treatment === "vat_included" ? item.price / (1 + (item.vat_rate ?? 20) / 100) : item.price;
+                  const itemTotal = (itemNetPrice + itemVat) * item.quantity;
 
                   return (
                     <div key={item.id} className="flex gap-3">
@@ -210,11 +215,14 @@ const CartCheckout = () => {
 
               <div className="border-t border-border pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>Subtotal</span>
+                  <span>Subtotal (ex. VAT)</span>
                   <span>
                     {formatPrice(
                       items[0]?.currency,
-                      items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+                      items.reduce((sum, item) => {
+                        const netPrice = item.vat_treatment === "vat_included" ? item.price / (1 + (item.vat_rate ?? 20) / 100) : item.price;
+                        return sum + netPrice * item.quantity;
+                      }, 0)
                     )}
                   </span>
                 </div>
@@ -224,8 +232,9 @@ const CartCheckout = () => {
                     {formatPrice(
                       items[0]?.currency,
                       items.reduce((sum, item) => {
-                        const vat = item.vat_treatment === "plus_vat" ? item.price * 0.2 : 0;
-                        return sum + vat * item.quantity;
+                        if (item.vat_treatment === "plus_vat") return sum + item.price * ((item.vat_rate ?? 20) / 100) * item.quantity;
+                        if (item.vat_treatment === "vat_included") return sum + (item.price - item.price / (1 + (item.vat_rate ?? 20) / 100)) * item.quantity;
+                        return sum;
                       }, 0)
                     )}
                   </span>

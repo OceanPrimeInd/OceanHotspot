@@ -62,12 +62,16 @@ export function Footer() {
     setError("");
 
     try {
-      const { error: fnError } = await supabase.functions.invoke(
-        "newsletter-subscribe",
-        { body: { email: email.toLowerCase().trim() } }
-      );
+      const { error: dbError } = await supabase.rpc("subscribe_newsletter", {
+        subscriber_email: email.toLowerCase().trim(),
+      });
 
-      if (fnError) throw fnError;
+      if (dbError) throw dbError;
+
+      // Send welcome email (fire-and-forget — don't block on failure)
+      supabase.functions.invoke("send-welcome-email", {
+        body: { email: email.toLowerCase().trim() },
+      }).catch((err) => console.warn("Welcome email failed:", err));
 
       setSubscribed(true);
       setEmail("");

@@ -1,19 +1,30 @@
 import type { Metadata } from "next";
+import { Public_Sans } from "next/font/google";
 import { Providers } from "@/components/Providers";
 import "./globals.css";
+
+const publicSans = Public_Sans({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-public-sans",
+  weight: ["400", "500", "600", "700", "800"],
+});
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: {
-    default: "Ocean Hotspot | Marine Marketplace",
+    default: "B2B Maritime Marketplace | Ocean Hotspot",
     template: "%s | Ocean Hotspot",
   },
-  description: "The world's leading B2B maritime marketplace. Browse marine equipment, boats, parts, and services from verified sellers worldwide.",
-  keywords: ["marine", "maritime", "boat", "yacht", "marine equipment", "boat parts", "maritime marketplace"],
+  description: "The world's leading B2B maritime marketplace. Buy and sell curated marine products, equipment, boats, parts, and services from verified sellers worldwide.",
+  keywords: ["marine", "maritime", "boat", "yacht", "marine equipment", "boat parts", "maritime marketplace", "marine products"],
   authors: [{ name: "Ocean Hotspot" }],
   creator: "Ocean Hotspot",
-  metadataBase: new URL("https://oceanhotspot.com"),
+  metadataBase: new URL("https://www.oceanhotspot.com"),
+  alternates: {
+    canonical: "https://www.oceanhotspot.com",
+  },
   icons: {
     icon: "/favicon.png",
     shortcut: "/favicon.png",
@@ -22,16 +33,25 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_GB",
-    url: "https://oceanhotspot.com",
+    url: "https://www.oceanhotspot.com",
     siteName: "Ocean Hotspot",
-    title: "Ocean Hotspot | Marine Marketplace",
-    description: "The world's leading B2B maritime marketplace. Browse marine equipment, boats, parts, and services from verified sellers worldwide.",
+    title: "B2B Maritime Marketplace | Ocean Hotspot",
+    description: "Buy and sell marine products and services in one place.",
+    images: [
+      {
+        url: "https://www.oceanhotspot.com/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Ocean Hotspot - B2B Maritime Marketplace",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Ocean Hotspot | Marine Marketplace",
-    description: "The world's leading B2B maritime marketplace.",
+    title: "B2B Maritime Marketplace | Ocean Hotspot",
+    description: "Buy and sell marine products and services.",
     creator: "@oceanhotspot",
+    images: ["https://www.oceanhotspot.com/og-image.jpg"],
   },
   robots: {
     index: true,
@@ -52,7 +72,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning className={publicSans.variable}>
       <body>
         <Providers>
           {children}

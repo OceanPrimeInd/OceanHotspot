@@ -79,8 +79,13 @@ const Cart = () => {
           {/* Cart Items */}
           <div className="lg:col-span-2 space-y-4">
             {items.map((item) => {
-              const itemVat = item.vat_treatment === "plus_vat" ? item.price * 0.2 : 0;
-              const itemTotal = (item.price + itemVat) * item.quantity;
+              const itemVat = item.vat_treatment === "plus_vat"
+                ? item.price * ((item.vat_rate ?? 20) / 100)
+                : item.vat_treatment === "vat_included"
+                ? item.price - item.price / (1 + (item.vat_rate ?? 20) / 100)
+                : 0;
+              const itemNetPrice = item.vat_treatment === "vat_included" ? item.price / (1 + (item.vat_rate ?? 20) / 100) : item.price;
+              const itemTotal = (itemNetPrice + itemVat) * item.quantity;
 
               return (
                 <div
@@ -113,6 +118,7 @@ const Cart = () => {
                     <p className="text-sm text-muted-foreground mt-1">
                       {formatPrice(item.currency, item.price)}
                       {item.vat_treatment === "plus_vat" && " + VAT"}
+                      {item.vat_treatment === "vat_included" && " inc. VAT"}
                     </p>
 
                     {/* Quantity Controls */}
@@ -175,14 +181,19 @@ const Cart = () => {
 
               <div className="space-y-2 mb-4">
                 {items.map((item) => {
-                  const itemVat = item.vat_treatment === "plus_vat" ? item.price * 0.2 : 0;
+                  const itemVat = item.vat_treatment === "plus_vat"
+                    ? item.price * ((item.vat_rate ?? 20) / 100)
+                    : item.vat_treatment === "vat_included"
+                    ? item.price - item.price / (1 + (item.vat_rate ?? 20) / 100)
+                    : 0;
+                  const itemNetPrice = item.vat_treatment === "vat_included" ? item.price / (1 + (item.vat_rate ?? 20) / 100) : item.price;
                   return (
                     <div key={item.id} className="flex justify-between text-sm">
                       <span className="truncate pr-2">
                         {item.title} x{item.quantity}
                       </span>
                       <span>
-                        {formatPrice(item.currency, (item.price + itemVat) * item.quantity)}
+                        {formatPrice(item.currency, (itemNetPrice + itemVat) * item.quantity)}
                       </span>
                     </div>
                   );

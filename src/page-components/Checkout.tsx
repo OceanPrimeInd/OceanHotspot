@@ -24,6 +24,7 @@ interface Product {
   currency: string;
   image_url: string | null;
   vat_treatment: string | null;
+  vat_rate: number | null;
 }
 
 const Checkout = () => {
@@ -74,14 +75,27 @@ const Checkout = () => {
     }
   }, [profile, user]);
 
+  // For plus_vat: price is ex-VAT, VAT = price × rate%, total = price × (1 + rate)
+  // For vat_included: price is gross (inc. VAT), VAT = price × (rate/(100+rate)), net = price / (1 + rate)
+  // For vat_exempt: no VAT, total = price
+  const vatRate = (product?.vat_rate ?? 20) / 100;
+
   const calculateVAT = () => {
     if (!product) return 0;
-    return product.vat_treatment === "plus_vat" ? product.price * 0.2 : 0;
+    if (product.vat_treatment === "plus_vat") return product.price * vatRate;
+    if (product.vat_treatment === "vat_included") return product.price - product.price / (1 + vatRate);
+    return 0;
+  };
+
+  const calculateNetPrice = () => {
+    if (!product) return 0;
+    if (product.vat_treatment === "vat_included") return product.price / (1 + vatRate);
+    return product.price;
   };
 
   const calculateTotal = () => {
     if (!product) return 0;
-    return product.price + calculateVAT();
+    return calculateNetPrice() + calculateVAT();
   };
 
   const handleCheckout = async () => {
@@ -195,12 +209,14 @@ const Checkout = () => {
 
               <div className="border-t border-border pt-4 space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>Subtotal</span>
-                  <span>{formatPrice(product.currency, product.price)}</span>
+                  <span>Subtotal (ex. VAT)</span>
+                  <span>{formatPrice(product.currency, calculateNetPrice())}</span>
                 </div>
                 {calculateVAT() > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span>VAT (20%)</span>
+                    <span>
+                      VAT ({product.vat_rate ?? 20}%){product.vat_treatment === "vat_included" ? " incl." : ""}
+                    </span>
                     <span>{formatPrice(product.currency, calculateVAT())}</span>
                   </div>
                 )}

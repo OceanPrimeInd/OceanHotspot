@@ -50,6 +50,8 @@ export function TopBar() {
   const { itemCount } = useCart();
   const { itemCount: wishlistCount } = useWishlist();
   const { isAdmin } = useAdminCheck();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const [searchQuery, setSearchQuery] = useState("");
   const [categories, setCategories] = useState<DomainLabel[]>([]);
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
@@ -403,7 +405,7 @@ export function TopBar() {
             >
               <div className="relative">
                 <Heart className="h-6 w-6" />
-                {wishlistCount > 0 && (
+                {mounted && wishlistCount > 0 && (
                   <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
                     {wishlistCount > 9 ? "9+" : wishlistCount}
                   </span>
@@ -421,7 +423,7 @@ export function TopBar() {
             >
               <div className="relative">
                 <ShoppingCart className="h-6 w-6" />
-                {itemCount > 0 && (
+                {mounted && itemCount > 0 && (
                   <span className="absolute -top-2 -right-2 w-5 h-5 bg-o42-orange text-white text-xs font-bold rounded-full flex items-center justify-center">
                     {itemCount > 9 ? "9+" : itemCount}
                   </span>

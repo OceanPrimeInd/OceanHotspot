@@ -26,6 +26,8 @@ export function Navbar() {
   const { user, signOut, profile } = useAuth();
   const { itemCount } = useCart();
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -157,7 +159,7 @@ export function Navbar() {
             className="relative w-10 h-10 flex items-center justify-center rounded-full hover:bg-muted transition-colors"
           >
             <ShoppingCart className="h-5 w-5" />
-            {itemCount > 0 && (
+            {mounted && itemCount > 0 && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center">
                 {itemCount > 9 ? "9+" : itemCount}
               </span>
@@ -260,7 +262,7 @@ export function Navbar() {
             className="relative w-10 h-10 flex items-center justify-center"
           >
             <ShoppingCart className="h-5 w-5" />
-            {itemCount > 0 && (
+            {mounted && itemCount > 0 && (
               <span className="absolute -top-1 -right-1 w-5 h-5 bg-primary text-primary-foreground text-xs font-bold rounded-full flex items-center justify-center">
                 {itemCount > 9 ? "9+" : itemCount}
               </span>

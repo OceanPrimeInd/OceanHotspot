@@ -96,6 +96,8 @@ export function useGlobalKeyboardShortcuts() {
         document.activeElement?.tagName === "TEXTAREA" ||
         (document.activeElement as HTMLElement)?.isContentEditable;
 
+      if (!event.key) return;
+
       for (const shortcut of shortcuts) {
         const keyMatch = event.key.toLowerCase() === shortcut.key.toLowerCase();
         const ctrlMatch = shortcut.ctrlKey
@@ -152,6 +154,7 @@ export function useKeyboardShortcut(
         document.activeElement?.tagName === "TEXTAREA";
 
       if (isTyping && key !== "Escape") return;
+      if (!event.key) return;
 
       const keyMatch = event.key.toLowerCase() === key.toLowerCase();
       const ctrlMatch = ctrlKey ? event.ctrlKey : metaKey ? event.metaKey : true;

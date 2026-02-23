@@ -61,6 +61,13 @@ const VAT_TREATMENTS = [
   { value: "vat_exempt", label: "VAT Exempt" },
 ];
 
+// VAT rate options
+const VAT_RATES = [
+  { value: "20", label: "Standard rate (20%)" },
+  { value: "5",  label: "Reduced rate (5%)" },
+  { value: "0",  label: "Zero rate (0%)" },
+];
+
 // Availability options
 const AVAILABILITY_OPTIONS = [
   { value: "in_stock", label: "In Stock" },
@@ -96,6 +103,7 @@ const CreateProduct = () => {
   // Section 5 - Pricing
   const [price, setPrice] = useState("");
   const [vatTreatment, setVatTreatment] = useState("");
+  const [vatRate, setVatRate] = useState("20");
 
   // Section 6 - Availability
   const [availabilityStatus, setAvailabilityStatus] = useState("");
@@ -227,6 +235,7 @@ const CreateProduct = () => {
       price: price ? parseFloat(price) : 0,
       currency: "GBP",
       vat_treatment: vatTreatment || null,
+      vat_rate: vatTreatment === "vat_exempt" ? 0 : parseFloat(vatRate),
       availability_status: availabilityStatus || null,
       lead_time_text: leadTimeText.trim() || null,
       ships_from: shipsFrom.trim() || null,
@@ -435,7 +444,7 @@ const CreateProduct = () => {
 
                   <div className="space-y-2">
                     <Label>VAT Treatment *</Label>
-                    <Select value={vatTreatment} onValueChange={setVatTreatment}>
+                    <Select value={vatTreatment} onValueChange={(val) => { setVatTreatment(val); if (val === "vat_exempt") setVatRate("0"); else if (vatRate === "0") setVatRate("20"); }}>
                       <SelectTrigger className="h-12">
                         <SelectValue placeholder="Select VAT treatment" />
                       </SelectTrigger>
@@ -446,6 +455,22 @@ const CreateProduct = () => {
                       </SelectContent>
                     </Select>
                   </div>
+
+                  {vatTreatment && vatTreatment !== "vat_exempt" && (
+                    <div className="space-y-2">
+                      <Label>VAT Rate *</Label>
+                      <Select value={vatRate} onValueChange={setVatRate}>
+                        <SelectTrigger className="h-12">
+                          <SelectValue placeholder="Select VAT rate" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {VAT_RATES.map((r) => (
+                            <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
                 </div>
               </div>
 

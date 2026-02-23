@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useState, useEffect } from "react";
 import { useRecentlyViewed } from "@/contexts/RecentlyViewedContext";
 import { Package, Clock, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -8,9 +9,11 @@ import { formatPrice } from "@/lib/utils";
 
 export function RecentlyViewed() {
   const { items, clearHistory } = useRecentlyViewed();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
-  // Don't render if no items
-  if (items.length === 0) {
+  // Don't render until mounted (avoids hydration mismatch with localStorage)
+  if (!mounted || items.length === 0) {
     return null;
   }
 

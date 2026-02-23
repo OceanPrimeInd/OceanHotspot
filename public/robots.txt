@@ -1,4 +1,7 @@
+User-agent: Googlebot
+Allow: /
+
 User-agent: *
 Allow: /
 
-Sitemap: https://oceanhotspot.com/sitemap.xml
+Sitemap: https://www.oceanhotspot.com/sitemap.xml
