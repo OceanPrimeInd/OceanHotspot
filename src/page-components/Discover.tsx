@@ -6,12 +6,11 @@ import Link from "next/link";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { 
-  Loader2, 
-  Send, 
-  Sparkles, 
-  Anchor, 
-  Ship, 
+import {
+  Loader2,
+  Send,
+  Sparkles,
+  Ship,
   Search,
   ArrowRight
 } from "lucide-react";
@@ -27,7 +26,7 @@ const CHAT_URL = SUPABASE_URL ? `${SUPABASE_URL}/functions/v1/ai-discovery` : ""
 
 const STARTER_PROMPTS = [
   { icon: Ship, text: "I need equipment for my sailboat" },
-  { icon: Anchor, text: "What safety gear do you recommend?" },
+  { icon: Search, text: "What safety gear do you recommend?" },
   { icon: Search, text: "Looking for electric outboard motors" },
 ];
 
@@ -180,17 +179,17 @@ const Discover = () => {
 
   return (
     <Layout>
-      <div className="container max-w-4xl py-8">
+      <div className="container max-w-4xl py-4">
         <div className="animate-slide-up">
           {/* Header */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-secondary mb-4">
-              <Sparkles className="h-8 w-8 text-white" />
+          <div className="text-center mb-4">
+            <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-secondary mb-3">
+              <Sparkles className="h-6 w-6 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-headline mb-2">
+            <h1 className="text-2xl font-bold text-headline mb-1">
               AI Discovery Assistant
             </h1>
-            <p className="text-muted-foreground max-w-xl mx-auto">
+            <p className="text-sm text-muted-foreground max-w-xl mx-auto">
               Tell me about your maritime needs and I'll help you find the perfect products and services.
             </p>
           </div>
@@ -198,17 +197,16 @@ const Discover = () => {
           {/* Chat Container */}
           <div className="rounded-2xl border border-border bg-card shadow-lg overflow-hidden">
             {/* Messages Area */}
-            <div ref={messagesContainerRef} className="h-[450px] overflow-y-auto p-6 space-y-4">
+            <div ref={messagesContainerRef} className="h-[min(450px,calc(100vh-360px))] overflow-y-auto p-6 space-y-4">
               {messages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center">
-                  <Anchor className="h-12 w-12 text-primary/30 mb-4" />
+                <div className="flex flex-col items-center text-center pt-4">
                   <h3 className="font-semibold text-headline mb-2">
                     How can I help you today?
                   </h3>
                   <p className="text-sm text-muted-foreground mb-6 max-w-sm">
                     Ask me about maritime products, equipment recommendations, or tell me about your vessel and needs.
                   </p>
-                  
+
                   {/* Starter Prompts */}
                   <div className="flex flex-wrap gap-2 justify-center">
                     {STARTER_PROMPTS.map((prompt, idx) => (
@@ -238,11 +236,19 @@ const Discover = () => {
                     >
                       {msg.role === "assistant" && msg.content === "" ? (
                         <div className="flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span className="text-sm text-muted-foreground">Thinking...</span>
+                          <span className="flex gap-1">
+                            <span className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:0ms]" />
+                            <span className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:150ms]" />
+                            <span className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:300ms]" />
+                          </span>
                         </div>
                       ) : (
-                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                        <p className="text-sm whitespace-pre-wrap">
+                          {msg.content}
+                          {msg.role === "assistant" && isLoading && idx === messages.length - 1 && (
+                            <span className="inline-block w-0.5 h-[1em] bg-current align-middle ml-0.5 animate-pulse" />
+                          )}
+                        </p>
                       )}
                     </div>
                   </div>
@@ -251,7 +257,7 @@ const Discover = () => {
             </div>
 
             {/* Input Area */}
-            <div className="border-t border-border p-4 bg-muted/30">
+            <div className="border-t border-border p-4 bg-muted/30 shrink-0">
               <div className="flex gap-2">
                 <Input
                   ref={inputRef}
@@ -280,7 +286,7 @@ const Discover = () => {
           </div>
 
           {/* Browse CTA */}
-          <div className="mt-6 text-center">
+          <div className="mt-4 text-center">
             <p className="text-sm text-muted-foreground mb-2">
               Want to browse all products?
             </p>
