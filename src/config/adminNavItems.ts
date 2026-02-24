@@ -7,6 +7,7 @@ import {
   Award,
   Users,
   Package,
+  BarChart2,
 } from "lucide-react";
 
 export const getAdminNavItems = (badges?: {
@@ -60,5 +61,10 @@ export const getAdminNavItems = (badges?: {
     title: "Users",
     href: "/admin/users",
     icon: Users,
+  },
+  {
+    title: "Google Analytics",
+    href: "/admin/analytics",
+    icon: BarChart2,
   },
 ];
