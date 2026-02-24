@@ -14,6 +14,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { formatPrice } from "@/lib/utils";
+import { getPlaceholderSvg } from "@/lib/productPlaceholders";
 import { Loader2, ShieldCheck, CreditCard, Package } from "lucide-react";
 import {
   Breadcrumb,
@@ -194,17 +195,25 @@ const CartCheckout = () => {
                         <img
                           src={item.image_url}
                           alt={item.title}
-                          className="w-16 h-16 object-cover rounded-lg border flex-shrink-0"
+                          className="w-16 h-16 object-cover rounded-lg border shrink-0"
                         />
+                      ) : getPlaceholderSvg(item.title) ? (
+                        <div className="w-16 h-16 rounded-lg overflow-hidden shrink-0">
+                          {getPlaceholderSvg(item.title)}
+                        </div>
                       ) : (
-                        <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                        <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center shrink-0">
                           <Package className="h-6 w-6 text-muted-foreground" />
                         </div>
                       )}
                       <div className="flex-1 min-w-0">
                         <h3 className="font-medium text-sm line-clamp-2">{item.title}</h3>
-                        <p className="text-xs text-muted-foreground">Qty: {item.quantity}</p>
-                        <p className="text-sm font-medium text-primary">
+                        <p className="text-xs text-muted-foreground">
+                          Qty: {item.quantity}
+                          {item.vat_treatment === "plus_vat" && ` · ${formatPrice(item.currency, item.price)} + VAT`}
+                          {item.vat_treatment === "vat_included" && ` · ${formatPrice(item.currency, item.price)} inc. VAT`}
+                        </p>
+                        <p className="text-sm font-medium text-primary whitespace-nowrap">
                           {formatPrice(item.currency, itemTotal)}
                         </p>
                       </div>

@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatPrice } from "@/lib/utils";
+import { getPlaceholderSvg } from "@/lib/productPlaceholders";
 import {
   Tooltip,
   TooltipContent,
@@ -75,9 +76,9 @@ const Cart = () => {
           </Button>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-5 gap-8">
           {/* Cart Items */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-3 space-y-4">
             {items.map((item) => {
               const itemVat = item.vat_treatment === "plus_vat"
                 ? item.price * ((item.vat_rate ?? 20) / 100)
@@ -100,6 +101,10 @@ const Cart = () => {
                         alt={item.title}
                         className="w-24 h-24 object-cover rounded-lg border"
                       />
+                    ) : getPlaceholderSvg(item.title) ? (
+                      <div className="w-24 h-24 rounded-lg overflow-hidden">
+                        {getPlaceholderSvg(item.title)}
+                      </div>
                     ) : (
                       <div className="w-24 h-24 bg-muted rounded-lg flex items-center justify-center">
                         <Package className="h-8 w-8 text-muted-foreground" />
@@ -115,9 +120,9 @@ const Cart = () => {
                     >
                       {item.title}
                     </Link>
-                    <p className="text-sm text-muted-foreground mt-1">
+                    <p className="text-xs text-muted-foreground mt-1">
                       {formatPrice(item.currency, item.price)}
-                      {item.vat_treatment === "plus_vat" && " + VAT"}
+                      {item.vat_treatment === "plus_vat" && ` + VAT (${formatPrice(item.currency, itemVat)})`}
                       {item.vat_treatment === "vat_included" && " inc. VAT"}
                     </p>
 
@@ -175,7 +180,7 @@ const Cart = () => {
           </div>
 
           {/* Order Summary */}
-          <div className="lg:col-span-1">
+          <div className="lg:col-span-2">
             <div className="rounded-xl border border-border bg-card p-6 sticky top-24">
               <h2 className="text-lg font-semibold mb-4">Order Summary</h2>
 
@@ -188,11 +193,11 @@ const Cart = () => {
                     : 0;
                   const itemNetPrice = item.vat_treatment === "vat_included" ? item.price / (1 + (item.vat_rate ?? 20) / 100) : item.price;
                   return (
-                    <div key={item.id} className="flex justify-between text-sm">
-                      <span className="truncate pr-2">
+                    <div key={item.id} className="flex justify-between text-sm gap-2">
+                      <span className="truncate min-w-0">
                         {item.title} x{item.quantity}
                       </span>
-                      <span>
+                      <span className="whitespace-nowrap shrink-0">
                         {formatPrice(item.currency, (itemNetPrice + itemVat) * item.quantity)}
                       </span>
                     </div>

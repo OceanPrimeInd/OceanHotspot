@@ -13,6 +13,7 @@ import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { formatPrice } from "@/lib/utils";
+import { getPlaceholderSvg } from "@/lib/productPlaceholders";
 import { Loader2, ArrowLeft, ShieldCheck, CreditCard, Package } from "lucide-react";
 
 interface Product {
@@ -196,6 +197,10 @@ const Checkout = () => {
                     alt={product.title}
                     className="w-20 h-20 object-cover rounded-lg border"
                   />
+                ) : getPlaceholderSvg(product.title) ? (
+                  <div className="w-20 h-20 rounded-lg overflow-hidden">
+                    {getPlaceholderSvg(product.title)}
+                  </div>
                 ) : (
                   <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center">
                     <Package className="h-8 w-8 text-muted-foreground" />
@@ -203,7 +208,11 @@ const Checkout = () => {
                 )}
                 <div>
                   <h3 className="font-medium">{product.title}</h3>
-                  <p className="text-sm text-muted-foreground">Qty: 1</p>
+                  <p className="text-sm text-muted-foreground">
+                    Qty: 1
+                    {product.vat_treatment === "plus_vat" && ` · ${formatPrice(product.currency, product.price)} + VAT`}
+                    {product.vat_treatment === "vat_included" && ` · ${formatPrice(product.currency, product.price)} inc. VAT`}
+                  </p>
                 </div>
               </div>
 

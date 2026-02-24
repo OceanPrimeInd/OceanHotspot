@@ -3,15 +3,19 @@
 import { useState } from "react";
 import { ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getPlaceholderSvg } from "@/lib/productPlaceholders";
+
 interface ProductImageGalleryProps {
   images: string[];
   title: string;
 }
 export function ProductImageGallery({ images, title }: ProductImageGalleryProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
-  
+
   const hasImages = images.length > 0;
   const selectedImage = hasImages ? images[selectedIndex] : null;
+  const placeholder = getPlaceholderSvg(title);
+
   return (
     <div className="flex flex-col gap-4">
       {/* Main Image */}
@@ -22,10 +26,14 @@ export function ProductImageGallery({ images, title }: ProductImageGalleryProps)
             alt={title}
             className="w-full h-full object-contain"
           />
+        ) : placeholder ? (
+          <div className="w-full h-full">
+            {placeholder}
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center text-muted-foreground">
             <ImageIcon className="h-16 w-16 mb-2" />
-            <span className="text-sm">[Product Image]</span>
+            <span className="text-sm">No image</span>
           </div>
         )}
       </div>

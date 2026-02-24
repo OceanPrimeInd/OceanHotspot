@@ -9,6 +9,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatPrice } from "@/lib/utils";
+import { getPlaceholderSvg } from "@/lib/productPlaceholders";
 import {
   Tooltip,
   TooltipContent,
@@ -96,6 +97,10 @@ const Wishlist = () => {
                     alt={item.title}
                     className="w-28 h-28 object-cover rounded-lg border"
                   />
+                ) : getPlaceholderSvg(item.title) ? (
+                  <div className="w-28 h-28 rounded-lg overflow-hidden">
+                    {getPlaceholderSvg(item.title)}
+                  </div>
                 ) : (
                   <div className="w-28 h-28 bg-muted rounded-lg flex items-center justify-center">
                     <Package className="h-10 w-10 text-muted-foreground" />

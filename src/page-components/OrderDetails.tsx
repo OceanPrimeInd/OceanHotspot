@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Loader2, ArrowLeft, Package, Truck, CheckCircle2, XCircle, RotateCcw } from "lucide-react";
+import { getPlaceholderSvg } from "@/lib/productPlaceholders";
 
 interface OrderItem {
   id: string;
@@ -316,6 +317,10 @@ const OrderDetails = () => {
                         alt={item.product_title}
                         className="h-16 w-16 rounded-lg object-cover border"
                       />
+                    ) : getPlaceholderSvg(item.product_title) ? (
+                      <div className="h-16 w-16 rounded-lg overflow-hidden">
+                        {getPlaceholderSvg(item.product_title)}
+                      </div>
                     ) : (
                       <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center">
                         <Package className="h-6 w-6 text-muted-foreground" />

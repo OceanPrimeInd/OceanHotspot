@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ImageIcon } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
+import { getPlaceholderSvg } from "@/lib/productPlaceholders";
 
 interface Product {
   id: string;
@@ -28,6 +29,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
 
   const hasImage = allImages.length > 0;
   const imageCount = allImages.length;
+  const placeholder = getPlaceholderSvg(product.title);
 
   return (
     <Link
@@ -51,10 +53,14 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
               </span>
             )}
           </>
+        ) : placeholder ? (
+          <div className="w-full h-full group-hover:scale-105 transition-transform duration-200">
+            {placeholder}
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center text-muted-foreground">
             <ImageIcon className="h-8 w-8 mb-1" />
-            <span className="text-xs">[Product Image]</span>
+            <span className="text-xs">No image</span>
           </div>
         )}
       </div>

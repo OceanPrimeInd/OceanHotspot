@@ -190,7 +190,7 @@ const Discover = () => {
           {/* Chat Container */}
           <div className="rounded-2xl border border-border bg-card shadow-lg overflow-hidden">
             {/* Messages Area */}
-            <div ref={messagesContainerRef} className="h-[min(450px,calc(100vh-360px))] overflow-y-auto p-6 space-y-4">
+            <div ref={messagesContainerRef} className={`overflow-y-auto p-6 space-y-4 ${messages.length > 0 ? "h-[min(450px,calc(100vh-360px))]" : ""}`}>
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center text-center pt-4">
                   <h3 className="font-semibold text-headline mb-2">
