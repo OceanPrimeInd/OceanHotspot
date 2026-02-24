@@ -35,11 +35,14 @@ const Discover = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = messagesContainerRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
   };
 
   useEffect(() => {
@@ -195,7 +198,7 @@ const Discover = () => {
           {/* Chat Container */}
           <div className="rounded-2xl border border-border bg-card shadow-lg overflow-hidden">
             {/* Messages Area */}
-            <div className="h-[450px] overflow-y-auto p-6 space-y-4">
+            <div ref={messagesContainerRef} className="h-[450px] overflow-y-auto p-6 space-y-4">
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center">
                   <Anchor className="h-12 w-12 text-primary/30 mb-4" />
@@ -245,7 +248,6 @@ const Discover = () => {
                   </div>
                 ))
               )}
-              <div ref={messagesEndRef} />
             </div>
 
             {/* Input Area */}
