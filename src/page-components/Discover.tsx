@@ -10,8 +10,6 @@ import {
   Loader2,
   Send,
   Sparkles,
-  Ship,
-  Search,
   ArrowRight
 } from "lucide-react";
 
@@ -24,11 +22,6 @@ const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
 const SUPABASE_KEY = (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim();
 const CHAT_URL = SUPABASE_URL ? `${SUPABASE_URL}/functions/v1/ai-discovery` : "";
 
-const STARTER_PROMPTS = [
-  { icon: Ship, text: "I need equipment for my sailboat" },
-  { icon: Search, text: "What safety gear do you recommend?" },
-  { icon: Search, text: "Looking for electric outboard motors" },
-];
 
 const Discover = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -203,23 +196,9 @@ const Discover = () => {
                   <h3 className="font-semibold text-headline mb-2">
                     How can I help you today?
                   </h3>
-                  <p className="text-sm text-muted-foreground mb-6 max-w-sm">
+                  <p className="text-sm text-muted-foreground max-w-sm">
                     Ask me about maritime products, equipment recommendations, or tell me about your vessel and needs.
                   </p>
-
-                  {/* Starter Prompts */}
-                  <div className="flex flex-wrap gap-2 justify-center">
-                    {STARTER_PROMPTS.map((prompt, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleSend(prompt.text)}
-                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-background hover:bg-muted transition-colors text-sm"
-                      >
-                        <prompt.icon className="h-4 w-4 text-primary" />
-                        {prompt.text}
-                      </button>
-                    ))}
-                  </div>
                 </div>
               ) : (
                 messages.map((msg, idx) => (
