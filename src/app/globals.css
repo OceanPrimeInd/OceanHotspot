@@ -6,82 +6,82 @@
 
 @layer base {
   :root {
-    --o42-blue: 240 100% 50%;
-    --o42-orange: 20 100% 54%;
-    --o42-headline: 221 47% 31%;
-    --near-black: 222 47% 11%;
-    --dark-grey: 215 25% 27%;
-    --mid-grey: 215 16% 57%;
-    --light-grey: 210 40% 96%;
-    --off-white: 210 40% 98%;
+    --o42-blue: 219 84% 33%;
+    --o42-orange: 20 90% 55%;
+    --o42-headline: 214 21% 19%;
+    --near-black: 216 14% 14%;
+    --dark-grey: 216 13% 28%;
+    --mid-grey: 215 12% 50%;
+    --light-grey: 220 17% 95%;
+    --off-white: 210 20% 98%;
     --white: 0 0% 100%;
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    --background: 210 18% 98%;
+    --foreground: 214 21% 19%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 214 21% 19%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 240 100% 50%;
+    --popover-foreground: 214 21% 19%;
+    --primary: 219 84% 33%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 20 100% 54%;
+    --secondary: 20 90% 55%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 217 91% 60%;
+    --muted: 220 17% 95%;
+    --muted-foreground: 215 12% 50%;
+    --accent: 189 64% 42%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 210 40% 96%;
-    --input: 210 40% 96%;
-    --ring: 240 100% 50%;
-    --radius: 0.5rem;
-    --headline: 221 47% 31%;
-    --body-text: 222 47% 11%;
-    --text-muted: 215 16% 47%;
-    --shadow-sm-val: 0 1px 2px 0 hsl(222 47% 11% / 0.05);
-    --shadow-md-val: 0 4px 6px -1px hsl(222 47% 11% / 0.1), 0 2px 4px -2px hsl(222 47% 11% / 0.1);
-    --shadow-lg-val: 0 10px 15px -3px hsl(222 47% 11% / 0.1), 0 4px 6px -4px hsl(222 47% 11% / 0.1);
-    --shadow-xl-val: 0 20px 25px -5px hsl(222 47% 11% / 0.1), 0 8px 10px -6px hsl(222 47% 11% / 0.1);
-    --sidebar-background: 210 40% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 210 40% 96%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --border: 220 16% 88%;
+    --input: 220 16% 88%;
+    --ring: 219 84% 33%;
+    --radius: 0.85rem;
+    --headline: 214 21% 19%;
+    --body-text: 214 21% 19%;
+    --text-muted: 215 12% 50%;
+    --shadow-sm-val: 0 1px 2px 0 hsl(214 21% 19% / 0.04);
+    --shadow-md-val: 0 12px 30px -12px hsl(214 21% 19% / 0.18);
+    --shadow-lg-val: 0 24px 60px -24px hsl(214 21% 19% / 0.25);
+    --shadow-xl-val: 0 32px 70px -28px hsl(214 21% 19% / 0.3);
+    --sidebar-background: 210 18% 98%;
+    --sidebar-foreground: 214 21% 19%;
+    --sidebar-primary: 219 84% 33%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 17% 95%;
+    --sidebar-accent-foreground: 214 21% 19%;
+    --sidebar-border: 220 16% 88%;
+    --sidebar-ring: 219 84% 33%;
   }
 
   .dark {
-    --background: 222 47% 11%;
+    --background: 222 32% 10%;
     --foreground: 210 40% 98%;
-    --card: 222 47% 11%;
+    --card: 222 32% 12%;
     --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
+    --popover: 222 32% 12%;
     --popover-foreground: 210 40% 98%;
-    --primary: 240 100% 60%;
+    --primary: 224 78% 62%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 20 100% 54%;
+    --secondary: 22 100% 58%;
     --secondary-foreground: 0 0% 100%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --muted: 217 23% 18%;
+    --muted-foreground: 215 20% 72%;
+    --accent: 197 86% 48%;
+    --accent-foreground: 0 0% 100%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 217 23% 22%;
+    --input: 217 23% 22%;
+    --ring: 224 78% 62%;
     --headline: 210 40% 98%;
     --body-text: 210 40% 98%;
-    --text-muted: 215 20.2% 65.1%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --text-muted: 215 20% 72%;
+    --sidebar-background: 222 32% 10%;
+    --sidebar-foreground: 210 40% 98%;
+    --sidebar-primary: 224 78% 62%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-accent: 217 23% 18%;
+    --sidebar-accent-foreground: 210 40% 98%;
+    --sidebar-border: 217 23% 22%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
@@ -149,8 +149,31 @@
 
 @layer base {
   * { @apply border-border; }
-  body { @apply bg-background text-foreground font-sans antialiased; }
+  html { scroll-behavior: smooth; }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    background-image: radial-gradient(circle at top, rgba(17, 67, 188, 0.08), transparent 30%), linear-gradient(180deg, #f8fbff 0%, #f3f7fb 100%);
+  }
   h1, h2, h3, h4, h5, h6 { @apply font-heading font-bold tracking-tight text-headline; }
+  img { display: block; max-width: 100%; }
+}
+
+@layer utilities {
+  .page-container {
+    @apply mx-auto w-full max-w-[1280px] px-4 md:px-6;
+  }
+  .section-shell {
+    @apply mx-auto w-full max-w-[1280px] px-4 md:px-6;
+  }
+  .brand-card {
+    @apply rounded-3xl border border-border/80 bg-white/85 shadow-[0_16px_40px_-28px_rgba(15,34,87,0.35)];
+  }
+  .brand-gradient {
+    background: linear-gradient(135deg, rgba(17, 63, 180, 0.96) 0%, rgba(7, 35, 102, 0.97) 55%, rgba(13, 26, 67, 1) 100%);
+  }
+  .brand-accent {
+    background: linear-gradient(135deg, rgba(255,109,42,1) 0%, rgba(255,133,59,1) 100%);
+  }
 }
 
 @utility container {
@@ -160,8 +183,7 @@
   padding-right: 1rem;
   width: 100%;
   max-width: 1280px;
-  @media (width >= 640px) { padding-left: 1.5rem; padding-right: 1.5rem; }
-  @media (width >= 1024px) { padding-left: 2rem; padding-right: 2rem; }
+  @media (width >= 768px) { padding-left: 1.5rem; padding-right: 1.5rem; }
 }
 
 @layer utilities {

@@ -7,13 +7,14 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { TopBar } from "@/components/landing/TopBar";
 import { Footer } from "@/components/landing/Footer";
 import { MobileNav } from "@/components/landing/MobileNav";
-import { FilterSidebar } from "@/components/browse/FilterSidebar";
 import { ProductCard } from "@/components/browse/ProductCard";
 import { supabase } from "@/lib/supabase/client";
-import { Loader2, Package, Search, SlidersHorizontal } from "lucide-react";
-import { Input } from "@/components/ui/input";
+import { Loader2, Package, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useProductSearch, SearchResult } from "@/hooks/useProductSearch";
+import { useProductSearch } from "@/hooks/useProductSearch";
+import { VintedFilterBar } from "@/components/browse/VintedFilterBar";
+import { ActiveFilterChip } from "@/components/browse/vintedFilterConfig";
+import { applyVintedFilters } from "@/lib/vintedFilters";
 import {
   Sheet,
   SheetContent,
@@ -34,6 +35,70 @@ interface Product {
   created_at: string;
 }
 
+const DOMAIN_CODE_TO_PRODUCT_VALUES: Record<string, string[]> = {
+  garmin: ["garmin"],
+  raymarine: ["raymarine"],
+  simrad: ["simrad"],
+  bg: ["bg", "b_and_g"],
+  lowrance: ["lowrance"],
+  victron_energy: ["victron_energy", "victron"],
+  blue_sea_systems: ["blue_sea_systems", "blue_sea"],
+  lewmar: ["lewmar"],
+  harken: ["harken"],
+  vetus: ["vetus"],
+  yanmar: ["yanmar"],
+  mercury: ["mercury"],
+  yamaha: ["yamaha"],
+  volvo_penta: ["volvo_penta", "volvo"],
+  other_vendor: ["other_vendor", "vendor"],
+  sailboats: ["sailboats", "sailing"],
+  motorboats: ["motorboats", "motoryacht"],
+  ribs: ["ribs", "rib"],
+  fishing_boats: ["fishing_boats", "fishing"],
+  catamarans: ["catamarans", "catamaran"],
+  yachts: ["yachts", "yacht"],
+  canal_boats: ["canal_boats", "canal"],
+  commercial_vessels: ["commercial_vessels", "commercial"],
+  engine_brand: ["engine_brand", "engine_brand_name"],
+  engine_model: ["engine_model", "model"],
+  parts_service_kits: ["parts_service_kits", "service_kits", "parts"],
+  manufacturer_part_number: ["manufacturer_part_number", "part_number", "mpn"],
+  eco_rated: ["eco_rated", "eco", "eco-rated"],
+  certified: ["certified", "certification"],
+};
+
+const normalizeDomainValues = (value: string | null): string[] => {
+  if (!value) return [];
+
+  const raw = value.trim();
+  if (!raw) return [];
+
+  const variants = new Set<string>();
+  variants.add(raw);
+  variants.add(raw.toLowerCase());
+  variants.add(raw.replace(/\s+/g, "_"));
+  variants.add(raw.replace(/\s+/g, "_").toLowerCase());
+  variants.add(raw.replace(/-/g, "_"));
+  variants.add(raw.replace(/-/g, "_").toLowerCase());
+
+  return [...variants];
+};
+
+const matchesSelectedDomain = (productDomain: string | null, selectedDomains: string[]) => {
+  if (selectedDomains.length === 0) return true;
+  if (!productDomain) return false;
+
+  const selectedMatches = new Set<string>();
+  selectedDomains.forEach((code) => {
+    const mappedValues = DOMAIN_CODE_TO_PRODUCT_VALUES[code] ?? [code];
+    mappedValues.forEach((value) => {
+      normalizeDomainValues(value).forEach((variant) => selectedMatches.add(variant));
+    });
+  });
+
+  return normalizeDomainValues(productDomain).some((variant) => selectedMatches.has(variant));
+};
+
 const Browse = () => {
   const searchParams = useSearchParams();
   const pathname = usePathname();
@@ -41,6 +106,7 @@ const Browse = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const [categoryName, setCategoryName] = useState<string | null>(null);
+  const [activeFilters, setActiveFilters] = useState<ActiveFilterChip[]>([]);
 
   // Filter states
   const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
@@ -136,9 +202,7 @@ const Browse = () => {
     (productList: Product[]) => {
       return productList.filter((product) => {
         // Domain filter
-        if (selectedDomains.length > 0 && product.domain_category) {
-          if (!selectedDomains.includes(product.domain_category)) return false;
-        } else if (selectedDomains.length > 0 && !product.domain_category) {
+        if (!matchesSelectedDomain(product.domain_category, selectedDomains)) {
           return false;
         }
 
@@ -171,22 +235,27 @@ const Browse = () => {
     [selectedDomains, selectedEntities, priceRange, searchQuery, searchError]
   );
 
-  // Determine which products to display
-  const displayProducts = searchQuery.trim() && !searchError
+  const displayProducts = (searchQuery.trim() && !searchError
     ? applyFilters(searchResults as unknown as Product[])
-    : applyFilters(products);
+    : applyFilters(products)
+  );
+
+  const filteredDisplayProducts = applyVintedFilters(displayProducts, activeFilters);
 
   const isLoading = loading || searchLoading;
 
-  // Dynamic page title
-  const pageTitle = categoryName
-    ? categoryName
-    : "All Maritime Products & Services";
+  const categoryFilter = activeFilters.find((filter) => filter.group === "Category");
+  const pageTitle = categoryFilter
+    ? categoryFilter.label.split(" / ").pop() ?? categoryFilter.label
+    : categoryName
+      ? categoryName
+      : "All Maritime Products & Services";
 
   const handleClearFilters = () => {
     setSelectedDomains([]);
     setSelectedEntities([]);
     setPriceRange([0, maxPrice]);
+    setActiveFilters([]);
   };
 
   // Mobile filter sheet content
@@ -207,34 +276,19 @@ const Browse = () => {
     <div className="min-h-screen bg-background flex flex-col">
       <TopBar />
 
-      <div className="flex flex-1">
-        {/* Filter Sidebar - Desktop */}
-        <FilterSidebar
-          selectedDomains={selectedDomains}
-          selectedEntities={selectedEntities}
-          priceRange={priceRange}
-          maxPrice={maxPrice}
-          onDomainChange={setSelectedDomains}
-          onEntityChange={setSelectedEntities}
-          onPriceChange={setPriceRange}
-          onClearFilters={handleClearFilters}
-        />
-
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto pb-24 md:pb-0">
-          <div className="p-6 md:p-8">
-            {/* Header */}
-            <div className="mb-8 animate-slide-up">
-              <div className="flex items-center justify-between mb-4">
-                <h1 className="text-2xl md:text-3xl font-bold text-headline">
+      <div className="flex flex-1 flex-col min-h-0">
+        <div className="relative z-30 shrink-0 bg-background">
+          <div className="page-container pt-6 md:pt-8">
+            <div className="mb-6 animate-slide-up">
+              <div className="mb-4 flex items-center justify-between gap-4">
+                <h1 className="text-[2.2rem] font-bold tracking-[-0.04em] text-headline">
                   {pageTitle}
                 </h1>
 
-                {/* Mobile Filter Button */}
                 <Sheet>
                   <SheetTrigger asChild>
                     <Button variant="outline" className="lg:hidden">
-                      <SlidersHorizontal className="h-4 w-4 mr-2" />
+                      <SlidersHorizontal className="mr-2 h-4 w-4" />
                       Filters
                     </Button>
                   </SheetTrigger>
@@ -247,33 +301,32 @@ const Browse = () => {
                 </Sheet>
               </div>
 
-              <p className="text-muted-foreground max-w-2xl mb-6">
-                Discover everything maritime. Browse our curated selection of products and services.
-              </p>
-
-              {/* Search info */}
-              {searchQuery.trim() && !searchError && totalFound > 0 && (
-                <p className="text-sm text-muted-foreground mt-3">
-                  Found {totalFound} results for &ldquo;{searchQuery}&rdquo;
+              {categoryFilter ? (
+                <p className="mb-5 text-sm text-muted-foreground">
+                  {categoryFilter.label.split(" / ").map((part, index, parts) => (
+                    <span key={`${part}-${index}`}>
+                      {index > 0 && <span className="mx-1.5 text-[#b8c4cc]">/</span>}
+                      <span className={index === parts.length - 1 ? "font-medium text-[#1d2a2f]" : ""}>
+                        {part}
+                      </span>
+                    </span>
+                  ))}
+                </p>
+              ) : (
+                <p className="mb-5 max-w-2xl text-[1.05rem] text-muted-foreground">
+                  Discover everything maritime. Browse our curated selection of products and services.
                 </p>
               )}
 
-              {/* Active filters summary */}
               {(selectedDomains.length > 0 || selectedEntities.length > 0) && (
-                <div className="flex flex-wrap gap-2 mt-4">
+                <div className="mb-4 flex flex-wrap gap-2">
                   {selectedDomains.map((d) => (
-                    <span
-                      key={d}
-                      className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary"
-                    >
+                    <span key={d} className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
                       {d}
                     </span>
                   ))}
                   {selectedEntities.map((e) => (
-                    <span
-                      key={e}
-                      className="inline-flex items-center rounded-full bg-secondary/10 px-3 py-1 text-xs font-medium text-secondary"
-                    >
+                    <span key={e} className="inline-flex items-center rounded-full bg-[#f4f5f7] px-3 py-1.5 text-xs font-medium text-[#4a5564]">
                       {e}
                     </span>
                   ))}
@@ -281,18 +334,30 @@ const Browse = () => {
               )}
             </div>
 
-            {/* Products Grid */}
+            <VintedFilterBar
+              activeFilters={activeFilters}
+              onFiltersChange={setActiveFilters}
+            />
+          </div>
+        </div>
+
+        <main className="flex-1 overflow-y-auto pb-24 md:pb-0">
+          <div className="page-container pb-8 pt-2">
+            {searchQuery.trim() && !searchError && totalFound > 0 && (
+              <p className="mb-4 text-sm text-muted-foreground">
+                Found {totalFound} results for &ldquo;{searchQuery}&rdquo;
+              </p>
+            )}
+
             {isLoading ? (
               <div className="flex items-center justify-center py-20">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
               </div>
-            ) : displayProducts.length === 0 ? (
-              <div className="text-center py-20">
-                <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                <h2 className="text-xl font-semibold text-headline mb-2">
-                  No Products Found
-                </h2>
-                <p className="text-muted-foreground mb-4">
+            ) : filteredDisplayProducts.length === 0 ? (
+              <div className="py-20 text-center">
+                <Package className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                <h2 className="mb-2 text-xl font-semibold text-headline">No Products Found</h2>
+                <p className="mb-4 text-muted-foreground">
                   {searchQuery
                     ? "Try adjusting your search or filters."
                     : "Be the first to list a product on Ocean Hotspot!"}
@@ -303,11 +368,11 @@ const Browse = () => {
               </div>
             ) : (
               <>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Showing {displayProducts.length} products
+                <p className="mb-4 text-sm text-muted-foreground">
+                  Showing {filteredDisplayProducts.length} products
                 </p>
-                <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                  {displayProducts.map((product, index) => (
+                <div className="relative z-0 isolate grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                  {filteredDisplayProducts.map((product, index) => (
                     <ProductCard key={product.id} product={product} index={index} />
                   ))}
                 </div>

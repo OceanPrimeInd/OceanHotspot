@@ -2,19 +2,26 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Search, ShoppingCart, ChevronDown, User, Menu, Shield, Store, Heart } from "lucide-react";
+import {
+  Search,
+  ShoppingCart,
+  ChevronDown,
+  ChevronRight,
+  User,
+  Shield,
+  Store,
+  Heart,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
-import { useState, useEffect, FormEvent, useCallback } from "react";
+import { useState, useEffect, FormEvent, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase/client";
-import { ThemeToggle } from "@/components/ThemeToggle";
 import { formatPrice } from "@/lib/utils";
 import {
   Command,
-  CommandInput,
   CommandList,
   CommandEmpty,
   CommandGroup,
@@ -32,11 +39,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-
-interface DomainLabel {
-  code: string;
-  label: string;
-}
+import { CATEGORY_TREE, TOP_CATEGORIES } from "@/components/browse/vintedFilterConfig";
+import { getCategoryIcon, getSubgroupIcon } from "@/components/browse/categoryIcons";
 
 interface SearchSuggestion {
   id: string;
@@ -45,34 +49,49 @@ interface SearchSuggestion {
   currency: string;
 }
 
+const BRAND = {
+  orange: "#f26d2a",
+};
+
 export function TopBar() {
   const { user, profile, signOut } = useAuth();
   const { itemCount } = useCart();
   const { itemCount: wishlistCount } = useWishlist();
   const { isAdmin } = useAdminCheck();
+  const router = useRouter();
+  const headerRef = useRef<HTMLElement | null>(null);
+
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const [activeCategory, setActiveCategory] = useState<string>(TOP_CATEGORIES[0]);
+  const [activeSubgroup, setActiveSubgroup] = useState<string>("");
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [categories, setCategories] = useState<DomainLabel[]>([]);
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
-  const router = useRouter();
 
   const isSeller = profile?.is_seller && profile?.company_name;
+  const subgroups = Object.keys(CATEGORY_TREE[activeCategory] ?? {});
+  const activeItems = CATEGORY_TREE[activeCategory]?.[activeSubgroup] ?? [];
+
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    const fetchCategories = async () => {
-      const { data } = await supabase
-        .from("domain_labels")
-        .select("code, label")
-        .limit(10);
-      if (data) setCategories(data);
+    const firstSubgroup = Object.keys(CATEGORY_TREE[activeCategory] ?? {})[0] ?? "";
+    setActiveSubgroup(firstSubgroup);
+  }, [activeCategory]);
+
+  useEffect(() => {
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!headerRef.current?.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
     };
-    fetchCategories();
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
   }, []);
 
-  // Debounced search suggestions
   const fetchSuggestions = useCallback(async (query: string) => {
     if (!query.trim() || query.length < 2) {
       setSuggestions([]);
@@ -87,34 +106,30 @@ export function TopBar() {
       .ilike("title", `%${query}%`)
       .limit(5);
 
-    if (!error && data) {
-      setSuggestions(data);
-    }
+    if (!error && data) setSuggestions(data);
     setLoadingSuggestions(false);
   }, []);
 
   useEffect(() => {
-    const debounce = setTimeout(() => {
-      fetchSuggestions(searchQuery);
-    }, 300);
-
+    const debounce = setTimeout(() => fetchSuggestions(searchQuery), 300);
     return () => clearTimeout(debounce);
   }, [searchQuery, fetchSuggestions]);
 
   const handleSuggestionClick = (productId: string) => {
     setShowSuggestions(false);
     setSearchQuery("");
+    setIsMenuOpen(false);
     router.push(`/product/${productId}`);
   };
 
   const handleSearch = (e: FormEvent) => {
     e.preventDefault();
+    setIsMenuOpen(false);
     if (searchQuery.trim()) {
       router.push(`/browse?q=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
-  // Determine dashboard link based on role
   const getDashboardLink = () => {
     if (isAdmin) return "/admin";
     if (isSeller) return "/seller/dashboard";
@@ -127,327 +142,312 @@ export function TopBar() {
     return "My Account";
   };
 
+  const openCategoryMenu = (category: string) => {
+    if (activeCategory === category && isMenuOpen) {
+      setIsMenuOpen(false);
+      return;
+    }
+    setActiveCategory(category);
+    setIsMenuOpen(true);
+  };
+
+  const browseLink = (category: string, subgroup?: string, item?: string) => {
+    const parts = [category, subgroup, item].filter(Boolean);
+    return `/browse?q=${encodeURIComponent(parts.join(" "))}`;
+  };
+
+  const categoryRows = [
+    TOP_CATEGORIES.slice(0, 8),
+    TOP_CATEGORIES.slice(8),
+  ] as const;
+
+  const renderCategoryButton = (category: string) => {
+    const Icon = getCategoryIcon(category);
+    const isActive = activeCategory === category && isMenuOpen;
+
+    return (
+      <button
+        key={category}
+        type="button"
+        onMouseEnter={() => {
+          if (isMenuOpen) setActiveCategory(category);
+        }}
+        onClick={() => openCategoryMenu(category)}
+        className={`group flex min-h-[64px] w-full min-w-0 flex-col items-center justify-center gap-1.5 rounded-lg px-1.5 py-2 transition-all duration-200 md:min-h-[68px] md:px-2 ${
+          isActive
+            ? "bg-primary/10 font-semibold text-primary shadow-[0_2px_10px_hsl(var(--primary)/0.14)] ring-1 ring-primary/15"
+            : "font-medium text-[#4a5861] hover:bg-primary/5 hover:text-primary hover:shadow-[0_1px_6px_hsl(var(--primary)/0.08)]"
+        }`}
+      >
+        <Icon
+          className={`h-5 w-5 shrink-0 transition ${
+            isActive ? "text-primary" : "text-[#6b7a84] group-hover:text-primary"
+          }`}
+        />
+        <span className="w-full text-center text-xs leading-snug sm:text-[13px] md:text-sm">
+          {category}
+        </span>
+      </button>
+    );
+  };
+
   return (
-    <header className="sticky top-0 z-50 bg-background border-b border-light-grey">
-      <div className="flex items-center justify-between gap-4 px-4 py-3 md:px-6">
-        {/* Logo */}
-        <Link href="/" className="flex items-center flex-shrink-0">
-          <img
-            src="/logo.png"
-            alt="Ocean Hotspot"
-            className="h-10 w-auto"
-          />
+    <header
+      ref={headerRef}
+      className="sticky top-0 z-50 border-b border-[#e8e8e8] bg-white text-[#1d2a2f] shadow-[0_1px_8px_rgba(24,39,52,0.06)]"
+    >
+      {/* Top row */}
+      <div className="page-container flex items-center gap-2 py-2.5 md:gap-3">
+        <Link
+          href="/"
+          className="flex shrink-0 items-center"
+          onClick={() => setIsMenuOpen(false)}
+        >
+          <img src="/logo.png" alt="Ocean Hotspot" className="h-9 w-auto md:h-10" />
         </Link>
-        {/* Category Dropdown + Search Bar - Hidden for Admin and Seller */}
-        {!isAdmin && !isSeller && (
-          <div className="hidden md:flex flex-1 max-w-3xl items-center mx-4">
-            {/* Unified Amazon-style search bar */}
-            <div className="flex flex-1 items-stretch h-11 rounded-md border-2 border-border focus-within:border-primary transition-colors overflow-hidden bg-background">
-              {/* Category Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1 px-3 bg-muted hover:bg-muted/80 border-r border-border text-sm font-medium whitespace-nowrap shrink-0 transition-colors">
-                    <Menu className="h-4 w-4" />
-                    <span className="hidden lg:inline ml-1">All Categories</span>
-                    <ChevronDown className="h-3 w-3 ml-1" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-56 bg-background z-50">
-                  <DropdownMenuItem asChild>
-                    <Link
-                      href="/browse"
-                      className="cursor-pointer"
-                      onClick={() => router.push("/browse")}
-                    >
-                      All Products
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {categories.map((cat) => (
-                    <DropdownMenuItem key={cat.code} asChild>
-                      <Link
-                        href={`/browse?domain=${encodeURIComponent(cat.code)}`}
-                        className="cursor-pointer"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          router.push(`/browse?domain=${encodeURIComponent(cat.code)}`);
-                        }}
-                      >
-                        {cat.label}
-                      </Link>
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
 
-              {/* Search Input + Button */}
-              <form onSubmit={handleSearch} className="flex flex-1 items-stretch">
-                <Popover open={showSuggestions && suggestions.length > 0} onOpenChange={setShowSuggestions}>
-                  <PopoverTrigger asChild>
-                    <input
-                      type="text"
-                      placeholder="What are you looking for?"
-                      value={searchQuery}
-                      onChange={(e) => {
-                        setSearchQuery(e.target.value);
-                        setShowSuggestions(true);
-                      }}
-                      onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                      className="flex-1 w-full px-4 text-base bg-transparent focus:outline-none"
-                    />
-                  </PopoverTrigger>
-                  <PopoverContent
-                    className="w-[var(--radix-popover-trigger-width)] p-0 bg-background"
-                    align="start"
-                    onOpenAutoFocus={(e) => e.preventDefault()}
-                  >
-                    <Command>
-                      <CommandList>
-                        {loadingSuggestions ? (
-                          <div className="py-6 text-center text-sm text-muted-foreground">
-                            Searching...
-                          </div>
-                        ) : suggestions.length === 0 ? (
-                          <CommandEmpty>No products found.</CommandEmpty>
-                        ) : (
-                          <CommandGroup heading="Suggestions">
-                            {suggestions.map((suggestion) => (
-                              <CommandItem
-                                key={suggestion.id}
-                                onSelect={() => handleSuggestionClick(suggestion.id)}
-                                className="cursor-pointer"
-                              >
-                                <Search className="mr-2 h-4 w-4 text-muted-foreground" />
-                                <div className="flex-1 min-w-0">
-                                  <p className="truncate">{suggestion.title}</p>
-                                  <p className="text-xs text-primary font-medium">
-                                    {formatPrice(suggestion.currency, suggestion.price)}
-                                  </p>
-                                </div>
-                              </CommandItem>
-                            ))}
-                          </CommandGroup>
-                        )}
-                      </CommandList>
-                    </Command>
-                  </PopoverContent>
-                </Popover>
-                <button
-                  type="submit"
-                  className="px-4 bg-primary hover:bg-primary/90 text-primary-foreground flex items-center justify-center transition-colors shrink-0"
-                >
-                  <Search className="w-5 h-5" />
-                </button>
-              </form>
-            </div>
+        <form
+          onSubmit={handleSearch}
+          className="hidden min-w-0 flex-1 items-stretch overflow-hidden rounded-lg border border-[#d4d4d4] bg-[#f4f4f4] md:flex"
+        >
+          <div className="flex min-w-0 flex-1 items-center gap-2.5 px-3.5">
+            <Search className="h-4 w-4 shrink-0 text-[#8a969e]" />
+            <Popover open={showSuggestions && suggestions.length > 0} onOpenChange={setShowSuggestions}>
+              <PopoverTrigger asChild>
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setShowSuggestions(true);
+                  }}
+                  onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
+                  placeholder="Search for items"
+                  className="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-[#1d2a2f] placeholder:text-[#8a969e] focus:outline-none"
+                />
+              </PopoverTrigger>
+              <PopoverContent
+                className="w-[var(--radix-popover-trigger-width)] p-0"
+                align="start"
+                onOpenAutoFocus={(e) => e.preventDefault()}
+              >
+                <Command>
+                  <CommandList>
+                    {loadingSuggestions ? (
+                      <div className="px-4 py-4 text-sm text-slate-500">Searching...</div>
+                    ) : suggestions.length === 0 ? (
+                      <CommandEmpty>No products found.</CommandEmpty>
+                    ) : (
+                      <CommandGroup heading="Suggestions">
+                        {suggestions.map((suggestion) => (
+                          <CommandItem
+                            key={suggestion.id}
+                            onSelect={() => handleSuggestionClick(suggestion.id)}
+                            className="cursor-pointer"
+                          >
+                            <Search className="mr-2 h-4 w-4 text-slate-500" />
+                            <div className="min-w-0 flex-1">
+                              <p className="truncate text-sm">{suggestion.title}</p>
+                                <p className="text-xs font-medium text-primary">
+                                {formatPrice(suggestion.currency, suggestion.price)}
+                              </p>
+                            </div>
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    )}
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
-        )}
 
-        {/* Right-side navigation - Amazon style */}
-        <div className="flex items-center gap-1 md:gap-2 flex-shrink-0">
+          <button
+            type="submit"
+            className="flex w-12 shrink-0 items-center justify-center border-l border-[#d4d4d4] text-[#1d2a2f] transition hover:bg-[#ebebeb]"
+            aria-label="Search"
+          >
+            <Search className="h-[18px] w-[18px]" />
+          </button>
+        </form>
+
+        <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
           {user ? (
-            <>
-              {/* Account & Lists Dropdown - Role-based */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="hidden md:flex items-center gap-1 h-auto py-1 px-2">
-                    <div className="text-left">
-                      <p className="text-[11px] text-muted-foreground leading-tight">
-                        Hello, {user.email?.split('@')[0]}
-                      </p>
-                      <p className="text-sm font-semibold leading-tight flex items-center gap-0.5">
-                        {isAdmin && <Shield className="h-3 w-3 mr-1 text-destructive" />}
-                        {isSeller && !isAdmin && <Store className="h-3 w-3 mr-1 text-primary" />}
-                        Account & Lists <ChevronDown className="h-3 w-3" />
-                      </p>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52 bg-background z-50">
-                  {/* Primary Dashboard Link */}
-                  <DropdownMenuItem asChild>
-                    <Link href={getDashboardLink()} className="font-medium">
-                      {isAdmin && <Shield className="h-4 w-4 mr-2 text-destructive" />}
-                      {isSeller && !isAdmin && <Store className="h-4 w-4 mr-2 text-primary" />}
-                      {getDashboardLabel()}
-                    </Link>
-                  </DropdownMenuItem>
-                  
-                  <DropdownMenuSeparator />
-                  
-                  {/* Admin-specific links */}
-                  {isAdmin && (
-                    <>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/sellers">Manage Sellers</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/orders">All Orders</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/disputes">Disputes</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/admin/users">Users</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  
-                  {/* Seller-specific links (only if seller and not admin) */}
-                  {isSeller && !isAdmin && (
-                    <>
-                      <DropdownMenuItem asChild>
-                        <Link href="/account/settings">My Account</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/seller/orders">My Orders</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/seller/returns">Returns</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  
-                  {/* Customer links - only visible to non-sellers and non-admins */}
-                  {!isAdmin && !isSeller && (
-                    <>
-                      <DropdownMenuItem asChild>
-                        <Link href="/my-orders">My Orders</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/my-returns">My Returns</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link href="/my-disputes">My Disputes</Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  
-                  <DropdownMenuItem onClick={signOut} className="text-destructive">
-                    Sign Out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              {/* Seller quick link */}
-              {isSeller && !isAdmin && (
-                <Button variant="ghost" asChild className="hidden md:flex items-center h-auto py-1 px-2">
-                  <Link href="/seller/dashboard">
-                    <div className="text-left">
-                      <p className="text-[11px] text-muted-foreground leading-tight">Seller</p>
-                      <p className="text-sm font-semibold leading-tight">Dashboard</p>
-                    </div>
-                  </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="hidden items-center gap-2 px-2 py-1 text-[#2e3d44] md:flex">
+                  <div className="text-left">
+                    <p className="text-[10px] leading-none text-[#8a969e]">
+                      Hello, {user.email?.split("@")[0]}
+                    </p>
+                    <p className="mt-1 flex items-center gap-1 text-sm font-semibold">
+                      {isAdmin && <Shield className="h-3 w-3 text-red-500" />}
+                      {isSeller && !isAdmin && <Store className="h-3 w-3 text-primary" />}
+                      Account <ChevronDown className="h-3 w-3" />
+                    </p>
+                  </div>
                 </Button>
-              )}
-              
-              {/* Admin quick link */}
-              {isAdmin && (
-                <Button variant="ghost" asChild className="hidden md:flex items-center h-auto py-1 px-2">
-                  <Link href="/admin">
-                    <div className="text-left">
-                      <p className="text-[11px] text-muted-foreground leading-tight">Admin</p>
-                      <p className="text-sm font-semibold leading-tight">Dashboard</p>
-                    </div>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="z-50 w-52 bg-white">
+                <DropdownMenuItem asChild>
+                  <Link href={getDashboardLink()} className="font-medium">
+                    {getDashboardLabel()}
                   </Link>
-                </Button>
-              )}
-            </>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {isAdmin && (
+                  <>
+                    <DropdownMenuItem asChild><Link href="/admin/sellers">Manage Sellers</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/admin/orders">All Orders</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/admin/users">Users</Link></DropdownMenuItem>
+                  </>
+                )}
+                {!isAdmin && !isSeller && (
+                  <>
+                    <DropdownMenuItem asChild><Link href="/my-orders">My Orders</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link href="/my-returns">My Returns</Link></DropdownMenuItem>
+                  </>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={signOut} className="text-red-500">
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
-            <>
-              {/* Sign In */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="hidden md:flex items-center gap-1 h-auto py-1 px-2">
-                    <div className="text-left">
-                      <p className="text-[11px] text-muted-foreground leading-tight">Hello, Sign in</p>
-                      <p className="text-sm font-semibold leading-tight flex items-center gap-0.5">
-                        Account & Lists <ChevronDown className="h-3 w-3" />
-                      </p>
-                    </div>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56 p-4 bg-background z-50">
-                  <Button variant="o42Primary" asChild className="w-full mb-3">
-                    <Link href="/login">Sign In</Link>
-                  </Button>
-                  <p className="text-sm text-muted-foreground text-center">
-                    New customer?{" "}
-                    <Link href="/join" className="text-o42-blue hover:underline font-medium">
-                      Register here
-                    </Link>
-                  </p>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </>
+            <div className="hidden items-center gap-1.5 md:flex">
+              <Link
+                href="/join"
+                className="whitespace-nowrap rounded-lg border border-primary px-4 py-2 text-sm font-semibold text-primary transition hover:bg-primary/10"
+              >
+                Sign up | Log in
+              </Link>
+              <Link
+                href="/sell"
+                className="whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
+              >
+                Sell now
+              </Link>
+            </div>
           )}
 
-          {/* Become a Seller - Only for non-admin and non-sellers */}
-          {!isAdmin && !isSeller && (
-            <Button variant="ghost" asChild className="hidden lg:flex items-center h-auto py-1 px-2">
-              <a href="/sell" target="_blank" rel="noopener noreferrer">
-                <div className="text-left">
-                  <p className="text-[11px] text-muted-foreground leading-tight">Start</p>
-                  <p className="text-sm font-semibold leading-tight">Selling</p>
-                </div>
-              </a>
-            </Button>
-          )}
+          <Link
+            href="/cart"
+            className="relative flex items-center justify-center rounded-lg border border-[#e0e0e0] bg-white p-2 text-[#2e3d44] transition hover:border-[#c8c8c8]"
+            onClick={() => setIsMenuOpen(false)}
+          >
+            <ShoppingCart className="h-5 w-5" />
+            {mounted && itemCount > 0 && (
+              <span
+                className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
+                style={{ backgroundColor: BRAND.orange }}
+              >
+                {itemCount > 9 ? "9+" : itemCount}
+              </span>
+            )}
+          </Link>
 
-          {/* Wishlist - Only for customers (hidden for Admin and Seller) */}
           {!isAdmin && !isSeller && (
             <Link
               href="/wishlist"
-              className="relative flex items-center gap-1 px-2 py-1 rounded transition-colors"
+              className="relative flex items-center justify-center rounded-lg border border-[#e0e0e0] bg-white p-2 text-[#2e3d44] transition hover:border-[#c8c8c8]"
+              onClick={() => setIsMenuOpen(false)}
             >
-              <div className="relative">
-                <Heart className="h-6 w-6" />
-                {mounted && wishlistCount > 0 && (
-                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                    {wishlistCount > 9 ? "9+" : wishlistCount}
-                  </span>
-                )}
-              </div>
-              <span className="hidden md:block text-sm font-semibold sr-only">Wishlist</span>
+              <Heart className="h-4 w-4" />
+              {mounted && wishlistCount > 0 && (
+                <span
+                  className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold text-white"
+                  style={{ backgroundColor: BRAND.orange }}
+                >
+                  {wishlistCount > 9 ? "9+" : wishlistCount}
+                </span>
+              )}
             </Link>
           )}
 
-          {/* Cart - Only for customers (hidden for Admin and Seller) */}
-          {!isAdmin && !isSeller && (
-            <Link
-              href="/cart"
-              className="relative flex items-center gap-1 px-2 py-1 rounded hover:bg-muted transition-colors"
-            >
-              <div className="relative">
-                <ShoppingCart className="h-6 w-6" />
-                {mounted && itemCount > 0 && (
-                  <span className="absolute -top-2 -right-2 w-5 h-5 bg-o42-orange text-white text-xs font-bold rounded-full flex items-center justify-center">
-                    {itemCount > 9 ? "9+" : itemCount}
-                  </span>
-                )}
-              </div>
-              <span className="hidden md:block text-sm font-semibold">Cart</span>
-            </Link>
-          )}
-
-          {/* Theme Toggle */}
-          <ThemeToggle />
-
-          {/* Mobile user icon - Role-aware */}
           <Button variant="ghost" size="icon" asChild className="md:hidden">
             <Link href={user ? getDashboardLink() : "/login"}>
-              {isAdmin ? (
-                <Shield className="h-5 w-5 text-destructive" />
-              ) : (
-                <User className="h-5 w-5" />
-              )}
+              {isAdmin ? <Shield className="h-5 w-5 text-red-500" /> : <User className="h-5 w-5" />}
             </Link>
           </Button>
         </div>
       </div>
+
+      {/* Category nav — two equal-height rows */}
+      <nav className="border-t border-[#ececec]">
+        <div className="page-container flex flex-col gap-2 py-2.5 md:gap-2.5 md:py-3">
+          <div className="grid min-h-[64px] grid-cols-4 items-stretch gap-x-1.5 sm:grid-cols-4 md:min-h-[68px] md:grid-cols-8 md:gap-x-2">
+            {categoryRows[0].map(renderCategoryButton)}
+          </div>
+
+          <div className="h-px bg-[#e4e4e4]" aria-hidden="true" />
+
+          <div className="grid min-h-[64px] grid-cols-4 items-stretch gap-x-1.5 sm:grid-cols-4 md:min-h-[68px] md:grid-cols-8 md:gap-x-2">
+            {categoryRows[1].map(renderCategoryButton)}
+          </div>
+        </div>
+      </nav>
+
+      {/* Mega menu */}
+      {isMenuOpen && (
+        <div className="border-t border-[#ececec] bg-white shadow-[0_12px_32px_rgba(15,34,87,0.08)]">
+          <div className="page-container py-6 md:py-8">
+            <div className="grid gap-6 md:grid-cols-[260px_1fr]">
+              <div className="space-y-0.5 border-r border-[#ececec] pr-4">
+                {subgroups.map((subgroup) => {
+                  const SubgroupIcon = getSubgroupIcon(subgroup);
+                  const isSelected = activeSubgroup === subgroup;
+
+                  return (
+                    <button
+                      key={subgroup}
+                      type="button"
+                      onMouseEnter={() => setActiveSubgroup(subgroup)}
+                      onClick={() => setActiveSubgroup(subgroup)}
+                      className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[15px] transition ${
+                        isSelected
+                          ? "bg-[#f5f8fb] font-semibold text-[#1d2a2f]"
+                          : "text-[#5a6973] hover:bg-[#fafafa] hover:text-[#1d2a2f]"
+                      }`}
+                    >
+                      <SubgroupIcon
+                        className={`h-[18px] w-[18px] shrink-0 ${isSelected ? "text-primary" : "text-[#8a969e]"}`}
+                      />
+                      <span className="flex-1">{subgroup}</span>
+                      {isSelected && (
+                        <ChevronRight className="h-4 w-4 shrink-0 text-primary" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div>
+                <h3 className="mb-4 text-lg font-semibold text-[#1d2a2f]">{activeSubgroup}</h3>
+                <div className="grid gap-x-10 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-3">
+                  <Link
+                    href={browseLink(activeCategory, activeSubgroup)}
+                    className="text-[15px] font-medium text-primary transition hover:underline"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    All {activeSubgroup}
+                  </Link>
+                  {activeItems.map((item) => (
+                    <Link
+                      key={item}
+                      href={browseLink(activeCategory, activeSubgroup, item)}
+                      className="text-[15px] text-[#4b5d68] transition hover:text-primary hover:underline"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {item}
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 }

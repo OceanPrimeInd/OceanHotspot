@@ -9,15 +9,72 @@ import { Button } from "@/components/ui/button";
 import { Loader2, Filter, X } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
-interface DomainLabel {
+interface CategoryGroup {
   code: string;
   label: string;
+  description: string;
+  subcategories: { code: string; label: string }[];
 }
 
-interface EntityLabel {
-  code: string;
-  label: string;
-}
+const CATEGORY_GROUPS: CategoryGroup[] = [
+  {
+    code: "brand",
+    label: "Brand",
+    description: "Garmin, Raymarine, Simrad, B&G, Lowrance, Victron Energy, Blue Sea Systems, Lewmar, Harken, Vetus, Yanmar, Mercury, Yamaha, Volvo Penta, and others as vendors add them.",
+    subcategories: [
+      { code: "garmin", label: "Garmin" },
+      { code: "raymarine", label: "Raymarine" },
+      { code: "simrad", label: "Simrad" },
+      { code: "bg", label: "B&G" },
+      { code: "lowrance", label: "Lowrance" },
+      { code: "victron_energy", label: "Victron Energy" },
+      { code: "blue_sea_systems", label: "Blue Sea Systems" },
+      { code: "lewmar", label: "Lewmar" },
+      { code: "harken", label: "Harken" },
+      { code: "vetus", label: "Vetus" },
+      { code: "yanmar", label: "Yanmar" },
+      { code: "mercury", label: "Mercury" },
+      { code: "yamaha", label: "Yamaha" },
+      { code: "volvo_penta", label: "Volvo Penta" },
+      { code: "other_vendor", label: "Other vendors" },
+    ],
+  },
+  {
+    code: "boat_type",
+    label: "Boat Type",
+    description: "Sailboats, Motorboats, RIBs, Fishing Boats, Catamarans, Yachts, Canal Boats, Commercial Vessels.",
+    subcategories: [
+      { code: "sailboats", label: "Sailboats" },
+      { code: "motorboats", label: "Motorboats" },
+      { code: "ribs", label: "RIBs" },
+      { code: "fishing_boats", label: "Fishing Boats" },
+      { code: "catamarans", label: "Catamarans" },
+      { code: "yachts", label: "Yachts" },
+      { code: "canal_boats", label: "Canal Boats" },
+      { code: "commercial_vessels", label: "Commercial Vessels" },
+    ],
+  },
+  {
+    code: "find_parts",
+    label: "Find Parts",
+    description: "Engine brand → Engine model → parts and service kits, plus manufacturer part number lookup.",
+    subcategories: [
+      { code: "engine_brand", label: "Engine brand" },
+      { code: "engine_model", label: "Engine model" },
+      { code: "parts_service_kits", label: "Parts & Service Kits" },
+      { code: "manufacturer_part_number", label: "Manufacturer part number lookup" },
+    ],
+  },
+  {
+    code: "eco_compliance",
+    label: "Eco & Compliance",
+    description: "Everything tagged eco-rated or certified.",
+    subcategories: [
+      { code: "eco_rated", label: "Eco-rated" },
+      { code: "certified", label: "Certified" },
+    ],
+  },
+];
 
 interface FilterSidebarProps {
   selectedDomains: string[];
@@ -40,24 +97,11 @@ export function FilterSidebar({
   onPriceChange,
   onClearFilters,
 }: FilterSidebarProps) {
-  const [domainLabels, setDomainLabels] = useState<DomainLabel[]>([]);
-  const [entityLabels, setEntityLabels] = useState<EntityLabel[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchLabels = async () => {
-      const [domainsRes, entitiesRes] = await Promise.all([
-        supabase.from("domain_labels").select("code, label"),
-        supabase.from("entity_labels").select("code, label"),
-      ]);
-
-      if (domainsRes.data) setDomainLabels(domainsRes.data);
-      if (entitiesRes.data) setEntityLabels(entitiesRes.data);
-      setLoading(false);
-    };
-
-    fetchLabels();
-  }, []);
+  const toggleCategory = (code: string) => {
+    setExpandedCategory((current) => (current === code ? null : code));
+  };
 
   const handleDomainToggle = (code: string) => {
     if (selectedDomains.includes(code)) {
@@ -80,16 +124,6 @@ export function FilterSidebar({
     selectedEntities.length > 0 ||
     priceRange[0] > 0 ||
     priceRange[1] < maxPrice;
-
-  if (loading) {
-    return (
-      <aside className="hidden lg:block w-64 bg-card border-r border-border p-6 flex-shrink-0">
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="w-6 h-6 animate-spin text-primary" />
-        </div>
-      </aside>
-    );
-  }
 
   return (
     <aside className="hidden lg:block w-64 bg-card border-r border-border flex-shrink-0 min-h-screen">
@@ -133,25 +167,53 @@ export function FilterSidebar({
 
         <Separator />
 
-        {/* Categories (Domain) */}
+        {/* Shop by */}
         <div>
-          <h3 className="text-sm font-semibold text-headline mb-4">Categories</h3>
-          <div className="space-y-3">
-            {domainLabels.map((domain) => (
-              <div key={domain.code} className="flex items-center space-x-3">
-                <Checkbox
-                  id={`domain-${domain.code}`}
-                  checked={selectedDomains.includes(domain.code)}
-                  onCheckedChange={() => handleDomainToggle(domain.code)}
-                />
-                <Label
-                  htmlFor={`domain-${domain.code}`}
-                  className="text-sm font-normal cursor-pointer text-foreground"
-                >
-                  {domain.label}
-                </Label>
-              </div>
-            ))}
+          <h3 className="text-sm font-semibold text-headline mb-4">Shop by</h3>
+          <div className="space-y-4">
+            {CATEGORY_GROUPS.map((group) => {
+              const isExpanded = expandedCategory === group.code;
+
+              return (
+                <div key={group.code} className="border-b border-border pb-2 last:border-b-0 last:pb-0">
+                  <button
+                    type="button"
+                    onClick={() => toggleCategory(group.code)}
+                    className="flex w-full items-center justify-between text-left text-sm font-medium text-foreground"
+                  >
+                    <span>{group.label}</span>
+                    <span className="text-muted-foreground">{isExpanded ? "−" : "+"}</span>
+                  </button>
+
+                  {isExpanded && (
+                    <div className="mt-3 space-y-2 pl-2">
+                      <p className="text-xs leading-relaxed text-muted-foreground">
+                        {group.description}
+                      </p>
+                      {group.subcategories.length > 0 && (
+                        <div className="space-y-2 pt-1">
+                          {group.subcategories.map((sub) => (
+                            <div key={sub.code} className="flex items-center space-x-3">
+                              <Checkbox
+                                id={`domain-${sub.code}`}
+                                checked={selectedDomains.includes(sub.code)}
+                                onCheckedChange={() => handleDomainToggle(sub.code)}
+                              />
+                              <Label
+                                htmlFor={`domain-${sub.code}`}
+                                className="text-sm font-normal cursor-pointer text-foreground"
+                              >
+                                {sub.label}
+                              </Label>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -161,7 +223,14 @@ export function FilterSidebar({
         <div>
           <h3 className="text-sm font-semibold text-headline mb-4">Product Type</h3>
           <div className="space-y-3">
-            {entityLabels.map((entity) => (
+            {[
+              { code: "physical_product", label: "Physical Product" },
+              { code: "service", label: "Service" },
+              { code: "asset_facility", label: "Asset / Facility" },
+              { code: "software_data", label: "Software / Data" },
+              { code: "membership_subscription", label: "Membership / Subscription" },
+              { code: "document_standard", label: "Document / Standard" },
+            ].map((entity) => (
               <div key={entity.code} className="flex items-center space-x-3">
                 <Checkbox
                   id={`entity-${entity.code}`}
