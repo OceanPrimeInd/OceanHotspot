@@ -3,7 +3,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
+import { Layout } from "@/components/layout/Layout";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { getBuyerNavItems } from "@/config/buyerNavItems";
 import { Button } from "@/components/ui/button";
@@ -47,6 +48,7 @@ interface OrderDetailsData {
   created_at: string | null;
   shipped_at: string | null;
   delivered_at: string | null;
+  tracking_number: string | null;
   buyer_email: string;
   buyer_name: string | null;
   buyer_id: string | null;
@@ -67,6 +69,9 @@ const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
 
 const OrderDetails = () => {
   const { orderId } = useParams<{ orderId: string }>();
+  const searchParams = useSearchParams();
+  const guestToken = searchParams.get("token");
+  const isGuestView = Boolean(guestToken);
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -79,23 +84,37 @@ const OrderDetails = () => {
   const [cancelling, setCancelling] = useState(false);
 
   useEffect(() => {
-    if (authLoading) return;
-
-    if (!user) {
-      router.push("/login");
-      return;
-    }
-
     if (!orderId) {
       setLoading(false);
       return;
     }
 
-    const fetchOrder = async () => {
+    const fetchGuestOrder = async () => {
+      const { data, error } = await supabase.functions.invoke("guest-order", {
+        body: { order_id: orderId, token: guestToken },
+      });
+
+      if (error || data?.error || !data?.order) {
+        setNotAuthorized(true);
+        setLoading(false);
+        return;
+      }
+
+      setOrder(data.order as OrderDetailsData);
+      setItems(data.items || []);
+      setLoading(false);
+    };
+
+    const fetchMemberOrder = async () => {
+      if (!user) {
+        router.replace("/orders/track");
+        return;
+      }
+
       const { data: orderData, error } = await supabase
         .from("orders")
         .select(
-          "id, order_number, status, total_amount, subtotal, vat_amount, shipping_cost, currency, created_at, shipped_at, delivered_at, buyer_email, buyer_name, buyer_id, shipping_address",
+          "id, order_number, status, total_amount, subtotal, vat_amount, shipping_cost, currency, created_at, shipped_at, delivered_at, tracking_number, buyer_email, buyer_name, buyer_id, shipping_address",
         )
         .eq("id", orderId)
         .maybeSingle();
@@ -123,8 +142,14 @@ const OrderDetails = () => {
       setLoading(false);
     };
 
-    fetchOrder();
-  }, [authLoading, user, orderId, router]);
+    if (isGuestView) {
+      fetchGuestOrder();
+      return;
+    }
+
+    if (authLoading) return;
+    fetchMemberOrder();
+  }, [authLoading, user, orderId, router, guestToken, isGuestView]);
 
   const handleCancelOrder = async () => {
     if (!orderId || !user) return;
@@ -169,45 +194,59 @@ const OrderDetails = () => {
   };
 
   // Determine which action buttons to show
-  const canCancel = order && ["paid", "processing"].includes(order.status || "");
-  const canRequestReturn = order && ["delivered", "completed"].includes(order.status || "");
+  const canCancel =
+    !isGuestView && order && ["paid", "processing"].includes(order.status || "");
+  const canRequestReturn =
+    !isGuestView && order && ["delivered", "completed"].includes(order.status || "");
 
-  if (authLoading || loading) {
+  const PageShell = isGuestView ? Layout : DashboardLayout;
+  const dashboardShellProps = {
+    sidebarItems: getBuyerNavItems(),
+    sidebarTitle: "My Account",
+  };
+
+  if ((!isGuestView && authLoading) || loading) {
     return (
-      <DashboardLayout sidebarItems={getBuyerNavItems()} sidebarTitle="My Account">
+      <PageShell {...(isGuestView ? {} : dashboardShellProps)}>
         <div className="container flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
-      </DashboardLayout>
+      </PageShell>
     );
   }
 
   if (notAuthorized) {
     return (
-      <DashboardLayout sidebarItems={getBuyerNavItems()} sidebarTitle="My Account">
+      <PageShell {...(isGuestView ? {} : dashboardShellProps)}>
         <div className="container py-20 text-center">
           <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
           <p className="text-muted-foreground mb-6">
-            This order is not associated with your account.
+            {isGuestView
+              ? "This link is invalid or expired. Look up your order with email and order number."
+              : "This order is not associated with your account."}
           </p>
           <Button variant="o42Primary" asChild>
-            <Link href="/my-orders">Back to My Orders</Link>
+            <Link href={isGuestView ? "/orders/track" : "/my-orders"}>
+              {isGuestView ? "Track order" : "Back to My Orders"}
+            </Link>
           </Button>
         </div>
-      </DashboardLayout>
+      </PageShell>
     );
   }
 
   if (!order) {
     return (
-      <DashboardLayout sidebarItems={getBuyerNavItems()} sidebarTitle="My Account">
+      <PageShell {...(isGuestView ? {} : dashboardShellProps)}>
         <div className="container py-20 text-center">
           <h1 className="text-2xl font-bold mb-4">Order Not Found</h1>
           <Button variant="o42Primary" asChild>
-            <Link href="/my-orders">Back to My Orders</Link>
+            <Link href={isGuestView ? "/orders/track" : "/my-orders"}>
+              {isGuestView ? "Track order" : "Back to My Orders"}
+            </Link>
           </Button>
         </div>
-      </DashboardLayout>
+      </PageShell>
     );
   }
 
@@ -228,15 +267,21 @@ const OrderDetails = () => {
   const shippingAddress = formatAddress(order.shipping_address);
 
   return (
-    <DashboardLayout sidebarItems={getBuyerNavItems()} sidebarTitle="My Account">
+    <PageShell {...(isGuestView ? {} : dashboardShellProps)}>
       <div className="container max-w-4xl py-12">
         <Link
-          href="/my-orders"
+          href={isGuestView ? "/orders/track" : "/my-orders"}
           className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground mb-6"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to My Orders
+          {isGuestView ? "Track another order" : "Back to My Orders"}
         </Link>
+
+        {isGuestView && (
+          <p className="text-sm text-muted-foreground mb-4 rounded-lg bg-muted/50 border border-border p-3">
+            You&apos;re viewing this order as a guest — save this page link to check shipping updates. No password required.
+          </p>
+        )}
 
         <div className="rounded-2xl border border-border bg-card p-6 md:p-8 shadow-lg">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -255,6 +300,26 @@ const OrderDetails = () => {
             </div>
             <Badge className={statusConfig.color}>{statusConfig.label}</Badge>
           </div>
+
+          {(order.tracking_number || order.shipped_at || order.delivered_at) && (
+            <div className="mt-6 rounded-xl border border-border/60 bg-muted/30 p-4">
+              <h2 className="font-semibold text-foreground flex items-center gap-2">
+                <Truck className="h-4 w-4" />
+                Delivery status
+              </h2>
+              <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+                {order.shipped_at && (
+                  <p>Shipped on {new Date(order.shipped_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</p>
+                )}
+                {order.tracking_number && (
+                  <p className="font-medium text-foreground">Tracking number: {order.tracking_number}</p>
+                )}
+                {order.delivered_at && (
+                  <p>Delivered on {new Date(order.delivered_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</p>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="mt-6 grid gap-6 md:grid-cols-2">
             <div className="rounded-xl border border-border/60 bg-muted/30 p-4">
@@ -450,7 +515,7 @@ const OrderDetails = () => {
           </DialogContent>
         </Dialog>
       </div>
-    </DashboardLayout>
+    </PageShell>
   );
 };
 

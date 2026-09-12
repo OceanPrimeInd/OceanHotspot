@@ -60,6 +60,7 @@ interface Product {
   title: string;
   brand: string | null;
   price: number;
+  pricing_type: string | null;
   currency: string | null;
   image_url: string | null;
   status: string | null;
@@ -341,10 +342,16 @@ const SellerProducts = () => {
                               )}
                             </div>
                           </TableCell>
-                          <TableCell className="text-foreground">
-                            {product.price > 0
+                          <TableCell className="text-foreground text-sm">
+                            {product.pricing_type === "poa"
+                              ? "POA"
+                              : product.pricing_type === "contact_us"
+                              ? "Contact Us"
+                              : product.pricing_type === "coming_soon"
+                              ? "Coming Soon"
+                              : product.price > 0
                               ? `${product.currency === "GBP" || !product.currency ? "£" : product.currency}${product.price.toLocaleString()}`
-                              : "Enquiry"}
+                              : "—"}
                           </TableCell>
                           <TableCell>
                             <Badge className={`${statusInfo.color} border text-xs`}>

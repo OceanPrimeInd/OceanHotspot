@@ -23,6 +23,10 @@ import { supabase } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getStatusInfo } from "@/config/productStatus";
 import { Loader2, Package, Upload, X, Image as ImageIcon, FileEdit, Send, AlertTriangle } from "lucide-react";
+import {
+  PRODUCT_DOMAIN_CATEGORIES,
+  normalizeDomainCategory,
+} from "@/config/productCategories";
 
 // Phase 1 Entity Types
 const ENTITY_TYPES = [
@@ -32,18 +36,6 @@ const ENTITY_TYPES = [
   { value: "software_data", label: "Software / Data" },
   { value: "membership_subscription", label: "Membership / Subscription" },
   { value: "document_standard", label: "Document / Standard" },
-];
-
-// Phase 1 Domain Categories
-const DOMAIN_CATEGORIES = [
-  { value: "vessels_floating_assets", label: "Vessels & Floating Assets" },
-  { value: "propulsion_power", label: "Propulsion & Power" },
-  { value: "safety_security_response", label: "Safety, Security & Response" },
-  { value: "maintenance_consumables", label: "Maintenance & Consumables" },
-  { value: "finance_insurance_legal", label: "Finance, Insurance & Legal" },
-  { value: "fishing_aquaculture", label: "Fishing & Aquaculture" },
-  { value: "eco_compliance", label: "Eco & Compliance Products" },
-  { value: "other", label: "Other" },
 ];
 
 // Condition options
@@ -104,6 +96,7 @@ const EditProduct = () => {
   const [uploading, setUploading] = useState(false);
 
   // Section 5 - Pricing
+  const [pricingType, setPricingType] = useState("fixed_price");
   const [price, setPrice] = useState("");
   const [vatTreatment, setVatTreatment] = useState("");
   const [vatRate, setVatRate] = useState("20");
@@ -165,9 +158,10 @@ const EditProduct = () => {
       setBrand(data.brand || "");
       setCondition(data.condition || "");
       setEntityType(data.entity_type || "");
-      setDomainCategory(data.domain_category || "");
+      setDomainCategory(normalizeDomainCategory(data.domain_category));
       setShortDescription(data.description || "");
       setImages(data.images || []);
+      setPricingType(data.pricing_type || "fixed_price");
       setPrice(data.price?.toString() || "");
       setVatTreatment(data.vat_treatment || "plus_vat");
       setVatRate((data.vat_rate ?? 20).toString());
@@ -270,8 +264,9 @@ const EditProduct = () => {
       description: shortDescription.trim() || null,
       images: images,
       image_url: images[0] || null,
-      price: price ? parseFloat(price) : 0,
-      vat_treatment: vatTreatment || null,
+      pricing_type: pricingType,
+      price: pricingType === "fixed_price" && price ? parseFloat(price) : 0,
+      vat_treatment: pricingType === "fixed_price" ? (vatTreatment || null) : null,
       vat_rate: vatTreatment === "vat_exempt" ? 0 : parseFloat(vatRate),
       availability_status: availabilityStatus || null,
       lead_time_text: leadTimeText.trim() || null,
@@ -281,6 +276,7 @@ const EditProduct = () => {
 
     if (submitForReview) {
       updateData.status = "pending_review";
+      updateData.is_published = false;
       updateData.submitted_at = new Date().toISOString();
       updateData.admin_notes = null;
     }
@@ -452,7 +448,7 @@ const EditProduct = () => {
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        {DOMAIN_CATEGORIES.map((c) => (
+                        {PRODUCT_DOMAIN_CATEGORIES.map((c) => (
                           <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                         ))}
                       </SelectContent>
@@ -546,6 +542,22 @@ const EditProduct = () => {
                 <h2 className="text-lg font-semibold mb-4">Pricing</h2>
                 <div className="space-y-4">
                   <div className="space-y-2">
+                    <Label>How would you like to display the price? *</Label>
+                    <Select value={pricingType} onValueChange={setPricingType}>
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Select pricing type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fixed_price">Fixed Price — show exact price</SelectItem>
+                        <SelectItem value="poa">POA — Price on Application</SelectItem>
+                        <SelectItem value="contact_us">Contact Us for More Information</SelectItem>
+                        <SelectItem value="coming_soon">Coming Soon</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {pricingType === "fixed_price" && (<>
+                  <div className="space-y-2">
                     <Label htmlFor="price">Price (excluding VAT) *</Label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">£</span>
@@ -560,7 +572,6 @@ const EditProduct = () => {
                         className="h-12 pl-7"
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground">Leave blank for "Price on enquiry"</p>
                   </div>
 
                   <div className="space-y-2">
@@ -592,6 +603,7 @@ const EditProduct = () => {
                       </Select>
                     </div>
                   )}
+                  </>)}
                 </div>
               </div>
 

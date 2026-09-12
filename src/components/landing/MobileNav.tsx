@@ -7,11 +7,24 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 
+function isPortalPath(pathname: string | null) {
+  if (!pathname) return false;
+  return (
+    pathname.startsWith("/seller") ||
+    pathname.startsWith("/admin") ||
+    pathname.startsWith("/distributor")
+  );
+}
+
 export function MobileNav() {
   const pathname = usePathname();
   const { user, profile } = useAuth();
   const { itemCount } = useCart();
   const { isAdmin } = useAdminCheck();
+
+  if (isPortalPath(pathname)) {
+    return null;
+  }
 
   const isSeller = profile?.is_seller && profile?.company_name;
 

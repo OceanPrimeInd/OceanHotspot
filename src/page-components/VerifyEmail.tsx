@@ -16,6 +16,7 @@ import { Loader2, Mail, RefreshCw } from "lucide-react";
 
 import { SellerLayout } from "@/components/layout/SellerLayout";
 import { Layout } from "@/components/layout/Layout";
+import { DistributorLayout } from "@/components/layout/DistributorLayout";
 
 const VerifyEmail = () => {
   const [otp, setOtp] = useState("");
@@ -49,10 +50,10 @@ const VerifyEmail = () => {
   }, [email, router]);
 
   const handleVerify = async () => {
-    if (otp.length !== 8) {
+    if (otp.length !== 6) {
       toast({
         title: "Incomplete Code",
-        description: "Please enter all 8 digits.",
+        description: "Please enter all 6 digits.",
         variant: "destructive",
       });
       return;
@@ -88,6 +89,8 @@ const VerifyEmail = () => {
       // Redirect based on flow
       if (flow === "seller") {
         router.push("/seller/onboarding");
+      } else if (flow === "distributor") {
+        router.push("/distributor/register");
       } else {
         router.push("/");
       }
@@ -137,7 +140,7 @@ const VerifyEmail = () => {
     setResending(false);
   };
 
-  const Wrapper = flow === "seller" ? SellerLayout : Layout;
+  const Wrapper = flow === "seller" ? SellerLayout : flow === "distributor" ? DistributorLayout : Layout;
 
   return (
     <Wrapper>
@@ -160,7 +163,7 @@ const VerifyEmail = () => {
                 Verify Your Email
               </h1>
               <p className="mt-2 text-sm text-muted-foreground">
-                We've sent an 8-digit verification code to
+                We've sent an 6-digit verification code to
               </p>
               <p className="mt-1 text-sm font-semibold text-foreground">
                 {email}
@@ -170,7 +173,7 @@ const VerifyEmail = () => {
             {/* OTP Input */}
             <div className="flex flex-col items-center gap-6">
               <InputOTP
-                maxLength={8}
+                maxLength={6}
                 value={otp}
                 onChange={setOtp}
               >
@@ -178,14 +181,12 @@ const VerifyEmail = () => {
                   <InputOTPSlot index={0} />
                   <InputOTPSlot index={1} />
                   <InputOTPSlot index={2} />
-                  <InputOTPSlot index={3} />
                 </InputOTPGroup>
                 <InputOTPSeparator />
                 <InputOTPGroup>
+                  <InputOTPSlot index={3} />
                   <InputOTPSlot index={4} />
                   <InputOTPSlot index={5} />
-                  <InputOTPSlot index={6} />
-                  <InputOTPSlot index={7} />
                 </InputOTPGroup>
               </InputOTP>
 
@@ -193,7 +194,7 @@ const VerifyEmail = () => {
                 variant="o42Primary"
                 className="w-full h-11"
                 onClick={handleVerify}
-                disabled={verifying || otp.length !== 8}
+                disabled={verifying || otp.length !== 6}
               >
                 {verifying ? (
                   <>

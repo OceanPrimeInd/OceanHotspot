@@ -2,6 +2,7 @@
 "use client";
 
 import { Layout } from "@/components/layout/Layout";
+import { ContactEmailLink } from "@/components/ContactEmailLink";
 import Link from "next/link";
 
 const Terms = () => {
@@ -33,7 +34,7 @@ const Terms = () => {
               <h2 className="text-lg font-semibold text-headline mb-3">2. Accounts</h2>
               <p>
                 You must be at least 18 years old to create an account. You are responsible for keeping your login details secure. If you suspect unauthorised access to your account, contact us immediately at{" "}
-                <a href="mailto:oceanhotspotservices@gmail.com" className="text-primary hover:underline">oceanhotspotservices@gmail.com</a>.
+                <ContactEmailLink />.
               </p>
               <p className="mt-3">
                 One account per person or business. We reserve the right to close duplicate accounts.
@@ -61,7 +62,7 @@ const Terms = () => {
 
               <h3 className="font-semibold text-headline mt-4 mb-2">Commission</h3>
               <p>
-                Ocean Hotspot charges a commission on completed sales, starting at 10% of the product price (excluding shipping and taxes). Commission is charged after the buyer confirms acceptance of the product. Full details of the commission model are set out on our{" "}
+                Ocean Hotspot charges a commission on completed sales calculated as a percentage of the product price and excluding shipping, duty and taxes. Commission is charged after the buyer confirms acceptance of the product. Full details of the commission model are set out on our{" "}
                 <Link href="/pricing" className="text-primary hover:underline">Pricing page</Link>.
               </p>
               <p className="mt-3">
@@ -94,7 +95,7 @@ const Terms = () => {
 
               <h3 className="font-semibold text-headline mt-4 mb-2">Payment</h3>
               <p>
-                Payment is taken at checkout via Stripe. Secure payment processing via Stripe with buyer protection measures being enhanced throughout 2026.
+                Payment is taken at checkout via Stripe (card and other methods Stripe supports). Funds are processed by Stripe; sellers receive payouts through Stripe Connect according to our seller terms. Ocean Hotspot may charge a platform commission as shown at checkout or in our Pricing page.
               </p>
 
               <h3 className="font-semibold text-headline mt-4 mb-2">Buyer Verification</h3>
@@ -209,10 +210,10 @@ const Terms = () => {
                 Ocean Prime Industries Ltd
                 <br />
                 Email:{" "}
-                <a href="mailto:oceanhotspotservices@gmail.com" className="text-primary hover:underline">oceanhotspotservices@gmail.com</a>
+                <ContactEmailLink />
                 <br />
                 Vendor enquiries:{" "}
-                <a href="mailto:oceanhotspotservices@gmail.com" className="text-primary hover:underline">oceanhotspotservices@gmail.com</a>
+                <ContactEmailLink />
               </p>
               <p className="mt-3">Company registered in England and Wales.</p>
             </section>

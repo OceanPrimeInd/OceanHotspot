@@ -9,20 +9,20 @@ const supabase = createClient(
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
-  const tradingName = decodeURIComponent(slug).replace(/-/g, " ");
+  const normalizedSlug = decodeURIComponent(slug).toLowerCase();
 
-  const { data: seller } = await supabase
-    .from("profiles")
-    .select("company_name, trading_name, bio")
-    .ilike("trading_name", tradingName)
-    .eq("is_seller", true)
+  const { data: showroom } = await supabase
+    .from("showrooms")
+    .select("brand_name, tagline, slug")
+    .eq("slug", normalizedSlug)
+    .eq("is_published", true)
     .maybeSingle();
 
-  const name = seller?.trading_name || seller?.company_name || tradingName;
-  const title = `${name} | Seller Showroom on Ocean Hotspot`;
-  const description = seller?.bio
-    ? seller.bio.slice(0, 160)
-    : `Browse products and services from ${name} on Ocean Hotspot — the maritime marketplace.`;
+  const name = showroom?.brand_name || normalizedSlug.replace(/-/g, " ");
+  const title = `${name} | Verified Vendor Showroom on Ocean Hotspot`;
+  const description = showroom?.tagline
+    ? showroom.tagline.slice(0, 160)
+    : `Browse products from ${name} — verified maritime vendor on Ocean Hotspot.`;
 
   return {
     title,

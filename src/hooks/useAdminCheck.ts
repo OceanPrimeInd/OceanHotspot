@@ -18,6 +18,7 @@ export function useAdminCheck() {
       return;
     }
 
+    setLoading(true);
     const checkAdmin = async () => {
       const { data, error } = await supabase
         .from("user_roles")

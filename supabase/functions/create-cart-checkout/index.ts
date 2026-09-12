@@ -28,7 +28,46 @@ Deno.serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     // 7. Extract data from the frontend request
-    const { cartItems, buyerId, buyerEmail, buyerName, buyerPhone, shippingAddress, successUrl, cancelUrl } = await req.json();
+    const { cartItems, buyerId, buyerEmail, buyerName, buyerPhone, shippingAddress, createAccount, successUrl, cancelUrl } = await req.json();
+
+    let validBuyerId: string | null = buyerId || null;
+    if (createAccount && !validBuyerId && buyerEmail && buyerName) {
+      const normalizedEmail = String(buyerEmail).trim().toLowerCase();
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("email", normalizedEmail)
+        .maybeSingle();
+
+      if (existingProfile?.id) {
+        validBuyerId = existingProfile.id;
+      } else {
+        const generatedPassword = `OH-${crypto.randomUUID().slice(0, 12)}!`;
+        const { data: createdUser, error: createUserError } = await supabase.auth.admin.createUser({
+          email: normalizedEmail,
+          password: generatedPassword,
+          email_confirm: true,
+          user_metadata: {
+            full_name: buyerName,
+            phone: buyerPhone || null,
+          },
+        });
+
+        if (!createUserError && createdUser?.user) {
+          validBuyerId = createdUser.user.id;
+          await supabase.from("profiles").upsert({
+            id: createdUser.user.id,
+            email: normalizedEmail,
+            full_name: buyerName,
+            phone: buyerPhone || null,
+            country: "United Kingdom",
+            is_seller: false,
+          }, { onConflict: "id" });
+        } else {
+          console.warn("Silent buyer account creation failed:", createUserError?.message || createUserError);
+        }
+      }
+    }
 
     // 8. Fetch product details from your 'products' table to verify prices
     const productIds = cartItems.map((item: CartItem) => item.productId);
@@ -65,18 +104,16 @@ Deno.serve(async (req) => {
     }
 
     // 8c. Validate buyer exists if buyerId is provided
-    let validBuyerId: string | null = null;
-    if (buyerId) {
+    if (validBuyerId) {
       const { data: buyerProfile } = await supabase
         .from("profiles")
         .select("id")
-        .eq("id", buyerId)
+        .eq("id", validBuyerId)
         .maybeSingle();
 
-      if (buyerProfile) {
-        validBuyerId = buyerProfile.id;
-      } else {
-        console.warn("Buyer not found in profiles, setting buyer_id to null:", buyerId);
+      if (!buyerProfile) {
+        console.warn("Buyer not found in profiles, setting buyer_id to null:", validBuyerId);
+        validBuyerId = null;
       }
     }
 
@@ -122,6 +159,8 @@ Deno.serve(async (req) => {
       item_count: lineItems.length,
     });
 
+    const guestAccessToken = crypto.randomUUID();
+
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .insert({
@@ -137,6 +176,7 @@ Deno.serve(async (req) => {
         currency: products[0]?.currency || "GBP",
         status: "pending_payment",
         payment_status: "pending",
+        guest_access_token: guestAccessToken,
       })
       .select()
       .single();
@@ -182,7 +222,7 @@ Deno.serve(async (req) => {
       customer_email: buyerEmail,
       line_items: lineItems,
       metadata: { order_id: order.id },
-      success_url: `${successUrl}?order_id=${order.id}&session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${successUrl}?order_id=${order.id}&session_id={CHECKOUT_SESSION_ID}&token=${guestAccessToken}`,
       cancel_url: cancelUrl,
     });
 

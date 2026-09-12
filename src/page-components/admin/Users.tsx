@@ -57,7 +57,7 @@ const AdminUsers = () => {
   useEffect(() => {
     if (loading) return;
     if (!isAdmin) {
-      router.push("/");
+      router.push("/admin/login");
       return;
     }
 

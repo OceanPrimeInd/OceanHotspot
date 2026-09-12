@@ -2,11 +2,12 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { formatPrice } from "@/lib/utils";
 import {
   Table,
@@ -23,6 +24,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { DataTablePagination } from "@/components/ui/data-table-pagination";
 import { usePagination } from "@/hooks/usePagination";
 import { useAuth } from "@/contexts/AuthContext";
@@ -34,8 +43,6 @@ import {
   Package,
   Truck,
   CheckCircle2,
-  Clock,
-  AlertCircle,
 } from "lucide-react";
 
 interface Order {
@@ -49,6 +56,7 @@ interface Order {
   created_at: string;
   shipped_at: string | null;
   delivered_at: string | null;
+  tracking_number: string | null;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline" }> = {
@@ -67,6 +75,10 @@ const SellerOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [shipDialogOpen, setShipDialogOpen] = useState(false);
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [trackingNumber, setTrackingNumber] = useState("");
+  const [updating, setUpdating] = useState(false);
   const { user, profile, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
@@ -104,31 +116,50 @@ const SellerOrders = () => {
     setLoading(false);
   };
 
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
-    const updateData: Record<string, unknown> = { status: newStatus };
-    
-    if (newStatus === "shipped") {
-      updateData.shipped_at = new Date().toISOString();
-    } else if (newStatus === "delivered") {
-      updateData.delivered_at = new Date().toISOString();
+  const updateOrderStatus = async (orderId: string, newStatus: string, tracking?: string) => {
+    setUpdating(true);
+
+    const { data, error } = await supabase.functions.invoke("order-status", {
+      body: {
+        order_id: orderId,
+        status: newStatus,
+        tracking_number: tracking || null,
+      },
+    });
+
+    setUpdating(false);
+
+    if (error || data?.error) {
+      toast({
+        title: "Error",
+        description: data?.error || error?.message || "Failed to update order.",
+        variant: "destructive",
+      });
+      return;
     }
 
-    const { error } = await supabase
-      .from("orders")
-      .update(updateData)
-      .eq("id", orderId);
+    toast({
+      title: "Updated",
+      description: newStatus === "shipped"
+        ? "Order marked as shipped. Buyer notified by email."
+        : "Order status updated.",
+    });
 
-    if (error) {
-      toast({ title: "Error", description: "Failed to update order.", variant: "destructive" });
-    } else {
-      toast({ title: "Updated", description: "Order status updated." });
-      fetchOrders();
-    }
+    setShipDialogOpen(false);
+    setSelectedOrderId(null);
+    setTrackingNumber("");
+    fetchOrders();
   };
 
-  const filteredOrders = filterStatus === "all" 
-    ? orders 
-    : orders.filter(o => o.status === filterStatus);
+  const openShipDialog = (orderId: string) => {
+    setSelectedOrderId(orderId);
+    setTrackingNumber("");
+    setShipDialogOpen(true);
+  };
+
+  const filteredOrders = filterStatus === "all"
+    ? orders
+    : orders.filter((o) => o.status === filterStatus);
 
   const {
     paginatedItems,
@@ -139,7 +170,7 @@ const SellerOrders = () => {
     goToPage,
   } = usePagination(filteredOrders, { pageSize: 15 });
 
-  const pendingOrdersCount = orders.filter(o => ["paid", "processing", "shipped"].includes(o.status)).length;
+  const pendingOrdersCount = orders.filter((o) => ["paid", "processing", "shipped"].includes(o.status)).length;
 
   if (authLoading || loading) {
     return (
@@ -157,11 +188,10 @@ const SellerOrders = () => {
         <div className="mb-6">
           <h1 className="text-2xl font-bold text-foreground">Order Management</h1>
           <p className="text-base text-muted-foreground mt-1">
-            View and manage customer orders
+            View orders, mark as dispatched, and add tracking numbers
           </p>
         </div>
 
-        {/* Filters */}
         <div className="mb-4 flex gap-4 items-center">
           <Select value={filterStatus} onValueChange={setFilterStatus}>
             <SelectTrigger className="w-48">
@@ -183,7 +213,6 @@ const SellerOrders = () => {
           </span>
         </div>
 
-        {/* Orders Table */}
         {filteredOrders.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border bg-muted/30 p-12 text-center">
             <Package className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
@@ -201,6 +230,7 @@ const SellerOrders = () => {
                   <TableHead className="font-semibold text-foreground">Customer</TableHead>
                   <TableHead className="font-semibold text-foreground">Total</TableHead>
                   <TableHead className="font-semibold text-foreground">Status</TableHead>
+                  <TableHead className="font-semibold text-foreground">Tracking</TableHead>
                   <TableHead className="font-semibold text-foreground">Date</TableHead>
                   <TableHead className="font-semibold text-foreground text-right">Actions</TableHead>
                 </TableRow>
@@ -208,7 +238,7 @@ const SellerOrders = () => {
               <TableBody>
                 {paginatedItems.map((order) => {
                   const statusConfig = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending_payment;
-                  
+
                   return (
                     <TableRow key={order.id} className="hover:bg-muted/30">
                       <TableCell className="font-medium text-foreground">{order.order_number}</TableCell>
@@ -224,23 +254,27 @@ const SellerOrders = () => {
                       <TableCell>
                         <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>
                       </TableCell>
+                      <TableCell className="text-sm text-muted-foreground max-w-[140px] truncate">
+                        {order.tracking_number || "—"}
+                      </TableCell>
                       <TableCell className="text-foreground">
                         {new Date(order.created_at).toLocaleDateString("en-GB")}
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-1 justify-end">
                           {order.status === "paid" && (
-                            <Button size="sm" variant="outline" onClick={() => updateOrderStatus(order.id, "processing")}>
+                            <Button size="sm" variant="outline" onClick={() => updateOrderStatus(order.id, "processing")} disabled={updating}>
                               Process
                             </Button>
                           )}
                           {order.status === "processing" && (
-                            <Button size="sm" variant="outline" onClick={() => updateOrderStatus(order.id, "shipped")}>
-                              <Truck className="h-4 w-4" />
+                            <Button size="sm" variant="outline" onClick={() => openShipDialog(order.id)} disabled={updating}>
+                              <Truck className="h-4 w-4 mr-1" />
+                              Dispatch
                             </Button>
                           )}
                           {order.status === "shipped" && (
-                            <Button size="sm" variant="outline" onClick={() => updateOrderStatus(order.id, "delivered")}>
+                            <Button size="sm" variant="outline" onClick={() => updateOrderStatus(order.id, "delivered")} disabled={updating}>
                               <CheckCircle2 className="h-4 w-4" />
                             </Button>
                           )}
@@ -262,6 +296,37 @@ const SellerOrders = () => {
           </div>
         )}
       </div>
+
+      <Dialog open={shipDialogOpen} onOpenChange={setShipDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Mark order as dispatched</DialogTitle>
+            <DialogDescription>
+              Add a tracking number if you have one. The buyer will receive a dispatch email.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="tracking">Tracking number (optional)</Label>
+            <Input
+              id="tracking"
+              placeholder="e.g. RM123456789GB"
+              value={trackingNumber}
+              onChange={(e) => setTrackingNumber(e.target.value)}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShipDialogOpen(false)} disabled={updating}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => selectedOrderId && updateOrderStatus(selectedOrderId, "shipped", trackingNumber)}
+              disabled={updating || !selectedOrderId}
+            >
+              {updating ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirm dispatch"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 };

@@ -15,6 +15,7 @@ import { Loader2, Check, X, Eye, EyeOff } from "lucide-react";
 
 const Signup = () => {
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -46,8 +47,26 @@ const Signup = () => {
     { label: "One special character (!@#$%^&*)", met: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password) },
   ];
 
+  const normalizeUKPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    if (!digits) return "";
+    if (digits.startsWith("44")) return `+${digits}`;
+    if (digits.startsWith("0")) return `+44${digits.slice(1)}`;
+    return `+44${digits}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!phone.trim()) {
+      toast({ title: "Phone Number Required", description: "A UK mobile phone number is required for verification.", variant: "destructive" });
+      return;
+    }
+    const normalizedPhone = normalizeUKPhone(phone);
+    if (!normalizedPhone || normalizedPhone.length < 11) {
+      toast({ title: "Invalid Phone Number", description: "Please enter a valid UK mobile number.", variant: "destructive" });
+      return;
+    }
 
     if (password !== confirmPassword) {
       toast({
@@ -85,13 +104,23 @@ const Signup = () => {
       return;
     }
 
+    try {
+      await supabase.auth.signInWithOtp({
+        phone: normalizedPhone,
+        options: {
+          shouldCreateUser: false,
+        },
+      });
+    } catch (phoneOtpError) {
+      console.warn("Seller phone OTP send failed:", phoneOtpError);
+    }
+
     toast({
       title: "Verification Code Sent!",
-      description: "Please check your email for the 8-digit verification code.",
+      description: "Please check your email and SMS for the verification codes.",
     });
 
     setLoading(false);
-    // Navigate to email verification page — Supabase sends the OTP email automatically via SMTP
     router.push(`/verify-email?email=${encodeURIComponent(email)}&flow=seller`);
   };
 
@@ -119,6 +148,19 @@ const Signup = () => {
                   placeholder="you@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
+                  required
+                  className="h-11"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Mobile Phone</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  placeholder="+44 7700 900123"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   required
                   className="h-11"
                 />

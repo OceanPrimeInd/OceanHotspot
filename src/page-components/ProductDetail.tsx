@@ -16,6 +16,7 @@ import { useWishlist } from "@/contexts/WishlistContext";
 import { useRecentlyViewed } from "@/contexts/RecentlyViewedContext";
 import { useToast } from "@/hooks/use-toast";
 import { formatPrice } from "@/lib/utils";
+import { getProductCategoryLabel } from "@/config/productCategories";
 import { ProductReviews } from "@/components/ProductReviews";
 import { ProductImageGallery } from "@/components/product/ProductImageGallery";
 import {
@@ -29,6 +30,8 @@ import {
   ShieldCheck,
   Check,
   Heart,
+  Store,
+  ExternalLink,
 } from "lucide-react";
 import {
   Tooltip,
@@ -60,6 +63,7 @@ interface Product {
   availability_status: string | null;
   condition: string | null;
   brand: string | null;
+  pricing_type: string | null;
   created_at: string;
 }
 
@@ -81,6 +85,13 @@ const ProductDetail = () => {
   const { addItem: addToRecentlyViewed } = useRecentlyViewed();
   const { toast } = useToast();
   const [addedToCart, setAddedToCart] = useState(false);
+  const [sellerShowroom, setSellerShowroom] = useState<{
+    slug: string;
+    brand_name: string;
+    logo_url: string | null;
+    tagline: string | null;
+    company_name: string | null;
+  } | null>(null);
 
   const isOwner = user && product && user.id === product.seller_id;
   const isInCart = product && items.some((item) => item.id === product.id);
@@ -151,6 +162,32 @@ const ProductDetail = () => {
           domain_category: data.domain_category,
         });
         setProduct(data);
+
+        // Auto-open enquiry form for non-fixed-price products
+        if (data.pricing_type && data.pricing_type !== "fixed_price") {
+          setShowEnquiryForm(true);
+        }
+
+        // Fetch seller's published showroom
+        const { data: showroomData } = await supabase
+          .from("showrooms")
+          .select("slug, brand_name, logo_url, tagline")
+          .eq("seller_id", data.seller_id)
+          .eq("is_published", true)
+          .maybeSingle();
+
+        if (showroomData) {
+          // Fetch seller's company name from profiles
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("company_name")
+            .eq("id", data.seller_id)
+            .maybeSingle();
+          setSellerShowroom({
+            ...showroomData,
+            company_name: profileData?.company_name ?? null,
+          });
+        }
       }
       setLoading(false);
     };
@@ -299,7 +336,7 @@ const ProductDetail = () => {
                 <BreadcrumbItem>
                   <BreadcrumbLink asChild>
                     <Link href={`/browse?domain=${encodeURIComponent(product.domain_category)}`}>
-                      {product.domain_category}
+                      {getProductCategoryLabel(product.domain_category)}
                     </Link>
                   </BreadcrumbLink>
                 </BreadcrumbItem>
@@ -336,7 +373,7 @@ const ProductDetail = () => {
               )}
               {product.domain_category && (
                 <span className="inline-flex items-center rounded-full bg-secondary/10 px-3 py-1 text-sm font-medium text-secondary">
-                  {product.domain_category}
+                  {getProductCategoryLabel(product.domain_category)}
                 </span>
               )}
             </div>
@@ -356,14 +393,33 @@ const ProductDetail = () => {
               )}
             </div>
 
-            <p className="text-2xl font-bold text-primary mb-2">
-              {formatPrice(product.currency, product.price)}
-            </p>
-            {product.vat_treatment === "plus_vat" && (
-              <p className="text-sm text-muted-foreground mb-6">+ VAT ({product.vat_rate ?? 20}%)</p>
-            )}
-            {product.vat_treatment === "vat_included" && (
-              <p className="text-sm text-muted-foreground mb-6">inc. VAT ({product.vat_rate ?? 20}%)</p>
+            {product.pricing_type === "poa" ? (
+              <div className="mb-6">
+                <p className="text-2xl font-bold text-primary">POA</p>
+                <p className="text-sm text-muted-foreground mt-1">Price on Application — contact us for pricing details</p>
+              </div>
+            ) : product.pricing_type === "contact_us" ? (
+              <div className="mb-6">
+                <p className="text-2xl font-bold text-primary">Contact Us</p>
+                <p className="text-sm text-muted-foreground mt-1">Get in touch for more information and pricing</p>
+              </div>
+            ) : product.pricing_type === "coming_soon" ? (
+              <div className="mb-6">
+                <span className="inline-block bg-muted text-muted-foreground text-sm font-semibold px-4 py-2 rounded-full">Coming Soon</span>
+                <p className="text-sm text-muted-foreground mt-2">This product is not yet available. Submit an enquiry to register your interest.</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-2xl font-bold text-primary mb-2">
+                  {formatPrice(product.currency, product.price)}
+                </p>
+                {product.vat_treatment === "plus_vat" && (
+                  <p className="text-sm text-muted-foreground mb-6">+ VAT ({product.vat_rate ?? 20}%)</p>
+                )}
+                {product.vat_treatment === "vat_included" && (
+                  <p className="text-sm text-muted-foreground mb-6">inc. VAT ({product.vat_rate ?? 20}%)</p>
+                )}
+              </>
             )}
 
             <div className="prose prose-slate max-w-none mb-8">
@@ -398,8 +454,9 @@ const ProductDetail = () => {
               </div>
             ) : (
               <div className="space-y-4">
-                {/* Add to Cart & Wishlist Buttons */}
+                {/* Add to Cart & Wishlist Buttons — hidden for POA/Contact Us/Coming Soon */}
                 <div className="flex gap-3">
+                  {(!product.pricing_type || product.pricing_type === "fixed_price") && (
                   <Button
                     variant={addedToCart || isInCart ? "outline" : "o42Primary"}
                     size="lg"
@@ -424,6 +481,7 @@ const ProductDetail = () => {
                       </>
                     )}
                   </Button>
+                  )}
 
                   {/* Wishlist Button */}
                   <Tooltip>
@@ -457,10 +515,35 @@ const ProductDetail = () => {
                   </Button>
                 )}
 
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                  <ShieldCheck className="h-4 w-4 text-green-500" />
-                  <span>Secure payment • Funds protected until delivery confirmed</span>
-                </div>
+                {(!product.pricing_type || product.pricing_type === "fixed_price") && (
+                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                    <ShieldCheck className="h-4 w-4 text-green-500" />
+                    <span>Secure payment • Funds protected until delivery confirmed</span>
+                  </div>
+                )}
+
+                {/* Non-fixed-price: show prominent CTA box */}
+                {product.pricing_type && product.pricing_type !== "fixed_price" && (
+                  <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+                    <div className="flex items-center gap-2 mb-1">
+                      <MessageSquare className="h-4 w-4 text-primary" />
+                      <p className="font-semibold text-sm text-primary">
+                        {product.pricing_type === "poa"
+                          ? "Request a Price"
+                          : product.pricing_type === "contact_us"
+                          ? "Contact Us for More Information"
+                          : "Register Your Interest"}
+                      </p>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      {product.pricing_type === "poa"
+                        ? "Fill in the form below and the seller will come back to you with pricing."
+                        : product.pricing_type === "contact_us"
+                        ? "Fill in the form below and the seller will be in touch with full details."
+                        : "This product is coming soon. Leave your details and we'll let you know when it's available."}
+                    </p>
+                  </div>
+                )}
 
                 {/* Enquiry Toggle */}
                 <div className="border-t border-border pt-4">
@@ -469,7 +552,7 @@ const ProductDetail = () => {
                     className="flex items-center gap-2 text-sm text-primary hover:underline"
                   >
                     <MessageSquare className="h-4 w-4" />
-                    {showEnquiryForm ? "Hide enquiry form" : "Have a question? Contact seller"}
+                    {showEnquiryForm ? "Hide form" : "Have a question? Contact the seller"}
                   </button>
                 </div>
 
@@ -520,7 +603,15 @@ const ProductDetail = () => {
                           <Label htmlFor="message">Message *</Label>
                           <Textarea
                             id="message"
-                            placeholder="Write your message to the seller..."
+                            placeholder={
+                              product.pricing_type === "poa"
+                                ? "Please provide pricing for this product. Include quantity and delivery location if relevant."
+                                : product.pricing_type === "contact_us"
+                                ? "I'd like more information about this product..."
+                                : product.pricing_type === "coming_soon"
+                                ? "I'm interested in this product. Please notify me when it becomes available."
+                                : "Write your message to the seller..."
+                            }
                             value={message}
                             onChange={(e) => setMessage(e.target.value)}
                             rows={4}
@@ -528,7 +619,7 @@ const ProductDetail = () => {
                         </div>
 
                         <Button
-                          variant="outline"
+                          variant={product.pricing_type && product.pricing_type !== "fixed_price" ? "o42Primary" : "outline"}
                           onClick={handleSendEnquiry}
                           disabled={sending || !message.trim() || !buyerEmail.trim() || !buyerName.trim()}
                           className="w-full"
@@ -538,6 +629,12 @@ const ProductDetail = () => {
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                               Sending...
                             </>
+                          ) : product.pricing_type === "poa" ? (
+                            "Request a Price"
+                          ) : product.pricing_type === "contact_us" ? (
+                            "Send My Enquiry"
+                          ) : product.pricing_type === "coming_soon" ? (
+                            "Register My Interest"
                           ) : (
                             "Send Enquiry"
                           )}
@@ -550,6 +647,51 @@ const ProductDetail = () => {
             )}
           </div>
         </div>
+
+        {/* Seller Showroom Card */}
+        {sellerShowroom && !isOwner && (
+          <div className="mt-12 rounded-xl border border-border bg-linear-to-r from-primary/5 to-secondary/5 p-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
+              {/* Logo */}
+              <div className="shrink-0">
+                {sellerShowroom.logo_url ? (
+                  <img
+                    src={sellerShowroom.logo_url}
+                    alt={sellerShowroom.brand_name}
+                    className="h-16 w-16 rounded-xl object-contain border border-border bg-white p-1"
+                  />
+                ) : (
+                  <div className="h-16 w-16 rounded-xl bg-primary/10 flex items-center justify-center border border-border">
+                    <Store className="h-8 w-8 text-primary" />
+                  </div>
+                )}
+              </div>
+              {/* Info */}
+              <div className="flex-1 text-center sm:text-left">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                  Sold by
+                </p>
+                <h3 className="text-xl font-bold text-headline">
+                  {sellerShowroom.brand_name}
+                </h3>
+                {sellerShowroom.tagline && (
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {sellerShowroom.tagline}
+                  </p>
+                )}
+              </div>
+              {/* CTA */}
+              <div className="shrink-0">
+                <Button variant="o42Primary" asChild>
+                  <Link href={`/showroom/${sellerShowroom.slug}`}>
+                    <Store className="mr-2 h-4 w-4" />
+                    Visit Showroom
+                  </Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Reviews & Q&A Section */}
         {product && <ProductReviews productId={product.id} sellerId={product.seller_id} />}

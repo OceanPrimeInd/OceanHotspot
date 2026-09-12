@@ -3,6 +3,7 @@
 import React, { Component, ErrorInfo, ReactNode } from "react";
 import { AlertTriangle, RefreshCw, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ContactEmailLink } from "@/components/ContactEmailLink";
 
 interface Props {
   children: ReactNode;
@@ -102,13 +103,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
             {/* Support Info */}
             <p className="mt-8 text-sm text-muted-foreground">
-              If this problem persists, please contact{" "}
-              <a
-                href="mailto:oceanhotspotservices@gmail.com"
-                className="text-primary hover:underline"
-              >
-                oceanhotspotservices@gmail.com
-              </a>
+              If this problem persists, please contact <ContactEmailLink />.
             </p>
           </div>
         </div>

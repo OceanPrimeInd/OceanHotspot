@@ -67,9 +67,18 @@ export function Footer() {
 
       if (dbError) throw dbError;
 
-      supabase.functions.invoke("send-welcome-email", {
-        body: { email: email.toLowerCase().trim() },
-      }).catch((err) => console.warn("Welcome email failed:", err));
+      const normalized = email.toLowerCase().trim();
+      const { data: mailData, error: mailError } = await supabase.functions.invoke(
+        "send-welcome-email",
+        { body: { email: normalized } },
+      );
+
+      if (mailError || mailData?.error) {
+        console.warn("Welcome email failed:", mailError || mailData?.error);
+        setError(
+          "You're on the list, but we couldn't send the confirmation email yet. Check spam or contact support.",
+        );
+      }
 
       setSubscribed(true);
       setEmail("");

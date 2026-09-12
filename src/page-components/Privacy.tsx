@@ -3,6 +3,7 @@
 
 import { Layout } from "@/components/layout/Layout";
 import Link from "next/link";
+import { ContactEmailLink } from "@/components/ContactEmailLink";
 
 const Privacy = () => {
   return (
@@ -26,7 +27,7 @@ const Privacy = () => {
               </p>
               <p className="mt-3">
                 Contact:{" "}
-                <a href="mailto:oceanhotspotservices@gmail.com" className="text-primary hover:underline">oceanhotspotservices@gmail.com</a>
+                <ContactEmailLink />
               </p>
             </section>
 
@@ -125,8 +126,10 @@ const Privacy = () => {
                 Under UK GDPR, you have the right to access the personal data we hold about you, rectify inaccurate data, erase your data (subject to legal retention requirements), restrict processing in certain circumstances, data portability (receive your data in a structured format), object to processing based on legitimate interests, and withdraw consent where processing is based on consent.
               </p>
               <p className="mt-3">
-                To exercise any of these rights, contact{" "}
-                <a href="mailto:oceanhotspotservices@gmail.com" className="text-primary hover:underline">oceanhotspotservices@gmail.com</a>.
+                To exercise any of these rights, use our{" "}
+                <a href="/privacy/erasure" className="text-primary hover:underline">data subject request form</a>{" "}
+                or contact{" "}
+                <ContactEmailLink />.
                 We will respond within one month.
               </p>
               <p className="mt-3">
@@ -171,7 +174,7 @@ const Privacy = () => {
               <h2 className="text-lg font-semibold text-headline mb-3">Contact and Complaints</h2>
               <p>
                 For any questions about this policy or your data:{" "}
-                <a href="mailto:oceanhotspotservices@gmail.com" className="text-primary hover:underline">oceanhotspotservices@gmail.com</a>
+                <ContactEmailLink />
               </p>
               <p className="mt-3">
                 If you are not satisfied with our response, you have the right to complain to the Information Commissioner's Office (ICO): ico.org.uk

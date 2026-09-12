@@ -22,6 +22,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2, Package, Upload, X, FileEdit, Send } from "lucide-react";
+import { PRODUCT_DOMAIN_CATEGORIES } from "@/config/productCategories";
 
 // Phase 1 Entity Types
 const ENTITY_TYPES = [
@@ -31,18 +32,6 @@ const ENTITY_TYPES = [
   { value: "software_data", label: "Software / Data" },
   { value: "membership_subscription", label: "Membership / Subscription" },
   { value: "document_standard", label: "Document / Standard" },
-];
-
-// Phase 1 Domain Categories
-const DOMAIN_CATEGORIES = [
-  { value: "vessels_floating_assets", label: "Vessels & Floating Assets" },
-  { value: "propulsion_power", label: "Propulsion & Power" },
-  { value: "safety_security_response", label: "Safety, Security & Response" },
-  { value: "maintenance_consumables", label: "Maintenance & Consumables" },
-  { value: "finance_insurance_legal", label: "Finance, Insurance & Legal" },
-  { value: "fishing_aquaculture", label: "Fishing & Aquaculture" },
-  { value: "eco_compliance", label: "Eco & Compliance Products" },
-  { value: "other", label: "Other" },
 ];
 
 // Condition options
@@ -101,6 +90,7 @@ const CreateProduct = () => {
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   // Section 5 - Pricing
+  const [pricingType, setPricingType] = useState("fixed_price");
   const [price, setPrice] = useState("");
   const [vatTreatment, setVatTreatment] = useState("");
   const [vatRate, setVatRate] = useState("20");
@@ -232,15 +222,17 @@ const CreateProduct = () => {
       description: shortDescription.trim() || null,
       image_url: imageUrl,
       images: imageUrl ? [imageUrl] : null,
-      price: price ? parseFloat(price) : 0,
+      pricing_type: pricingType,
+      price: pricingType === "fixed_price" && price ? parseFloat(price) : 0,
       currency: "GBP",
-      vat_treatment: vatTreatment || null,
+      vat_treatment: pricingType === "fixed_price" ? (vatTreatment || null) : null,
       vat_rate: vatTreatment === "vat_exempt" ? 0 : parseFloat(vatRate),
       availability_status: availabilityStatus || null,
       lead_time_text: leadTimeText.trim() || null,
       ships_from: shipsFrom.trim() || null,
       shipping_cost_rule: shippingCostRule || null,
       status: submitForReview ? "pending_review" : "draft",
+      is_published: false,
       submitted_at: submitForReview ? new Date().toISOString() : null,
     };
 
@@ -355,7 +347,7 @@ const CreateProduct = () => {
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
                       <SelectContent>
-                        {DOMAIN_CATEGORIES.map((c) => (
+                        {PRODUCT_DOMAIN_CATEGORIES.map((c) => (
                           <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                         ))}
                       </SelectContent>
@@ -425,6 +417,22 @@ const CreateProduct = () => {
                 <h2 className="text-lg font-semibold mb-4">Pricing</h2>
                 <div className="space-y-4">
                   <div className="space-y-2">
+                    <Label>How would you like to display the price? *</Label>
+                    <Select value={pricingType} onValueChange={setPricingType}>
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Select pricing type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="fixed_price">Fixed Price — show exact price</SelectItem>
+                        <SelectItem value="poa">POA — Price on Application</SelectItem>
+                        <SelectItem value="contact_us">Contact Us for More Information</SelectItem>
+                        <SelectItem value="coming_soon">Coming Soon</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {pricingType === "fixed_price" && (
+                  <div className="space-y-2">
                     <Label htmlFor="price">Price (excluding VAT) *</Label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">£</span>
@@ -439,9 +447,10 @@ const CreateProduct = () => {
                         className="h-12 pl-7"
                       />
                     </div>
-                    <p className="text-xs text-muted-foreground">Leave blank for "Price on enquiry"</p>
                   </div>
+                  )}
 
+                  {pricingType === "fixed_price" && (<>
                   <div className="space-y-2">
                     <Label>VAT Treatment *</Label>
                     <Select value={vatTreatment} onValueChange={(val) => { setVatTreatment(val); if (val === "vat_exempt") setVatRate("0"); else if (vatRate === "0") setVatRate("20"); }}>
@@ -471,6 +480,7 @@ const CreateProduct = () => {
                       </Select>
                     </div>
                   )}
+                  </>)}
                 </div>
               </div>
 

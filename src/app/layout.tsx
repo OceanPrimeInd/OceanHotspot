@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { Public_Sans } from "next/font/google";
-import Script from "next/script";
 import { Providers } from "@/components/Providers";
 import "./globals.css";
 
@@ -11,6 +10,7 @@ const publicSans = Public_Sans({
   weight: ["400", "500", "600", "700", "800"],
 });
 
+/** Keeps auth/search-param pages reliable; homepage still cached at CDN after first hit. */
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
@@ -74,20 +74,6 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning className={publicSans.variable}>
-      <head>
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-VFHK2RGBE2"
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-VFHK2RGBE2');
-          `}
-        </Script>
-      </head>
       <body>
         <Providers>
           {children}

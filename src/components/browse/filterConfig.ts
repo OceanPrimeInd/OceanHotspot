@@ -29,6 +29,45 @@ export const TOP_CATEGORIES = [
   "Watersports",
 ] as const;
 
+/** Shopper-facing nav labels. Full backend taxonomy unchanged for sellers. */
+export interface NavCategory {
+  label: string;
+  backendKeys: readonly (typeof TOP_CATEGORIES)[number][];
+}
+
+export const NAV_CATEGORIES: NavCategory[] = [
+  { label: "Vessels", backendKeys: ["Boats & Vessels"] },
+  { label: "Engines", backendKeys: ["Engines, Propulsion & Steering"] },
+  { label: "Electronics", backendKeys: ["Electronics & Navigation"] },
+  { label: "Electrical", backendKeys: ["Electrical & Power"] },
+  { label: "Deck", backendKeys: ["Anchoring & Mooring", "Deck Hardware", "Sailing: Rigging & Sails"] },
+  { label: "Pumps", backendKeys: ["Plumbing, Pumps & Ventilation"] },
+  { label: "Maintenance", backendKeys: ["Maintenance & Consumables"] },
+  { label: "Safety", backendKeys: ["Safety, Security & Response"] },
+  {
+    label: "Leisure",
+    backendKeys: [
+      "Cabin, Galley & Comfort",
+      "Covers & Accessories",
+      "Fishing & Harvesting",
+      "Watersports",
+      "Trailers & Towing",
+    ],
+  },
+];
+
+export function getNavCategory(label: string) {
+  return NAV_CATEGORIES.find((category) => category.label === label);
+}
+
+export function navHasMultipleBackends(label: string) {
+  return (getNavCategory(label)?.backendKeys.length ?? 0) > 1;
+}
+
+export function getNavBackendKeys(label: string) {
+  return getNavCategory(label)?.backendKeys ?? [];
+}
+
 export const CATEGORY_TREE: Record<string, Record<string, string[]>> = {
   "Anchoring & Mooring": {
     Anchoring: ["Anchors", "Anchor Chain", "Rope & Rode", "Windlasses"],
@@ -164,7 +203,9 @@ export const ECO_COMPLIANCE_OPTIONS: FilterOption[] = [
   { label: "Sustainable materials", value: "sustainable_materials" },
 ];
 
-export const VINTED_FILTER_GROUPS: {
+export const ALL_SUBGROUP = "All";
+
+export const FILTER_GROUPS: {
   label: string;
   type: "category" | "checkbox" | "price" | "parts";
   options?: FilterOption[];
@@ -203,4 +244,12 @@ export function buildCategoryLabel(path: string[]) {
 
 export function buildFilterId(group: string, value: string) {
   return `${group}::${value}`;
+}
+
+export function getSubgroupsForBackend(backendKey: string) {
+  return Object.keys(CATEGORY_TREE[backendKey] ?? {});
+}
+
+export function getItemsForSubgroup(backendKey: string, subgroup: string) {
+  return CATEGORY_TREE[backendKey]?.[subgroup] ?? [];
 }

@@ -3,25 +3,40 @@
 
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { formatPrice } from "@/lib/utils";
+import { getPlaceholderSvg } from "@/lib/productPlaceholders";
 import {
   Loader2,
   Send,
   Sparkles,
-  ArrowRight
+  ArrowRight,
+  Package,
 } from "lucide-react";
 
-interface Message {
-  role: "user" | "assistant";
+type DiscoveryProduct = {
+  id: string;
+  title: string;
+  price: number;
+  currency: string;
+  image_url: string | null;
+  description: string | null;
+  domain_category: string | null;
+};
+
+type UserMessage = { role: "user"; content: string };
+type AssistantMessage = {
+  role: "assistant";
   content: string;
-}
+  products?: DiscoveryProduct[];
+};
+type Message = UserMessage | AssistantMessage;
 
-const SUPABASE_URL = (process.env.NEXT_PUBLIC_SUPABASE_URL || "").trim();
-const SUPABASE_KEY = (process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "").trim();
-const CHAT_URL = SUPABASE_URL ? `${SUPABASE_URL}/functions/v1/ai-discovery` : "";
-
+/** Same-origin route — live catalog search only (no LLM product invention). */
+const CHAT_URL = "/api/discovery";
 
 const Discover = () => {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -41,122 +56,63 @@ const Discover = () => {
     scrollToBottom();
   }, [messages]);
 
-  const extractDeltaText = (payload: any): string => {
-    const openAiDelta = payload?.choices?.[0]?.delta?.content;
-    if (typeof openAiDelta === "string" && openAiDelta.length > 0) {
-      return openAiDelta;
-    }
-
-    const geminiParts = payload?.candidates?.[0]?.content?.parts;
-    if (Array.isArray(geminiParts)) {
-      const text = geminiParts
-        .map((part: { text?: string }) => part?.text)
-        .filter(Boolean)
-        .join("");
-      if (text) return text;
-    }
-
-    const geminiText = payload?.candidates?.[0]?.content?.text;
-    if (typeof geminiText === "string" && geminiText.length > 0) {
-      return geminiText;
-    }
-
-    return "";
-  };
-
-  const streamChat = async (userMessages: Message[]) => {
-    if (!CHAT_URL || !SUPABASE_KEY) {
-      throw new Error("Missing Supabase environment variables. Check your .env file.");
-    }
-
+  const askDiscovery = async (userMessages: Message[]) => {
     const resp = await fetch(CHAT_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${SUPABASE_KEY}`,
-        apikey: SUPABASE_KEY,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ messages: userMessages }),
     });
 
+    const data = await resp.json().catch(() => ({}));
+
     if (!resp.ok) {
-      const errorData = await resp.json().catch(() => ({}));
-      throw new Error(errorData.error || "Failed to connect to AI assistant");
+      throw new Error(data.error || "Failed to connect to AI assistant");
     }
 
-    if (!resp.body) throw new Error("No response body");
-
-    const reader = resp.body.getReader();
-    const decoder = new TextDecoder();
-    let textBuffer = "";
-    let assistantContent = "";
-
-    // Add initial empty assistant message
-    setMessages(prev => [...prev, { role: "assistant", content: "" }]);
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-
-      textBuffer += decoder.decode(value, { stream: true });
-
-      let newlineIndex: number;
-      while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-        let line = textBuffer.slice(0, newlineIndex);
-        textBuffer = textBuffer.slice(newlineIndex + 1);
-
-        if (line.endsWith("\r")) line = line.slice(0, -1);
-        if (line.startsWith(":") || line.trim() === "") continue;
-        if (!line.startsWith("data: ")) continue;
-
-        const jsonStr = line.slice(6).trim();
-        if (jsonStr === "[DONE]") break;
-
-        try {
-          const parsed = JSON.parse(jsonStr);
-          const content = extractDeltaText(parsed);
-          if (content) {
-            assistantContent += content;
-            setMessages(prev => {
-              const updated = [...prev];
-              updated[updated.length - 1] = { role: "assistant", content: assistantContent };
-              return updated;
-            });
-          }
-        } catch {
-          // Incomplete JSON, put it back
-          textBuffer = line + "\n" + textBuffer;
-          break;
-        }
-      }
-    }
+    return {
+      reply: data.reply as string,
+      products: (data.products || []) as DiscoveryProduct[],
+    };
   };
 
   const handleSend = async (text?: string) => {
     const messageText = text || input.trim();
     if (!messageText || isLoading) return;
 
-    const userMessage: Message = { role: "user", content: messageText };
-    const newMessages = [...messages, userMessage];
+    const userMessage: UserMessage = { role: "user", content: messageText };
+    const newMessages: Message[] = [...messages, userMessage];
     setMessages(newMessages);
     setInput("");
     setIsLoading(true);
 
+    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+
     try {
-      await streamChat(newMessages);
+      const { reply, products } = await askDiscovery(newMessages);
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content: reply,
+          products,
+        };
+        return updated;
+      });
     } catch (error) {
       console.error("Chat error:", error);
       const errorMessage =
         error instanceof Error && error.message
           ? error.message
-          : "I apologize, but I'm having trouble connecting right now. Please try again in a moment.";
-      setMessages(prev => [
-        ...prev,
-        { 
-          role: "assistant", 
+          : "I'm having trouble connecting right now. Please try again in a moment.";
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
           content: errorMessage,
-        }
-      ]);
+          products: [],
+        };
+        return updated;
+      });
     } finally {
       setIsLoading(false);
       inputRef.current?.focus();
@@ -170,11 +126,17 @@ const Discover = () => {
     }
   };
 
+  const suggestedQuestions = [
+    "Bow thruster for a 40ft motor yacht",
+    "Rugged tablet for the helm",
+    "12V bilge pump",
+    "Sailproof or marine tablet",
+  ];
+
   return (
     <Layout>
       <div className="container max-w-4xl py-4">
         <div className="animate-slide-up">
-          {/* Header */}
           <div className="text-center mb-4">
             <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-primary to-secondary mb-3">
               <Sparkles className="h-6 w-6 text-white" />
@@ -183,31 +145,44 @@ const Discover = () => {
               AI Discovery Assistant
             </h1>
             <p className="text-sm text-muted-foreground max-w-xl mx-auto">
-              Tell me about your maritime needs and I'll help you find the perfect products and services.
+              Ask in plain English — answers only include live products from our catalog.
             </p>
           </div>
 
-          {/* Chat Container */}
           <div className="rounded-2xl border border-border bg-card shadow-lg overflow-hidden">
-            {/* Messages Area */}
-            <div ref={messagesContainerRef} className={`overflow-y-auto p-6 space-y-4 ${messages.length > 0 ? "h-[min(450px,calc(100vh-360px))]" : ""}`}>
+            <div
+              ref={messagesContainerRef}
+              className={`overflow-y-auto p-6 space-y-4 ${messages.length > 0 ? "h-[min(450px,calc(100vh-360px))]" : ""}`}
+            >
               {messages.length === 0 ? (
                 <div className="flex flex-col items-center text-center pt-4">
                   <h3 className="font-semibold text-headline mb-2">
                     How can I help you today?
                   </h3>
-                  <p className="text-sm text-muted-foreground max-w-sm">
-                    Ask me about maritime products, equipment recommendations, or tell me about your vessel and needs.
+                  <p className="text-sm text-muted-foreground max-w-sm mb-4">
+                    Try one of these buyer questions:
                   </p>
+                  <div className="flex flex-wrap justify-center gap-2 max-w-lg">
+                    {suggestedQuestions.map((q) => (
+                      <button
+                        key={q}
+                        type="button"
+                        className="text-left text-xs rounded-full border border-border px-3 py-1.5 hover:bg-muted transition"
+                        onClick={() => handleSend(q)}
+                      >
+                        {q}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               ) : (
                 messages.map((msg, idx) => (
                   <div
                     key={idx}
-                    className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                    className={`flex flex-col ${msg.role === "user" ? "items-end" : "items-start"}`}
                   >
                     <div
-                      className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                      className={`max-w-[90%] rounded-2xl px-4 py-3 ${
                         msg.role === "user"
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted"
@@ -215,27 +190,50 @@ const Discover = () => {
                     >
                       {msg.role === "assistant" && msg.content === "" ? (
                         <div className="flex items-center gap-2">
-                          <span className="flex gap-1">
-                            <span className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:0ms]" />
-                            <span className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:150ms]" />
-                            <span className="w-2 h-2 rounded-full bg-muted-foreground/50 animate-bounce [animation-delay:300ms]" />
-                          </span>
+                          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">Searching live listings…</span>
                         </div>
                       ) : (
-                        <p className="text-sm whitespace-pre-wrap">
-                          {msg.content}
-                          {msg.role === "assistant" && isLoading && idx === messages.length - 1 && (
-                            <span className="inline-block w-0.5 h-[1em] bg-current align-middle ml-0.5 animate-pulse" />
-                          )}
-                        </p>
+                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                       )}
                     </div>
+                    {msg.role === "assistant" && msg.products && msg.products.length > 0 && (
+                      <ul className="mt-3 w-full max-w-md space-y-2">
+                        {msg.products.map((product) => (
+                          <li key={product.id}>
+                            <Link
+                              href={`/product/${product.id}`}
+                              className="flex gap-3 rounded-xl border border-border bg-card p-3 hover:border-primary/40 transition"
+                            >
+                              <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
+                                <Image
+                                  src={product.image_url || getPlaceholderSvg(product.title)}
+                                  alt=""
+                                  fill
+                                  className="object-cover"
+                                  unoptimized
+                                />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium line-clamp-2">{product.title}</p>
+                                <p className="text-sm text-primary font-semibold mt-0.5">
+                                  {formatPrice(product.currency, product.price)}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground mt-1 flex items-center gap-1">
+                                  <Package className="h-3 w-3" />
+                                  Live listing · ID {product.id.slice(0, 8)}…
+                                </p>
+                              </div>
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 ))
               )}
             </div>
 
-            {/* Input Area */}
             <div className="border-t border-border p-4 bg-muted/30 shrink-0">
               <div className="flex gap-2">
                 <Input
@@ -264,7 +262,6 @@ const Discover = () => {
             </div>
           </div>
 
-          {/* Browse CTA */}
           <div className="mt-4 text-center">
             <p className="text-sm text-muted-foreground mb-2">
               Want to browse all products?

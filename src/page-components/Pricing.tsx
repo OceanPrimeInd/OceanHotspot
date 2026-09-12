@@ -2,6 +2,7 @@
 "use client";
 
 import { Layout } from "@/components/layout/Layout";
+import { ContactEmailLink } from "@/components/ContactEmailLink";
 
 const Pricing = () => {
   return (
@@ -154,7 +155,7 @@ const Pricing = () => {
               <h2 className="text-lg font-semibold text-headline mb-3">Contact</h2>
               <p>
                 Questions about pricing:{" "}
-                <a href="mailto:oceanhotspotservices@gmail.com" className="text-primary hover:underline">oceanhotspotservices@gmail.com</a>
+                <ContactEmailLink />
               </p>
             </section>
           </div>

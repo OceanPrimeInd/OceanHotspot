@@ -684,6 +684,8 @@ export type Database = {
           business_address: string | null
           business_registration_number: string | null
           business_type: string | null
+          cart_data: Json | null
+          wishlist_data: Json | null
           citizenship: string | null
           club_member: boolean | null
           company_name: string | null
@@ -726,6 +728,8 @@ export type Database = {
           business_address?: string | null
           business_registration_number?: string | null
           business_type?: string | null
+          cart_data?: Json | null
+          wishlist_data?: Json | null
           citizenship?: string | null
           club_member?: boolean | null
           company_name?: string | null
@@ -768,6 +772,8 @@ export type Database = {
           business_address?: string | null
           business_registration_number?: string | null
           business_type?: string | null
+          cart_data?: Json | null
+          wishlist_data?: Json | null
           citizenship?: string | null
           club_member?: boolean | null
           company_name?: string | null

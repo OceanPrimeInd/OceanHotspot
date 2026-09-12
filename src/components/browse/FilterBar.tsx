@@ -4,21 +4,29 @@ import { useEffect, useRef, useState } from "react";
 import { ArrowLeft, ChevronDown, ChevronRight, X } from "lucide-react";
 import {
   ActiveFilterChip,
-  CATEGORY_TREE,
   FIND_PARTS_TREE,
-  TOP_CATEGORIES,
-  VINTED_FILTER_GROUPS,
+  NAV_CATEGORIES,
+  FILTER_GROUPS,
   buildCategoryLabel,
   buildFilterId,
-} from "./vintedFilterConfig";
-import { getCategoryIcon } from "./categoryIcons";
+  getItemsForSubgroup,
+  getNavBackendKeys,
+  getSubgroupsForBackend,
+  navHasMultipleBackends,
+} from "./filterConfig";
+import {
+  getAllMenuIcon,
+  getCategoryIcon,
+  getNavIcon,
+  getSubgroupIcon,
+} from "./categoryIcons";
 
-interface VintedFilterBarProps {
+interface FilterBarProps {
   activeFilters: ActiveFilterChip[];
   onFiltersChange: (filters: ActiveFilterChip[]) => void;
 }
 
-export function VintedFilterBar({ activeFilters, onFiltersChange }: VintedFilterBarProps) {
+export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [navPath, setNavPath] = useState<string[]>([]);
@@ -26,7 +34,7 @@ export function VintedFilterBar({ activeFilters, onFiltersChange }: VintedFilter
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
 
-  const activeGroupConfig = VINTED_FILTER_GROUPS.find((group) => group.label === activeGroup);
+  const activeGroupConfig = FILTER_GROUPS.find((group) => group.label === activeGroup);
   const hasActiveFilters = activeFilters.length > 0;
   const isNestedPanel = activeGroupConfig?.type === "category" || activeGroupConfig?.type === "parts";
 
@@ -49,7 +57,14 @@ export function VintedFilterBar({ activeFilters, onFiltersChange }: VintedFilter
   const addFilter = (group: string, label: string, value: string) => {
     const id = buildFilterId(group, value);
     if (activeFilters.some((filter) => filter.id === id)) return;
-    onFiltersChange([...activeFilters, { id, group, label, value }]);
+
+    // One category at a time — picking a new category replaces the previous one
+    const withoutSameGroup =
+      group === "Category"
+        ? activeFilters.filter((filter) => filter.group !== "Category")
+        : activeFilters;
+
+    onFiltersChange([...withoutSameGroup, { id, group, label, value }]);
   };
 
   const removeFilter = (id: string) => {
@@ -103,6 +118,8 @@ export function VintedFilterBar({ activeFilters, onFiltersChange }: VintedFilter
     />
   );
 
+  const AllIcon = getAllMenuIcon();
+
   const renderCategoryPanel = () => {
     if (navPath.length === 0) {
       return (
@@ -110,51 +127,112 @@ export function VintedFilterBar({ activeFilters, onFiltersChange }: VintedFilter
           <button
             type="button"
             onClick={() => selectNestedFilter("Category", ["All categories"])}
-            className="flex w-full items-center justify-between border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9]"
+            className="flex w-full items-center gap-2.5 border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9]"
           >
-            <span>All</span>
+            <AllIcon className="h-[18px] w-[18px] shrink-0 text-[#5c6b74]" />
+            <span className="flex-1">All</span>
             {renderSelectionIndicator(isOptionSelected("Category", "all categories"))}
           </button>
-          <div className="grid grid-cols-2">
-            {TOP_CATEGORIES.map((category) => {
-              const Icon = getCategoryIcon(category);
-              return (
-                <button
-                  key={category}
-                  type="button"
-                  onClick={() => setNavPath([category])}
-                  className="flex w-full items-center gap-2 border-b border-[#edf1f4] px-3 py-3 text-left text-sm text-[#1d2a2f] transition hover:bg-primary/5 odd:border-r md:px-4 md:py-3.5"
-                >
-                  <Icon className="h-4 w-4 shrink-0 text-[#5c6b74] md:h-[18px] md:w-[18px]" />
-                  <span className="min-w-0 flex-1 leading-snug">{category}</span>
-                  <ChevronRight className="h-4 w-4 shrink-0 text-[#7a838b]" />
-                </button>
-              );
-            })}
-          </div>
+          {NAV_CATEGORIES.map((category) => {
+            const NavIcon = getNavIcon(category.label);
+            return (
+              <button
+                key={category.label}
+                type="button"
+                onClick={() => setNavPath([category.label])}
+                className="flex w-full items-center gap-2.5 border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
+              >
+                <NavIcon className="h-[18px] w-[18px] shrink-0 text-[#5c6b74]" />
+                <span className="flex-1">{category.label}</span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-[#7a838b]" />
+              </button>
+            );
+          })}
         </>
       );
     }
 
-    if (navPath.length === 1) {
-      const topCategory = navPath[0];
-      const subgroups = CATEGORY_TREE[topCategory] ?? {};
+    const navLabel = navPath[0];
+    const hasMultipleBackends = navHasMultipleBackends(navLabel);
+    const backendKey = hasMultipleBackends
+      ? navPath[1] ?? ""
+      : getNavBackendKeys(navLabel)[0] ?? "";
+
+    if (hasMultipleBackends && navPath.length === 1) {
+      return (
+        <>
+          <button
+            type="button"
+            onClick={() => selectNestedFilter("Category", [navLabel, "All"])}
+            className="flex w-full items-center gap-2.5 border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9]"
+          >
+            <AllIcon className="h-[18px] w-[18px] shrink-0 text-[#5c6b74]" />
+            <span className="flex-1">All</span>
+            {renderSelectionIndicator(
+              isOptionSelected("Category", `${navLabel}>all`.toLowerCase())
+            )}
+          </button>
+          {getNavBackendKeys(navLabel).map((key) => {
+            const BackendIcon = getCategoryIcon(key);
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setNavPath([navLabel, key])}
+                className="flex w-full items-center gap-2.5 border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
+              >
+                <BackendIcon className="h-[18px] w-[18px] shrink-0 text-[#5c6b74]" />
+                <span className="flex-1">{key}</span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-[#7a838b]" />
+              </button>
+            );
+          })}
+        </>
+      );
+    }
+
+    const atSubgroupLevel = hasMultipleBackends
+      ? navPath.length === 2
+      : navPath.length === 1;
+
+    if (atSubgroupLevel && backendKey) {
+      const subgroups = getSubgroupsForBackend(backendKey);
 
       return (
         <>
           <button
             type="button"
-            onClick={() => selectNestedFilter("Category", [topCategory, "All"])}
-            className="flex w-full items-center justify-between border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9]"
+            onClick={() =>
+              selectNestedFilter(
+                "Category",
+                hasMultipleBackends
+                  ? [navLabel, backendKey, "All"]
+                  : [navLabel, "All"]
+              )
+            }
+            className="flex w-full items-center gap-2.5 border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9]"
           >
-            <span>All</span>
+            <AllIcon className="h-[18px] w-[18px] shrink-0 text-[#5c6b74]" />
+            <span className="flex-1">All</span>
             {renderSelectionIndicator(
-              isOptionSelected("Category", `${topCategory}>all`.toLowerCase())
+              isOptionSelected(
+                "Category",
+                (hasMultipleBackends
+                  ? [navLabel, backendKey, "all"]
+                  : [navLabel, "all"]
+                )
+                  .join(">")
+                  .toLowerCase()
+              )
             )}
           </button>
-          {Object.keys(subgroups).map((subgroup) => {
-            const items = subgroups[subgroup] ?? [];
+          {subgroups.map((subgroup) => {
+            const items = getItemsForSubgroup(backendKey, subgroup);
             const hasItems = items.length > 0;
+            const nextPath = hasMultipleBackends
+              ? [navLabel, backendKey, subgroup]
+              : [navLabel, subgroup];
+            const SubgroupIcon = getSubgroupIcon(subgroup);
 
             return (
               <button
@@ -162,21 +240,22 @@ export function VintedFilterBar({ activeFilters, onFiltersChange }: VintedFilter
                 type="button"
                 onClick={() => {
                   if (hasItems) {
-                    setNavPath([topCategory, subgroup]);
+                    setNavPath(nextPath);
                     return;
                   }
-                  selectNestedFilter("Category", [topCategory, subgroup]);
+                  selectNestedFilter("Category", [...nextPath]);
                 }}
-                className="flex w-full items-center justify-between border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
+                className="flex w-full items-center gap-2.5 border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
               >
-                <span>{subgroup}</span>
+                <SubgroupIcon className="h-[18px] w-[18px] shrink-0 text-[#5c6b74]" />
+                <span className="flex-1">{subgroup}</span>
                 {hasItems ? (
-                  <ChevronRight className="h-4 w-4 text-[#7a838b]" />
+                  <ChevronRight className="h-4 w-4 shrink-0 text-[#7a838b]" />
                 ) : (
                   renderSelectionIndicator(
                     isOptionSelected(
                       "Category",
-                      `${topCategory}>${subgroup}`.toLowerCase()
+                      [...nextPath].join(">").toLowerCase()
                     )
                   )
                 )}
@@ -187,33 +266,37 @@ export function VintedFilterBar({ activeFilters, onFiltersChange }: VintedFilter
       );
     }
 
-    const [topCategory, subgroup] = navPath;
-    const items = CATEGORY_TREE[topCategory]?.[subgroup] ?? [];
+    const subgroup = hasMultipleBackends ? navPath[2] : navPath[1];
+    const items = getItemsForSubgroup(backendKey, subgroup);
+    const itemBasePath = hasMultipleBackends
+      ? [navLabel, backendKey, subgroup]
+      : [navLabel, subgroup];
 
     return (
       <>
         <button
           type="button"
-          onClick={() => selectNestedFilter("Category", [topCategory, subgroup, "All"])}
-          className="flex w-full items-center justify-between border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9]"
+          onClick={() => selectNestedFilter("Category", [...itemBasePath, "All"])}
+          className="flex w-full items-center gap-2.5 border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9]"
         >
-          <span>All</span>
+          <AllIcon className="h-[18px] w-[18px] shrink-0 text-[#5c6b74]" />
+          <span className="flex-1">All</span>
           {renderSelectionIndicator(
-            isOptionSelected("Category", `${topCategory}>${subgroup}>all`.toLowerCase())
+            isOptionSelected("Category", [...itemBasePath, "all"].join(">").toLowerCase())
           )}
         </button>
         {items.map((item) => (
           <button
             key={item}
             type="button"
-            onClick={() => selectNestedFilter("Category", [topCategory, subgroup, item])}
+            onClick={() => selectNestedFilter("Category", [...itemBasePath, item])}
             className="flex w-full items-center justify-between border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
           >
             <span>{item}</span>
             {renderSelectionIndicator(
               isOptionSelected(
                 "Category",
-                `${topCategory}>${subgroup}>${item}`.toLowerCase()
+                [...itemBasePath, item].join(">").toLowerCase()
               )
             )}
           </button>
@@ -306,8 +389,10 @@ export function VintedFilterBar({ activeFilters, onFiltersChange }: VintedFilter
   const getDropdownTitle = () => {
     if (activeGroup === "Category") {
       if (navPath.length === 0) return "Category";
-      if (navPath.length === 1) return navPath[0];
-      return navPath[1];
+      const navLabel = navPath[0];
+      if (navPath.length === 1) return navLabel;
+      if (navHasMultipleBackends(navLabel) && navPath.length === 2) return navPath[1];
+      return navPath[navPath.length - 1];
     }
 
     if (activeGroup === "Find Parts") {
@@ -322,13 +407,11 @@ export function VintedFilterBar({ activeFilters, onFiltersChange }: VintedFilter
     return activeGroup ?? "Filter";
   };
 
-  const isCategoryRoot =
-    activeGroupConfig?.type === "category" && navPath.length === 0 && isOpen;
 
   return (
     <div className="relative z-50 mb-5 border-b border-border bg-background pb-3">
       <div className="flex flex-wrap items-center gap-3">
-        {VINTED_FILTER_GROUPS.map((group) => {
+        {FILTER_GROUPS.map((group) => {
           const isActive = activeGroup === group.label;
           const isGroupOpen = isOpen && isActive;
           const selectionCount = getGroupSelectionCount(group.label);
@@ -361,11 +444,7 @@ export function VintedFilterBar({ activeFilters, onFiltersChange }: VintedFilter
               {isGroupOpen && (
                 <div
                   ref={popoverRef}
-                  className={`absolute left-0 top-full z-[100] mt-2 overflow-hidden rounded-[20px] border border-[#dfe7eb] bg-white shadow-[0_18px_36px_rgba(15,23,42,0.16)] ${
-                    isCategoryRoot && group.label === "Category"
-                      ? "w-[min(560px,calc(100vw-2rem))]"
-                      : "w-[320px]"
-                  }`}
+                  className="absolute left-0 top-full z-[100] mt-2 w-[320px] overflow-hidden rounded-[20px] border border-[#dfe7eb] bg-white shadow-[0_18px_36px_rgba(15,23,42,0.16)]"
                 >
                   <div className="flex items-center gap-2 border-b border-[#edf1f4] bg-[#f3f7f9] px-3 py-3">
                     {isNestedPanel && navPath.length > 0 && (
@@ -387,11 +466,7 @@ export function VintedFilterBar({ activeFilters, onFiltersChange }: VintedFilter
 
                   <div
                     ref={scrollRef}
-                    className={`overflow-y-auto bg-white ${
-                      isCategoryRoot && group.label === "Category"
-                        ? "max-h-none"
-                        : "max-h-[320px]"
-                    }`}
+                    className="max-h-[320px] overflow-y-auto bg-white"
                   >
                     {renderPanelContent()}
                   </div>

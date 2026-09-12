@@ -1,18 +1,25 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  ReactNode,
+} from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  clearStoredCart,
+  readStoredCart,
+  writeStoredCart,
+} from "@/lib/cartStorage";
+import { mergeCartItems } from "@/lib/mergeBuyerLists";
+import { saveProfileList } from "@/lib/profileBuyerLists";
+import { useProfileListSync } from "@/hooks/useProfileListSync";
+import type { CartItem } from "@/types/buyerLists";
 
-export interface CartItem {
-  id: string;
-  title: string;
-  price: number;
-  currency: string;
-  image_url: string | null;
-  seller_id: string;
-  vat_treatment: string | null;
-  vat_rate: number; // 0, 5, or 20
-  quantity: number;
-}
+export type { CartItem } from "@/types/buyerLists";
 
 interface CartContextType {
   items: CartItem[];
@@ -22,32 +29,41 @@ interface CartContextType {
   clearCart: () => void;
   itemCount: number;
   total: number;
+  hydrated: boolean;
 }
 
 const CartContext = createContext<CartContextType | null>(null);
 
-const CART_STORAGE_KEY = "ocean_hotspot_cart";
-
 export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    try {
-      const saved = localStorage.getItem(CART_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const { user } = useAuth();
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [hydrated, setHydrated] = useState(false);
 
-  // Persist cart to localStorage
   useEffect(() => {
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
-  }, [items]);
+    setItems(readStoredCart());
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    writeStoredCart(items);
+  }, [items, hydrated]);
+
+  const merge = useCallback(mergeCartItems, []);
+
+  useProfileListSync({
+    userId: user?.id,
+    column: "cart_data",
+    items,
+    setItems,
+    storageReady: hydrated,
+    merge,
+  });
 
   const addItem = (item: Omit<CartItem, "quantity">) => {
     setItems((current) => {
       const existingIndex = current.findIndex((i) => i.id === item.id);
       if (existingIndex > -1) {
-        // Item already in cart - increase quantity
         const updated = [...current];
         updated[existingIndex] = {
           ...updated[existingIndex],
@@ -55,7 +71,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
         };
         return updated;
       }
-      // New item
       return [...current, { ...item, quantity: 1 }];
     });
   };
@@ -71,13 +86,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
     setItems((current) =>
       current.map((item) =>
-        item.id === productId ? { ...item, quantity } : item
-      )
+        item.id === productId ? { ...item, quantity } : item,
+      ),
     );
   };
 
   const clearCart = () => {
     setItems([]);
+    clearStoredCart();
+    if (user?.id) {
+      void saveProfileList(user.id, "cart_data", []);
+    }
   };
 
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
@@ -87,7 +106,6 @@ export function CartProvider({ children }: { children: ReactNode }) {
     if (item.vat_treatment === "plus_vat") {
       return sum + item.price * (1 + rate) * item.quantity;
     }
-    // vat_included: price is already gross; vat_exempt: no VAT
     return sum + item.price * item.quantity;
   }, 0);
 
@@ -101,6 +119,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         clearCart,
         itemCount,
         total,
+        hydrated,
       }}
     >
       {children}

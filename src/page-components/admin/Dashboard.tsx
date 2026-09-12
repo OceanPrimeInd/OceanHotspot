@@ -36,6 +36,7 @@ interface DashboardStats {
   totalProducts: number;
   totalUsers: number;
   pendingProducts: number;
+  pendingDistributors: number;
   monthlyGrowth: number;
 }
 
@@ -64,6 +65,7 @@ const AdminDashboard = () => {
     totalProducts: 0,
     totalUsers: 0,
     pendingProducts: 0,
+    pendingDistributors: 0,
     monthlyGrowth: 0,
   });
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
@@ -75,12 +77,13 @@ const AdminDashboard = () => {
     products: stats.pendingProducts,
     disputes: stats.activeDisputes,
     returns: stats.pendingReturns,
+    distributors: stats.pendingDistributors,
   });
 
   useEffect(() => {
     if (loading) return;
     if (!isAdmin) {
-      router.push("/");
+      router.push("/admin/login");
       return;
     }
 
@@ -88,7 +91,7 @@ const AdminDashboard = () => {
   }, [isAdmin, loading, router]);
 
   const fetchAllData = async () => {
-    const [sellers, pendingSellers, orders, disputes, returns, clubs, products, users, pendingProducts] = await Promise.all([
+    const [sellers, pendingSellers, orders, disputes, returns, clubs, products, users, pendingProducts, pendingDistributors] = await Promise.all([
       supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_seller", true),
       supabase.from("profiles").select("*", { count: "exact", head: true }).eq("is_seller", true).eq("verification_status", "pending"),
       supabase.from("orders").select("*").order("created_at", { ascending: false }),
@@ -98,6 +101,7 @@ const AdminDashboard = () => {
       supabase.from("products").select("*", { count: "exact", head: true }).eq("is_published", true),
       supabase.from("profiles").select("*", { count: "exact", head: true }),
       supabase.from("products").select("*", { count: "exact", head: true }).eq("status", "pending_review"),
+      supabase.from("distributors").select("*", { count: "exact", head: true }).eq("status", "pending"),
     ]);
 
     const allOrders = orders.data || [];
@@ -157,6 +161,7 @@ const AdminDashboard = () => {
       totalProducts: products.count || 0,
       totalUsers: users.count || 0,
       pendingProducts: pendingProducts.count || 0,
+      pendingDistributors: pendingDistributors.count || 0,
       monthlyGrowth,
     });
     setLoadingStats(false);

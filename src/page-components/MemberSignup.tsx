@@ -21,6 +21,7 @@ const MemberSignup = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [fullName, setFullName] = useState("");
+  const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const { signIn, user, loading: authLoading } = useAuth();
   const router = useRouter();
@@ -33,11 +34,23 @@ const MemberSignup = () => {
     }
   }, [user, authLoading, router]);
 
+  const normalizeUKPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    if (!digits) return "";
+    if (digits.startsWith("44")) return `+${digits}`;
+    if (digits.startsWith("0")) return `+44${digits.slice(1)}`;
+    return `+44${digits}`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!fullName.trim()) {
       toast({ title: "Error", description: "Full name is required.", variant: "destructive" });
+      return;
+    }
+    if (!phone.trim()) {
+      toast({ title: "Error", description: "Mobile phone number is required.", variant: "destructive" });
       return;
     }
     if (password !== confirmPassword) {
@@ -46,6 +59,11 @@ const MemberSignup = () => {
     }
     if (password.length < 6) {
       toast({ title: "Error", description: "Password must be at least 6 characters.", variant: "destructive" });
+      return;
+    }
+    const normalizedPhone = normalizeUKPhone(phone);
+    if (!normalizedPhone || normalizedPhone.length < 11) {
+      toast({ title: "Error", description: "Please enter a valid UK mobile number.", variant: "destructive" });
       return;
     }
 
@@ -58,6 +76,7 @@ const MemberSignup = () => {
           email: email.trim(),
           password,
           fullName: fullName.trim(),
+          phone: normalizedPhone,
         },
       });
 
@@ -71,6 +90,18 @@ const MemberSignup = () => {
         return;
       }
 
+      // Send SMS OTP for phone verification after signup
+      const { error: otpError } = await supabase.auth.signInWithOtp({
+        phone: normalizedPhone,
+        options: {
+          shouldCreateUser: false,
+        },
+      });
+
+      if (otpError) {
+        console.warn("Phone OTP send failed:", otpError);
+      }
+
       // Sign in immediately (account is auto-confirmed)
       const { error: signInError } = await signIn(email.trim(), password);
 
@@ -79,17 +110,17 @@ const MemberSignup = () => {
           title: "Account Created",
           description: "Your account was created. Please sign in.",
         });
-        router.push("/login");
+        router.push("/verify-phone?phone=" + encodeURIComponent(normalizedPhone));
         setLoading(false);
         return;
       }
 
       toast({
         title: "Welcome to Ocean Hotspot!",
-        description: "Your account has been created. Check your email for a welcome message.",
+        description: "Your account has been created and a verification code was sent to your phone.",
       });
 
-      router.push("/");
+      router.push("/verify-phone?phone=" + encodeURIComponent(normalizedPhone));
     } catch (err) {
       toast({
         title: "Sign Up Failed",
@@ -136,6 +167,18 @@ const MemberSignup = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
+                  required
+                  className="h-11"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="phone">Mobile Phone</Label>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="+44 7700 900123"
                   required
                   className="h-11"
                 />

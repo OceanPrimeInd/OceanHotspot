@@ -34,18 +34,6 @@ const Cart = () => {
   const { toast } = useToast();
 
   const handleCheckout = () => {
-    if (!user) {
-      toast({
-        title: "Sign in required",
-        description: "Please sign in or create an account to complete your purchase.",
-      });
-      // Store return URL for after login
-      sessionStorage.setItem("checkout_return", "/cart-checkout");
-      router.push("/login");
-      return;
-    }
-
-    // Navigate to multi-item cart checkout
     router.push("/cart-checkout");
   };
 
@@ -217,32 +205,15 @@ const Cart = () => {
                 </p>
               </div>
 
-              {/* Auth Status */}
-              {!user && (
-                <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
-                  <div className="flex items-center gap-2">
-                    <LogIn className="h-4 w-4" />
-                    <span>Sign in required to checkout</span>
-                  </div>
-                </div>
-              )}
-
               <Button
                 variant="o42Primary"
                 className="w-full h-12"
                 onClick={handleCheckout}
               >
-                {user ? (
-                  <>
-                    Proceed to Checkout
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
-                ) : (
-                  <>
-                    <LogIn className="mr-2 h-4 w-4" />
-                    Sign in to Checkout
-                  </>
-                )}
+                <>
+                  Continue to Checkout
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
               </Button>
 
               {/* Trust Badges */}

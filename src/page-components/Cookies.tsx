@@ -2,6 +2,7 @@
 "use client";
 
 import { Layout } from "@/components/layout/Layout";
+import { ContactEmailLink } from "@/components/ContactEmailLink";
 
 const Cookies = () => {
   return (
@@ -41,7 +42,7 @@ const Cookies = () => {
 
               <h3 className="font-semibold text-headline mt-4 mb-2">Analytics Cookies</h3>
               <p>
-                We use basic, privacy-respecting analytics to understand how the Platform is used, which pages are visited most, where users encounter problems, and how we can improve the experience.
+                With your consent, we use first-party analytics on Ocean Hotspot (page views, site search terms, and checkout steps) stored in our own database — not sold to advertisers.
               </p>
               <p className="mt-3">
                 We do not use Google Analytics or any analytics service that tracks you across other websites. We do not build advertising profiles from your browsing behaviour.
@@ -76,7 +77,7 @@ const Cookies = () => {
               <h2 className="text-lg font-semibold text-headline mb-3">Contact</h2>
               <p>
                 Questions about cookies:{" "}
-                <a href="mailto:oceanhotspotservices@gmail.com" className="text-primary hover:underline">oceanhotspotservices@gmail.com</a>
+                <ContactEmailLink />
               </p>
             </section>
           </div>

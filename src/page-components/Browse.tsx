@@ -12,9 +12,10 @@ import { supabase } from "@/lib/supabase/client";
 import { Loader2, Package, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProductSearch } from "@/hooks/useProductSearch";
-import { VintedFilterBar } from "@/components/browse/VintedFilterBar";
-import { ActiveFilterChip } from "@/components/browse/vintedFilterConfig";
-import { applyVintedFilters } from "@/lib/vintedFilters";
+import { FilterBar } from "@/components/browse/FilterBar";
+import { ActiveFilterChip } from "@/components/browse/filterConfig";
+import { applyBrowseFilters } from "@/lib/browseFilters";
+import { trackSiteSearch } from "@/lib/analytics";
 import {
   Sheet,
   SheetContent,
@@ -124,6 +125,9 @@ const Browse = () => {
     setSelectedDomains(domain ? [domain] : []);
     setSelectedEntities(entity ? [entity] : []);
     setSearchQuery(q);
+    if (q.trim().length >= 2) {
+      trackSiteSearch(q);
+    }
   }, [searchParams.toString()]);
 
   const {
@@ -218,29 +222,30 @@ const Browse = () => {
           return false;
         }
 
-        // Search filter (fallback)
-        if (searchQuery.trim() && searchError) {
-          const query = searchQuery.toLowerCase();
-          return (
-            product.title.toLowerCase().includes(query) ||
-            product.description?.toLowerCase().includes(query) ||
-            product.entity_type?.toLowerCase().includes(query) ||
-            product.domain_category?.toLowerCase().includes(query)
-          );
-        }
-
         return true;
       });
     },
-    [selectedDomains, selectedEntities, priceRange, searchQuery, searchError]
+    [selectedDomains, selectedEntities, priceRange]
   );
 
-  const displayProducts = (searchQuery.trim() && !searchError
-    ? applyFilters(searchResults as unknown as Product[])
-    : applyFilters(products)
-  );
+  const matchesSearchQuery = (product: Product, query: string) => {
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+    return (
+      product.title.toLowerCase().includes(q) ||
+      product.description?.toLowerCase().includes(q) ||
+      product.domain_category?.toLowerCase().includes(q) ||
+      product.entity_type?.toLowerCase().includes(q)
+    );
+  };
 
-  const filteredDisplayProducts = applyVintedFilters(displayProducts, activeFilters);
+  const searchFilteredProducts = searchQuery.trim()
+    ? products.filter((product) => matchesSearchQuery(product, searchQuery))
+    : products;
+
+  const displayProducts = applyFilters(searchFilteredProducts);
+
+  const filteredDisplayProducts = applyBrowseFilters(displayProducts, activeFilters);
 
   const isLoading = loading || searchLoading;
 
@@ -334,7 +339,7 @@ const Browse = () => {
               )}
             </div>
 
-            <VintedFilterBar
+            <FilterBar
               activeFilters={activeFilters}
               onFiltersChange={setActiveFilters}
             />

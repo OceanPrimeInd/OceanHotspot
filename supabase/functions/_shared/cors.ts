@@ -1,13 +1,22 @@
-const ALLOWED_ORIGINS = [
+const DEFAULT_ORIGINS = [
   "https://www.oceanhotspot.com",
   "https://oceanhotspot.com",
   "http://localhost:5173",
   "http://localhost:3000",
 ];
 
+function allowedOrigins(): string[] {
+  const extra = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  return [...DEFAULT_ORIGINS, ...extra];
+}
+
 export function getCorsHeaders(req?: Request): Record<string, string> {
+  const origins = allowedOrigins();
   const origin = req?.headers.get("origin") || "";
-  const allowedOrigin = ALLOWED_ORIGINS.includes(origin) ? origin : ALLOWED_ORIGINS[0];
+  const allowedOrigin = origins.includes(origin) ? origin : origins[0];
 
   return {
     "Access-Control-Allow-Origin": allowedOrigin,

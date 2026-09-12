@@ -1,18 +1,25 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  ReactNode,
+} from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import {
+  clearStoredWishlist,
+  readStoredWishlist,
+  writeStoredWishlist,
+} from "@/lib/wishlistStorage";
+import { mergeWishlistItems } from "@/lib/mergeBuyerLists";
+import { saveProfileList } from "@/lib/profileBuyerLists";
+import { useProfileListSync } from "@/hooks/useProfileListSync";
+import type { WishlistItem } from "@/types/buyerLists";
 
-export interface WishlistItem {
-  id: string;
-  title: string;
-  price: number;
-  currency: string;
-  image_url: string | null;
-  description?: string | null;
-  entity_type?: string | null;
-  domain_category?: string | null;
-  addedAt: number; // timestamp
-}
+export type { WishlistItem } from "@/types/buyerLists";
 
 interface WishlistContextType {
   items: WishlistItem[];
@@ -22,30 +29,39 @@ interface WishlistContextType {
   toggleItem: (item: Omit<WishlistItem, "addedAt">) => void;
   clearWishlist: () => void;
   itemCount: number;
+  hydrated: boolean;
 }
 
 const WishlistContext = createContext<WishlistContextType | null>(null);
 
-const WISHLIST_STORAGE_KEY = "ocean_hotspot_wishlist";
-
 export function WishlistProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<WishlistItem[]>(() => {
-    try {
-      const saved = localStorage.getItem(WISHLIST_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const { user } = useAuth();
+  const [items, setItems] = useState<WishlistItem[]>([]);
+  const [hydrated, setHydrated] = useState(false);
 
-  // Persist wishlist to localStorage
   useEffect(() => {
-    localStorage.setItem(WISHLIST_STORAGE_KEY, JSON.stringify(items));
-  }, [items]);
+    setItems(readStoredWishlist());
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    writeStoredWishlist(items);
+  }, [items, hydrated]);
+
+  const merge = useCallback(mergeWishlistItems, []);
+
+  useProfileListSync({
+    userId: user?.id,
+    column: "wishlist_data",
+    items,
+    setItems,
+    storageReady: hydrated,
+    merge,
+  });
 
   const addItem = (item: Omit<WishlistItem, "addedAt">) => {
     setItems((current) => {
-      // Check if already exists
       if (current.some((i) => i.id === item.id)) {
         return current;
       }
@@ -62,15 +78,20 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
   };
 
   const toggleItem = (item: Omit<WishlistItem, "addedAt">) => {
-    if (isInWishlist(item.id)) {
-      removeItem(item.id);
-    } else {
-      addItem(item);
-    }
+    setItems((current) => {
+      if (current.some((i) => i.id === item.id)) {
+        return current.filter((i) => i.id !== item.id);
+      }
+      return [...current, { ...item, addedAt: Date.now() }];
+    });
   };
 
   const clearWishlist = () => {
     setItems([]);
+    clearStoredWishlist();
+    if (user?.id) {
+      void saveProfileList(user.id, "wishlist_data", []);
+    }
   };
 
   const itemCount = items.length;
@@ -85,6 +106,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
         toggleItem,
         clearWishlist,
         itemCount,
+        hydrated,
       }}
     >
       {children}

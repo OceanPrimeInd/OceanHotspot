@@ -2,6 +2,7 @@
 "use client";
 
 import { Layout } from "@/components/layout/Layout";
+import { ContactEmailLink } from "@/components/ContactEmailLink";
 import Link from "next/link";
 
 const BuyerProtection = () => {
@@ -99,7 +100,7 @@ const BuyerProtection = () => {
               <h2 className="text-lg font-semibold text-headline mb-3">Contact</h2>
               <p>
                 If you need help:{" "}
-                <a href="mailto:oceanhotspotservices@gmail.com" className="text-primary hover:underline">oceanhotspotservices@gmail.com</a>
+                <ContactEmailLink />
               </p>
             </section>
           </div>

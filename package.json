@@ -5,7 +5,10 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test:discovery": "node scripts/test-ai-discovery.mjs",
+    "test:discovery:local": "node scripts/test-ai-discovery.mjs http://127.0.0.1:3000/api/discovery",
+    "test:legal": "node scripts/test-legal-pages.mjs http://127.0.0.1:3000"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

@@ -16,6 +16,10 @@ import { useToast } from "@/hooks/use-toast";
 import { formatPrice } from "@/lib/utils";
 import { getPlaceholderSvg } from "@/lib/productPlaceholders";
 import { Loader2, ShieldCheck, CreditCard, Package } from "lucide-react";
+import { trackAnalyticsEvent } from "@/lib/analytics";
+
+const paymentTier = "card" as const;
+
 import {
   Breadcrumb,
   BreadcrumbList,
@@ -24,8 +28,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-
-// ... rest of your code
 
 const CartCheckout = () => {
   const router = useRouter();
@@ -40,6 +42,7 @@ const CartCheckout = () => {
   const [buyerEmail, setBuyerEmail] = useState(profile?.email || user?.email || "");
   const [buyerPhone, setBuyerPhone] = useState(profile?.phone || "");
   const [shippingAddress, setShippingAddress] = useState("");
+  const [createAccount, setCreateAccount] = useState(true);
 
   // Track if checkout is in progress to prevent redirect
   const [checkoutInitiated, setCheckoutInitiated] = useState(false);
@@ -50,6 +53,26 @@ const CartCheckout = () => {
       router.push("/cart");
     }
   }, [items.length, router, checkoutInitiated]);
+
+  useEffect(() => {
+    if (items.length === 0) return;
+    trackAnalyticsEvent("checkout_view", {
+      userId: user?.id,
+      metadata: { item_count: items.length, cart_total: total },
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    const onLeave = () => {
+      if (checkoutInitiated || items.length === 0) return;
+      trackAnalyticsEvent("checkout_abandon", {
+        userId: user?.id,
+        metadata: { item_count: items.length, stage: "cart_checkout_form" },
+      });
+    };
+    window.addEventListener("pagehide", onLeave);
+    return () => window.removeEventListener("pagehide", onLeave);
+  }, [checkoutInitiated, items.length, user?.id]);
 
   useEffect(() => {
     if (profile) {
@@ -68,11 +91,36 @@ const CartCheckout = () => {
     return acc;
   }, {} as Record<string, typeof items>);
 
+  const normalizeUKPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    if (!digits) return "";
+    if (digits.startsWith("44")) return `+${digits}`;
+    if (digits.startsWith("0")) return `+44${digits.slice(1)}`;
+    return `+44${digits}`;
+  };
+
+  const isValidUKPostcode = (value: string) => {
+    const trimmed = value.trim();
+    return /^[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}$/i.test(trimmed);
+  };
+
+  const getShippingPostcode = (value: string) => {
+    const match = value.match(/[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}/i);
+    return match ? match[0].trim() : "";
+  };
+
+
   const handleCheckout = async () => {
     if (items.length === 0) return;
 
-    if (!buyerName.trim() || !buyerEmail.trim()) {
-      toast({ title: "Please fill in required fields", variant: "destructive" });
+    if (!buyerName.trim() || !buyerEmail.trim() || !buyerPhone.trim() || !shippingAddress.trim()) {
+      toast({ title: "All required fields must be filled", variant: "destructive" });
+      return;
+    }
+
+    const postcode = getShippingPostcode(shippingAddress);
+    if (!postcode || !isValidUKPostcode(postcode)) {
+      toast({ title: "Invalid UK postcode", description: "Please include a valid UK postcode in the shipping address, such as SW1A 1AA or M12 6AE.", variant: "destructive" });
       return;
     }
 
@@ -81,11 +129,20 @@ const CartCheckout = () => {
       toast({ title: "Please enter a valid email", variant: "destructive" });
       return;
     }
+    const normalizedPhone = normalizeUKPhone(buyerPhone);
+    if (!normalizedPhone || normalizedPhone.length < 11) {
+      toast({ title: "Please enter a valid UK phone number", variant: "destructive" });
+      return;
+    }
 
     setProcessing(true);
 
     try {
       setCheckoutInitiated(true);
+      trackAnalyticsEvent("checkout_start", {
+        userId: user?.id,
+        metadata: { item_count: items.length, cart_total: total },
+      });
 
       const { data, error } = await supabase.functions.invoke("create-cart-checkout", {
         body: {
@@ -96,8 +153,9 @@ const CartCheckout = () => {
           buyerId: user?.id || null,
           buyerEmail: buyerEmail.trim(),
           buyerName: buyerName.trim(),
-          buyerPhone: buyerPhone.trim() || null,
+          buyerPhone: normalizedPhone,
           shippingAddress: shippingAddress.trim() || null,
+          createAccount,
           successUrl: `${window.location.origin}/order-confirmation`,
           cancelUrl: window.location.href,
         },
@@ -109,9 +167,8 @@ const CartCheckout = () => {
         throw new Error(error?.message || "Failed to create checkout session");
       }
 
-      clearCart();
-
-      // FIX: Use data.url here as well
+      // Do not clear the cart before redirecting to Stripe.
+      // The cart should stay intact until the order is confirmed on success.
       window.location.href = data.url;
       
     } catch (error) {
@@ -260,7 +317,7 @@ const CartCheckout = () => {
                 </div>
               </div>
 
-              {/* Trust Badges */}
+              {/* Payment Method Badge */}
               <div className="mt-6 pt-6 border-t border-border">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
                   <ShieldCheck className="h-4 w-4 text-green-500" />
@@ -302,27 +359,29 @@ const CartCheckout = () => {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone (Optional)</Label>
+                  <Label htmlFor="phone">Phone Number *</Label>
                   <Input
                     id="phone"
                     type="tel"
                     value={buyerPhone}
                     onChange={(e) => setBuyerPhone(e.target.value)}
-                    placeholder="+44 123 456 7890"
+                    placeholder="+44 7700 900123"
+                    required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="address">Shipping Address</Label>
+                  <Label htmlFor="address">Shipping Address *</Label>
                   <Textarea
                     id="address"
                     value={shippingAddress}
                     onChange={(e) => setShippingAddress(e.target.value)}
-                    placeholder="Enter your shipping address..."
-                    rows={3}
+                    placeholder="Flat 3, 22 High Street, Bristol, BS1 4AA"
+                    rows={4}
+                    required
                   />
                   <p className="text-xs text-muted-foreground">
-                    Seller will contact you to confirm shipping details
+                    Please include your full delivery address and a valid UK postcode.
                   </p>
                 </div>
 
@@ -333,15 +392,9 @@ const CartCheckout = () => {
                   className="w-full h-12"
                 >
                   {processing ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Processing...
-                    </>
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Processing...</>
                   ) : (
-                    <>
-                      <CreditCard className="mr-2 h-4 w-4" />
-                      Pay {formatPrice(items[0]?.currency, total)}
-                    </>
+                    <><CreditCard className="mr-2 h-4 w-4" />Pay {formatPrice(items[0]?.currency, total)}</>
                   )}
                 </Button>
               </div>

@@ -64,21 +64,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     console.error("Sitemap: error fetching categories:", e);
   }
 
-  // Fetch all public seller showrooms
+  // Fetch published vendor showrooms (slug matches /showroom/[slug] route)
   let showroomPages: MetadataRoute.Sitemap = [];
   try {
-    const { data: sellers } = await supabase
-      .from("profiles")
-      .select("trading_name, updated_at")
-      .eq("is_seller", true)
-      .not("trading_name", "is", null)
+    const { data: showrooms } = await supabase
+      .from("showrooms")
+      .select("slug, updated_at")
+      .eq("is_published", true)
+      .not("slug", "is", null)
       .limit(1000);
 
-    if (sellers) {
-      showroomPages = sellers
-        .filter((s) => s.trading_name)
+    if (showrooms) {
+      showroomPages = showrooms
+        .filter((s) => s.slug)
         .map((s) => ({
-          url: `${baseUrl}/showroom/${encodeURIComponent(s.trading_name.toLowerCase().replace(/\s+/g, "-"))}`,
+          url: `${baseUrl}/showroom/${encodeURIComponent(s.slug)}`,
           lastModified: s.updated_at ? new Date(s.updated_at) : new Date(),
           changeFrequency: "weekly" as const,
           priority: 0.6,

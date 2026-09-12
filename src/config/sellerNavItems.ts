@@ -8,6 +8,7 @@ import {
   UserCircle,
   Upload,
   RotateCcw,
+  Truck,
 } from "lucide-react";
 
 export const getSellerNavItems = (badges?: {
@@ -54,6 +55,11 @@ export const getSellerNavItems = (badges?: {
     href: "/seller/messages",
     icon: MessageSquare,
     badge: badges?.messages,
+  },
+  {
+    title: "Distributors",
+    href: "/seller/distributors",
+    icon: Truck,
   },
   {
     title: "Showroom",

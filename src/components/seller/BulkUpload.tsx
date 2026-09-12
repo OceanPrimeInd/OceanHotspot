@@ -27,6 +27,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+  isValidDomainCategory,
+  normalizeDomainCategory,
+  VALID_DOMAIN_CATEGORY_SLUGS,
+} from "@/config/productCategories";
 
 interface ParsedProduct {
   title: string;
@@ -39,6 +44,7 @@ interface ParsedProduct {
   availability_status: string;
   condition: string;
   brand: string;
+  image_url: string;
   is_valid: boolean;
   errors: string[];
 }
@@ -87,14 +93,21 @@ export function BulkUpload() {
     setUploadResult(null);
     setParsedProducts([]);
 
-    // Parse CSV
-    if (selectedFile.name.endsWith(".csv")) {
-      setParsing(true);
-      const text = await selectedFile.text();
-      const products = parseCSV(text);
-      setParsedProducts(products);
-      setParsing(false);
+    if (!selectedFile.name.endsWith(".csv")) {
+      toast({
+        title: "CSV required",
+        description: "Please upload a .csv file. Download our template and save as CSV from Excel if needed.",
+        variant: "destructive",
+      });
+      setFile(null);
+      return;
     }
+
+    setParsing(true);
+    const text = await selectedFile.text();
+    const products = parseCSV(text);
+    setParsedProducts(products);
+    setParsing(false);
   };
 
   const parseCSV = (text: string): ParsedProduct[] => {
@@ -149,17 +162,24 @@ export function BulkUpload() {
     const price = parseFloat(priceStr) || 0;
     const currency = getValue("currency") || "GBP";
     const entity_type = getValue("entity_type");
-    const domain_category = getValue("domain_category");
+    const rawCategory = getValue("domain_category");
+    const domain_category = normalizeDomainCategory(rawCategory) || rawCategory;
     const vat_treatment = getValue("vat_treatment") || "inclusive";
     const availability_status = getValue("availability_status") || "in_stock";
     const condition = getValue("condition") || "new";
     const brand = getValue("brand");
+    const image_url = getValue("image_url");
 
     // Validation
     if (!title) errors.push(`Row ${rowNum}: Title is required`);
     if (price <= 0) errors.push(`Row ${rowNum}: Invalid price`);
     if (!["GBP", "USD", "EUR"].includes(currency.toUpperCase())) {
       errors.push(`Row ${rowNum}: Currency must be GBP, USD, or EUR`);
+    }
+    if (domain_category && !isValidDomainCategory(domain_category)) {
+      errors.push(
+        `Row ${rowNum}: domain_category must be one of: ${VALID_DOMAIN_CATEGORY_SLUGS.join(", ")}`
+      );
     }
 
     return {
@@ -173,6 +193,7 @@ export function BulkUpload() {
       availability_status,
       condition,
       brand,
+      image_url,
       is_valid: errors.length === 0,
       errors,
     };
@@ -213,6 +234,7 @@ export function BulkUpload() {
         availability_status: product.availability_status,
         condition: product.condition,
         brand: product.brand || null,
+        image_url: product.image_url || null,
         status: "draft",
       });
 
@@ -251,18 +273,20 @@ export function BulkUpload() {
       "availability_status",
       "condition",
       "brand",
+      "image_url",
     ];
     const exampleRow = [
       "Marine GPS Navigator",
       "High-precision GPS for commercial vessels",
       "2500",
       "GBP",
-      "Equipment",
-      "Navigation",
+      "physical_product",
+      "electronics",
       "plus_vat",
       "in_stock",
       "new",
       "Garmin",
+      "https://example.com/product.jpg",
     ];
 
     const csv = [headers.join(","), exampleRow.join(",")].join("\n");

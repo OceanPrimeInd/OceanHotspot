@@ -2,6 +2,7 @@
 "use client";
 
 import { Layout } from "@/components/layout/Layout";
+import { ContactEmailLink } from "@/components/ContactEmailLink";
 import Link from "next/link";
 
 const HowItWorks = () => {
@@ -98,10 +99,10 @@ const HowItWorks = () => {
               <h2 className="text-lg font-semibold text-headline mb-3">Questions</h2>
               <p>
                 Buyers:{" "}
-                <a href="mailto:oceanhotspotservices@gmail.com" className="text-primary hover:underline">oceanhotspotservices@gmail.com</a>
+                <ContactEmailLink />
                 <br />
                 Vendors:{" "}
-                <a href="mailto:oceanhotspotservices@gmail.com" className="text-primary hover:underline">oceanhotspotservices@gmail.com</a>
+                <ContactEmailLink />
               </p>
             </section>
           </div>

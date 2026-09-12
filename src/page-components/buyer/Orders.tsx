@@ -32,6 +32,7 @@ interface Order {
   shipped_at: string | null;
   delivered_at: string | null;
   buyer_confirmed_at: string | null;
+  tracking_number: string | null;
 }
 
 const STATUS_CONFIG: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
@@ -179,13 +180,18 @@ const BuyerOrders = () => {
                   </div>
 
                   {/* Timeline */}
-                  {(order.shipped_at || order.delivered_at) && (
+                  {(order.shipped_at || order.delivered_at || order.tracking_number) && (
                     <div className="mt-4 pt-4 border-t border-border">
-                      <div className="flex gap-6 text-xs text-muted-foreground">
+                      <div className="flex flex-wrap gap-6 text-xs text-muted-foreground">
                         {order.shipped_at && (
                           <span className="flex items-center gap-1">
                             <Truck className="h-3 w-3" />
                             Shipped: {new Date(order.shipped_at).toLocaleDateString("en-GB")}
+                          </span>
+                        )}
+                        {order.tracking_number && (
+                          <span className="flex items-center gap-1 font-medium text-foreground">
+                            Tracking: {order.tracking_number}
                           </span>
                         )}
                         {order.delivered_at && (

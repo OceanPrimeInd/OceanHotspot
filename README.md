@@ -31,6 +31,6 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 
 ## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Production deploys from the main branch. See **[docs/STAGING_AND_ROLLBACK.md](docs/STAGING_AND_ROLLBACK.md)** for staging previews, Supabase backups (`scripts/backup-supabase.sh`), and rolling back a bad deploy before an event.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Public contact email (site + transactional footers): `oceanhotspotservices@gmail.com` — configured in `src/config/contact.ts` and Supabase secret `CONTACT_EMAIL` / `GMAIL_USER`.
