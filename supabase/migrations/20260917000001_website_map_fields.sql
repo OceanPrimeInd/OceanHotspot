@@ -45,12 +45,7 @@ CREATE POLICY store_interest_insert_anon ON public.store_interest
 DROP POLICY IF EXISTS store_interest_select_admin ON public.store_interest;
 CREATE POLICY store_interest_select_admin ON public.store_interest
   FOR SELECT TO authenticated
-  USING (
-    EXISTS (
-      SELECT 1 FROM public.profiles p
-      WHERE p.id = auth.uid() AND p.is_admin = true
-    )
-  );
+  USING (public.has_role(auth.uid(), 'admin'));
 
 -- Extend search_products to match part_number (replace function if it exists)
 CREATE OR REPLACE FUNCTION public.search_products(search_query text, result_limit int DEFAULT 20)

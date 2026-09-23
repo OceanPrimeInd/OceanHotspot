@@ -139,25 +139,13 @@ export function TopBar() {
 
     setLoadingSuggestions(true);
     const escaped = query.replace(/[%_,]/g, " ");
-    let { data, error } = await supabase
+    // Title + description only until DB has part_number and types are regenerated
+    const { data, error } = await supabase
       .from("products")
-      .select("id, title, price, currency, part_number")
+      .select("id, title, price, currency")
       .eq("is_published", true)
-      .or(
-        `title.ilike.%${escaped}%,part_number.ilike.%${escaped}%,description.ilike.%${escaped}%`,
-      )
+      .or(`title.ilike.%${escaped}%,description.ilike.%${escaped}%`)
       .limit(5);
-
-    if (error) {
-      const fallback = await supabase
-        .from("products")
-        .select("id, title, price, currency")
-        .eq("is_published", true)
-        .ilike("title", `%${escaped}%`)
-        .limit(5);
-      data = fallback.data;
-      error = fallback.error;
-    }
 
     if (!error && data) setSuggestions(data);
     setLoadingSuggestions(false);
