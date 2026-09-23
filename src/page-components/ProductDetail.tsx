@@ -17,6 +17,9 @@ import { useRecentlyViewed } from "@/contexts/RecentlyViewedContext";
 import { useToast } from "@/hooks/use-toast";
 import { formatPrice } from "@/lib/utils";
 import { getProductCategoryLabel } from "@/config/productCategories";
+import { isCustomerCheckoutEnabled } from "@/config/launch";
+import { ContactToOrderCTA } from "@/components/launch/ContactToOrderCTA";
+import { OpeningSoonWatermark } from "@/components/launch/OpeningSoonWatermark";
 import { ProductReviews } from "@/components/ProductReviews";
 import { ProductImageGallery } from "@/components/product/ProductImageGallery";
 import {
@@ -61,6 +64,14 @@ interface Product {
   vat_treatment: string | null;
   vat_rate: number | null;
   availability_status: string | null;
+  lead_time_text: string | null;
+  shipping_cost_rule: string | null;
+  ships_from: string | null;
+  part_number: string | null;
+  technical_detail: string | null;
+  fits: string | null;
+  replaces: string | null;
+  supplier_note: string | null;
   condition: string | null;
   brand: string | null;
   pricing_type: string | null;
@@ -94,6 +105,7 @@ const ProductDetail = () => {
   } | null>(null);
 
   const isOwner = user && product && user.id === product.seller_id;
+  const checkoutLive = isCustomerCheckoutEnabled();
   const isInCart = product && items.some((item) => item.id === product.id);
   const inWishlist = product ? isInWishlist(product.id) : false;
 
@@ -354,13 +366,16 @@ const ProductDetail = () => {
         <div className="grid lg:grid-cols-2 gap-12 animate-slide-up">
           {/* Product Image */}
           {/* Product Image Gallery */}
-          <ProductImageGallery
-            images={[
-              ...(product.image_url ? [product.image_url] : []),
-              ...(product.images || []),
-            ].filter((img, idx, arr) => arr.indexOf(img) === idx)}
-            title={product.title}
-          />
+          <div className="relative">
+            <ProductImageGallery
+              images={[
+                ...(product.image_url ? [product.image_url] : []),
+                ...(product.images || []),
+              ].filter((img, idx, arr) => arr.indexOf(img) === idx)}
+              title={product.title}
+            />
+            {!checkoutLive && !isOwner && <OpeningSoonWatermark />}
+          </div>
 
           {/* Product Details */}
           <div>
@@ -381,6 +396,11 @@ const ProductDetail = () => {
             <h1 className="text-3xl font-bold text-headline mb-2">
               {product.title}
             </h1>
+            {product.part_number && (
+              <p className="text-sm font-medium text-muted-foreground mb-2">
+                Part number: {product.part_number}
+              </p>
+            )}
 
             {/* Product meta */}
             <div className="flex flex-wrap gap-2 mb-4 text-sm text-muted-foreground">
@@ -422,10 +442,57 @@ const ProductDetail = () => {
               </>
             )}
 
-            <div className="prose prose-slate max-w-none mb-8">
+            {(product.availability_status || product.lead_time_text || product.ships_from) && (
+              <div className="mb-6 rounded-lg border border-border bg-muted/30 p-4 text-sm space-y-1">
+                {product.availability_status && (
+                  <p>
+                    <span className="font-semibold text-foreground">Stock: </span>
+                    {product.availability_status.replace(/_/g, " ")}
+                  </p>
+                )}
+                {product.lead_time_text && (
+                  <p>
+                    <span className="font-semibold text-foreground">Delivery: </span>
+                    {product.lead_time_text}
+                  </p>
+                )}
+                {product.ships_from && (
+                  <p>
+                    <span className="font-semibold text-foreground">Ships from: </span>
+                    {product.ships_from}
+                  </p>
+                )}
+              </div>
+            )}
+
+            <div className="prose prose-slate max-w-none mb-8 space-y-4">
               <p className="text-muted-foreground whitespace-pre-wrap">
                 {product.description || "No description provided."}
               </p>
+              {product.technical_detail && (
+                <div>
+                  <h2 className="text-lg font-semibold text-headline">Technical detail</h2>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{product.technical_detail}</p>
+                </div>
+              )}
+              {product.fits && (
+                <p className="text-sm">
+                  <span className="font-semibold text-foreground">Fits: </span>
+                  {product.fits}
+                </p>
+              )}
+              {product.replaces && (
+                <p className="text-sm">
+                  <span className="font-semibold text-foreground">Replaces: </span>
+                  {product.replaces}
+                </p>
+              )}
+              {product.supplier_note && (
+                <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-1">Supplier&apos;s note</p>
+                  <p className="text-sm text-muted-foreground whitespace-pre-wrap">{product.supplier_note}</p>
+                </div>
+              )}
             </div>
 
             {/* Actions */}
@@ -454,6 +521,12 @@ const ProductDetail = () => {
               </div>
             ) : (
               <div className="space-y-4">
+                {!checkoutLive && (
+                  <ContactToOrderCTA productTitle={product.title} />
+                )}
+
+                {checkoutLive && (
+                <>
                 {/* Add to Cart & Wishlist Buttons — hidden for POA/Contact Us/Coming Soon */}
                 <div className="flex gap-3">
                   {(!product.pricing_type || product.pricing_type === "fixed_price") && (
@@ -518,7 +591,34 @@ const ProductDetail = () => {
                 {(!product.pricing_type || product.pricing_type === "fixed_price") && (
                   <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
                     <ShieldCheck className="h-4 w-4 text-green-500" />
-                    <span>Secure payment • Funds protected until delivery confirmed</span>
+                    <span>Secure card payment via Stripe</span>
+                  </div>
+                )}
+                </>
+                )}
+
+                {!checkoutLive && (
+                  <div className="flex justify-end">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="lg"
+                          className={`h-14 w-14 ${
+                            inWishlist
+                              ? "text-red-500 hover:text-red-600 border-red-200 hover:border-red-300"
+                              : ""
+                          }`}
+                          onClick={handleToggleWishlist}
+                          aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+                        >
+                          <Heart className={`h-6 w-6 ${inWishlist ? "fill-current" : ""}`} />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{inWishlist ? "Remove from wishlist" : "Save for later"}</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </div>
                 )}
 
@@ -552,7 +652,7 @@ const ProductDetail = () => {
                     className="flex items-center gap-2 text-sm text-primary hover:underline"
                   >
                     <MessageSquare className="h-4 w-4" />
-                    {showEnquiryForm ? "Hide form" : "Have a question? Contact the seller"}
+                    {showEnquiryForm ? "Hide form" : "Ask a question — we will come back to you"}
                   </button>
                 </div>
 

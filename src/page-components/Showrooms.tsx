@@ -72,8 +72,11 @@ const Showrooms = () => {
         <div className="mx-auto max-w-2xl">
           <Store className="h-10 w-10 mx-auto mb-4 opacity-80" />
           <h1 className="text-3xl md:text-4xl font-bold mb-3">Vendor Showrooms</h1>
-          <p className="text-white/70 text-base mb-8">
-            Discover specialist marine suppliers — browse their full product range, story, and contact details.
+          <p className="text-white/70 text-base mb-4">
+            Browse supplier showrooms on Ocean Hotspot — all on this site, no external shop links.
+          </p>
+          <p className="text-white/90 text-sm mb-8">
+            To buy, contact Ocean Hotspot and we will arrange payment and dispatch with the supplier.
           </p>
           <div className="relative max-w-md mx-auto">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />

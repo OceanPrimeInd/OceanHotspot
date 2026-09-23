@@ -52,6 +52,9 @@ interface Order {
   buyer_email: string;
   status: string;
   total_amount: number;
+  subtotal?: number | null;
+  vat_amount?: number | null;
+  platform_fee?: number | null;
   currency: string;
   created_at: string;
   shipped_at: string | null;
@@ -229,6 +232,8 @@ const SellerOrders = () => {
                   <TableHead className="font-semibold text-foreground">Order #</TableHead>
                   <TableHead className="font-semibold text-foreground">Customer</TableHead>
                   <TableHead className="font-semibold text-foreground">Total</TableHead>
+                  <TableHead className="font-semibold text-foreground">Ex VAT</TableHead>
+                  <TableHead className="font-semibold text-foreground">Commission</TableHead>
                   <TableHead className="font-semibold text-foreground">Status</TableHead>
                   <TableHead className="font-semibold text-foreground">Tracking</TableHead>
                   <TableHead className="font-semibold text-foreground">Date</TableHead>
@@ -250,6 +255,17 @@ const SellerOrders = () => {
                       </TableCell>
                       <TableCell className="font-medium text-foreground">
                         {formatPrice(order.currency, order.total_amount)}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {formatPrice(
+                          order.currency,
+                          order.subtotal ?? order.total_amount - (order.vat_amount ?? 0),
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {order.platform_fee != null
+                          ? formatPrice(order.currency, order.platform_fee)
+                          : "—"}
                       </TableCell>
                       <TableCell>
                         <Badge variant={statusConfig.variant}>{statusConfig.label}</Badge>

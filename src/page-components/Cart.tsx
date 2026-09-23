@@ -25,7 +25,10 @@ import {
   Package,
   ShieldCheck,
   LogIn,
+  MessageSquare,
 } from "lucide-react";
+import { isCustomerCheckoutEnabled } from "@/config/launch";
+import { CONTACT_EMAIL } from "@/config/contact";
 
 const Cart = () => {
   const { items, removeItem, updateQuantity, clearCart, total } = useCart();
@@ -36,6 +39,26 @@ const Cart = () => {
   const handleCheckout = () => {
     router.push("/cart-checkout");
   };
+
+  if (!isCustomerCheckoutEnabled()) {
+    return (
+      <Layout>
+        <div className="container max-w-lg py-16 text-center">
+          <MessageSquare className="mx-auto h-12 w-12 text-primary mb-4" />
+          <h1 className="text-2xl font-bold text-headline mb-2">Ordering is opening soon</h1>
+          <p className="text-muted-foreground mb-6">
+            Browse the catalogue and email us what you need — we will confirm price and bank-transfer options.
+          </p>
+          <Button variant="o42Primary" asChild>
+            <a href={`mailto:${CONTACT_EMAIL}`}>Contact Ocean Hotspot</a>
+          </Button>
+          <Button variant="link" asChild className="mt-2">
+            <Link href="/browse">Back to catalogue</Link>
+          </Button>
+        </div>
+      </Layout>
+    );
+  }
 
   if (items.length === 0) {
     return (
@@ -220,7 +243,7 @@ const Cart = () => {
               <div className="mt-4 pt-4 border-t border-border">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <ShieldCheck className="h-4 w-4 text-green-500" />
-                  <span>Secure Payment • Funds Protected</span>
+                  <span>Secure card payment via Stripe</span>
                 </div>
               </div>
             </div>

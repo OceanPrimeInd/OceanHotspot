@@ -2,325 +2,212 @@
 "use client";
 
 import Link from "next/link";
+import { useState } from "react";
 import { SellerLayout } from "@/components/layout/SellerLayout";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/lib/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import { PRODUCT_DOMAIN_CATEGORIES } from "@/config/productCategories";
+import { PLATFORM_COMMISSION_PERCENT_LABEL } from "@/config/platform";
 import {
-  Ship,
-  Globe,
-  ShieldCheck,
-  CreditCard,
-  BarChart3,
   Store,
-  Users,
   ArrowRight,
   CheckCircle2,
   LogIn,
   UserPlus,
+  Building2,
+  Loader2,
 } from "lucide-react";
-
-const BENEFITS = [
-  {
-    icon: Globe,
-    title: "Global Reach",
-    description:
-      "Access buyers across the maritime industry worldwide. From commercial operators to recreational vessel owners.",
-  },
-  {
-    icon: CreditCard,
-    title: "No Listing Fees",
-    description:
-      "List your products for free. We only charge a small commission when you make a sale.",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Buyer Protection",
-    description:
-      "Payments are processed securely via Stripe. We are building enhanced buyer protection with payment holding and verified delivery confirmation, launching soon.",
-  },
-  {
-    icon: BarChart3,
-    title: "Seller Dashboard",
-    description:
-      "Track orders, revenue, enquiries, and performance from a dedicated seller dashboard.",
-  },
-  {
-    icon: Store,
-    title: "Your Own Showroom",
-    description:
-      "Create a branded showroom page to showcase your products and build trust with buyers.",
-  },
-  {
-    icon: Users,
-    title: "Direct Enquiries",
-    description:
-      "Receive product enquiries and messages directly from interested buyers.",
-  },
-];
-
-const STEPS = [
-  {
-    step: 1,
-    title: "Create Your Seller Account",
-    description:
-      "Sign up with your email and password. It's separate from buyer accounts.",
-  },
-  {
-    step: 2,
-    title: "Complete Onboarding",
-    description:
-      "Add your business details, KYC verification, and set up your shop.",
-  },
-  {
-    step: 3,
-    title: "List Your Products",
-    description:
-      "Add products with images, pricing, VAT treatment, and shipping details.",
-  },
-  {
-    step: 4,
-    title: "Start Selling",
-    description:
-      "Buyers discover your products, place orders, and you get paid securely via Stripe.",
-  },
-];
-
-const CATEGORIES = [
-  "Vessels & Floating Assets",
-  "Propulsion & Power",
-  "Safety & Response",
-  "Maintenance & Consumables",
-  "Fishing & Aquaculture",
-  "Eco & Compliance",
-  "Other",
-];
 
 const SellOnOceanHotspot = () => {
   const { user, profile } = useAuth();
+  const { toast } = useToast();
   const isSeller = profile?.is_seller && profile?.company_name;
+
+  const [storeName, setStoreName] = useState("");
+  const [storeBusiness, setStoreBusiness] = useState("");
+  const [storeEmail, setStoreEmail] = useState("");
+  const [storeSubmitting, setStoreSubmitting] = useState(false);
+  const [storeDone, setStoreDone] = useState(false);
+
+  const submitStoreInterest = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!storeName.trim() || !storeBusiness.trim() || !storeEmail.trim()) return;
+
+    setStoreSubmitting(true);
+    const { error } = await supabase.from("store_interest").insert({
+      name: storeName.trim(),
+      business: storeBusiness.trim(),
+      email: storeEmail.trim().toLowerCase(),
+    });
+
+    setStoreSubmitting(false);
+    if (error) {
+      toast({
+        title: "Could not register",
+        description: error.message.includes("store_interest")
+          ? "Store registration is not live yet — apply the store_interest database migration."
+          : error.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setStoreDone(true);
+    setStoreName("");
+    setStoreBusiness("");
+    setStoreEmail("");
+    toast({ title: "Thank you", description: "We will be in touch when in-store selling opens." });
+  };
 
   return (
     <SellerLayout>
-      {/* Hero Section with Auth Panel */}
-      <section className="py-12 md:py-20">
+      <section className="py-10 md:py-14">
         <div className="container max-w-6xl">
-          <div className="grid md:grid-cols-5 gap-8 md:gap-12 items-center">
-            {/* Left: Hero Content */}
-            <div className="md:col-span-3">
-              <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-1.5 mb-6">
-                <Ship className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-primary">
-                  Maritime Marketplace
-                </span>
-              </div>
-              <h1 className="text-3xl md:text-5xl font-bold text-headline mb-4 tracking-tight leading-tight">
-                Sell on{" "}
-                <span className="text-primary">Ocean Hotspot</span>
-              </h1>
-              <p className="text-lg text-muted-foreground max-w-lg mb-6">
-                Join the maritime marketplace trusted by professionals. List your
-                products to a global audience of vessel owners, operators, and
-                maritime businesses.
-              </p>
-              <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  No listing fees
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  Secure payments
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  Global reach
-                </span>
-              </div>
-            </div>
-
-            {/* Right: Auth Card */}
-            <div className="md:col-span-2">
-              <div className="rounded-2xl border border-border bg-white p-6 md:p-8 shadow-xl">
-                {user ? (
-                  // Logged in state
-                  <div className="text-center space-y-4">
-                    <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
-                      <Store className="h-7 w-7 text-primary" />
-                    </div>
-                    <h2 className="text-xl font-bold text-headline">
-                      {isSeller ? "Welcome Back, Seller!" : "Complete Your Setup"}
-                    </h2>
-                    <p className="text-sm text-muted-foreground">
-                      {isSeller
-                        ? "Head to your dashboard to manage products and orders."
-                        : "Finish setting up your seller account to start listing products."}
-                    </p>
-                    <Button variant="o42Primary" className="w-full h-11 gap-2" asChild>
-                      <Link href={isSeller ? "/seller/dashboard" : "/seller/onboarding"}>
-                        {isSeller ? "Go to Dashboard" : "Complete Registration"}
-                        <ArrowRight className="h-4 w-4" />
-                      </Link>
-                    </Button>
-                  </div>
-                ) : (
-                  // Not logged in state
-                  <div className="space-y-5">
-                    <div className="text-center">
-                      <h2 className="text-xl font-bold text-headline mb-1">
-                        Get Started
-                      </h2>
-                      <p className="text-sm text-muted-foreground">
-                        Create your seller account or sign in
-                      </p>
-                    </div>
-
-                    <Button variant="o42Primary" className="w-full h-12 gap-2 text-base" asChild>
-                      <Link href="/signup">
-                        <UserPlus className="h-5 w-5" />
-                        Register as a Seller
-                      </Link>
-                    </Button>
-
-                    <div className="relative">
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t border-border" />
-                      </div>
-                      <div className="relative flex justify-center text-xs uppercase">
-                        <span className="bg-white px-3 text-muted-foreground">
-                          or
-                        </span>
-                      </div>
-                    </div>
-
-                    <Button variant="outline" className="w-full h-11 gap-2" asChild>
-                      <Link href="/seller/login">
-                        <LogIn className="h-4 w-4" />
-                        Seller Login
-                      </Link>
-                    </Button>
-
-                    <p className="text-center text-xs text-muted-foreground pt-2">
-                      By registering, you agree to our{" "}
-                      <Link href="/terms" className="text-primary hover:underline">
-                        Terms of Service
-                      </Link>
-                    </p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Benefits Grid */}
-      <section className="py-16 bg-white/60">
-        <div className="container max-w-5xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-headline text-center mb-4">
-            Why Sell With Us?
-          </h2>
-          <p className="text-muted-foreground text-center mb-12 max-w-2xl mx-auto">
-            Everything you need to grow your maritime business online.
+          <h1 className="text-3xl md:text-4xl font-bold text-headline mb-3">Sell with Ocean Hotspot</h1>
+          <p className="text-muted-foreground max-w-2xl mb-10">
+            One place for suppliers selling online today and for physical stores joining soon.
           </p>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {BENEFITS.map((benefit) => (
-              <div
-                key={benefit.title}
-                className="rounded-xl border border-border bg-white p-6 shadow-sm hover:shadow-md transition-shadow"
-              >
-                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 mb-4">
-                  <benefit.icon className="h-6 w-6 text-primary" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{benefit.title}</h3>
-                <p className="text-sm text-muted-foreground">
-                  {benefit.description}
+
+          <div className="grid gap-8 lg:grid-cols-2">
+            {/* Online panel */}
+            <div className="rounded-2xl border border-border bg-white p-6 md:p-8 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-2">Sell online</p>
+              <h2 className="text-2xl font-bold text-headline mb-4 leading-snug">
+                Your showroom. Your brand. Your customers. You pay nothing until something sells.
+              </h2>
+
+              <div className="space-y-4 text-sm text-muted-foreground leading-relaxed mb-6">
+                <p>
+                  A showroom that carries your brand, not ours. A direct line to your customers, so you keep the
+                  relationship. One commission ({PLATFORM_COMMISSION_PERCENT_LABEL} of the order total today), only when a
+                  product sells. No listing fee and no joining fee.
+                </p>
+                <p className="font-medium text-foreground">How it works</p>
+                <ol className="list-decimal list-inside space-y-1">
+                  <li>Sign up.</li>
+                  <li>Set your price on each product.</li>
+                  <li>Post your products.</li>
+                  <li>Orders are paid by card via Stripe; we record platform commission on each sale.</li>
+                  <li>Test it: ask one of your customers to buy one product here.</li>
+                </ol>
+                <p className="rounded-lg border border-amber-200/80 bg-amber-50/80 p-3 text-amber-950">
+                  We are building range. We start marketing to customers once the shelves are full enough to be a real
+                  alternative. Until then, your own customers are the first buyers.
                 </p>
               </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
-      {/* How It Works */}
-      <section className="py-16">
-        <div className="container max-w-4xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-headline text-center mb-12">
-            How It Works
-          </h2>
-          <div className="space-y-6">
-            {STEPS.map((item) => (
-              <div
-                key={item.step}
-                className="flex gap-4 items-start rounded-xl border border-border bg-white p-6 shadow-sm"
-              >
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground font-bold">
-                  {item.step}
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold mb-1">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {item.description}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Categories */}
-      <section className="py-16 bg-white/60">
-        <div className="container max-w-4xl">
-          <h2 className="text-2xl md:text-3xl font-bold text-headline text-center mb-4">
-            What Can You Sell?
-          </h2>
-          <p className="text-muted-foreground text-center mb-8">
-            We support a wide range of maritime products and services.
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            {CATEGORIES.map((category) => (
-              <div
-                key={category}
-                className="flex items-center gap-2 rounded-lg border border-border bg-white p-4"
-              >
-                <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                <span className="text-sm font-medium">{category}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="py-16">
-        <div className="container max-w-3xl text-center">
-          <h2 className="text-2xl md:text-3xl font-bold text-headline mb-4">
-            Ready to Start Selling?
-          </h2>
-          <p className="text-muted-foreground mb-8 max-w-xl mx-auto">
-            No mandatory monthly fees. List your products for free. We only make money when you make money.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            {user ? (
-              <Button variant="o42Primary" size="lg" asChild className="gap-2">
-                <Link href={isSeller ? "/seller/dashboard" : "/seller/onboarding"}>
-                  {isSeller ? "Go to Dashboard" : "Complete Registration"}
-                  <ArrowRight className="h-5 w-5" />
-                </Link>
-              </Button>
-            ) : (
-              <>
-                <Button variant="o42Primary" size="lg" asChild className="gap-2">
-                  <Link href="/signup">
-                    Start Selling Today
-                    <ArrowRight className="h-5 w-5" />
+              {user ? (
+                <Button variant="o42Primary" className="w-full gap-2" asChild>
+                  <Link href={isSeller ? "/seller/dashboard" : "/seller/onboarding"}>
+                    {isSeller ? "Go to seller dashboard" : "Complete seller setup"}
+                    <ArrowRight className="h-4 w-4" />
                   </Link>
                 </Button>
-                <Button variant="outline" size="lg" asChild>
-                  <Link href="/seller/login">Seller Login</Link>
-                </Button>
-              </>
-            )}
+              ) : (
+                <div className="space-y-3">
+                  <Button variant="o42Primary" className="w-full gap-2 h-11" asChild>
+                    <Link href="/signup">
+                      <UserPlus className="h-4 w-4" />
+                      Register as a seller
+                    </Link>
+                  </Button>
+                  <Button variant="outline" className="w-full gap-2" asChild>
+                    <Link href="/seller/login">
+                      <LogIn className="h-4 w-4" />
+                      Seller login
+                    </Link>
+                  </Button>
+                </div>
+              )}
+
+              <div className="mt-8 pt-6 border-t border-border">
+                <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">
+                  Categories you can list
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {PRODUCT_DOMAIN_CATEGORIES.filter((c) => c.value !== "services").map((cat) => (
+                    <span
+                      key={cat.value}
+                      className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-medium"
+                    >
+                      {cat.label}
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <p className="mt-6 text-xs text-muted-foreground" id="commission">
+                Commission today: {PLATFORM_COMMISSION_PERCENT_LABEL} of the order total (including VAT where
+                applicable), recorded when the order is placed. See{" "}
+                <Link href="/terms" className="text-primary hover:underline">
+                  Terms
+                </Link>
+                .
+              </p>
+            </div>
+
+            {/* In-store panel */}
+            <div className="rounded-2xl border border-dashed border-border bg-muted/20 p-6 md:p-8">
+              <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                Sell in store
+              </p>
+              <div className="flex items-center gap-2 mb-4">
+                <Building2 className="h-6 w-6 text-primary" />
+                <h2 className="text-2xl font-bold text-headline">Sell in store with Ocean Hotspot</h2>
+              </div>
+              <p className="inline-flex rounded-full bg-slate-200 px-3 py-1 text-xs font-semibold text-slate-800 mb-4">
+                Coming soon
+              </p>
+              <p className="text-sm text-muted-foreground mb-6">
+                Register to be invited when counter sales, catalogue ordering, and store partnerships are live.
+              </p>
+
+              {storeDone ? (
+                <p className="text-sm text-green-700 font-medium">Thanks — we have your details.</p>
+              ) : (
+                <form onSubmit={submitStoreInterest} className="space-y-4">
+                  <div>
+                    <Label htmlFor="store-name">Name</Label>
+                    <Input
+                      id="store-name"
+                      value={storeName}
+                      onChange={(e) => setStoreName(e.target.value)}
+                      required
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="store-business">Business</Label>
+                    <Input
+                      id="store-business"
+                      value={storeBusiness}
+                      onChange={(e) => setStoreBusiness(e.target.value)}
+                      required
+                      className="mt-1"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="store-email">Email</Label>
+                    <Input
+                      id="store-email"
+                      type="email"
+                      value={storeEmail}
+                      onChange={(e) => setStoreEmail(e.target.value)}
+                      required
+                      className="mt-1"
+                    />
+                  </div>
+                  <Button type="submit" className="w-full gap-2" disabled={storeSubmitting}>
+                    {storeSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Store className="h-4 w-4" />}
+                    Register
+                  </Button>
+                </form>
+              )}
+            </div>
           </div>
         </div>
       </section>

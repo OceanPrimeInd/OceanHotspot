@@ -15,10 +15,11 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: {
-    default: "B2B Maritime Marketplace | Ocean Hotspot",
+    default: "Marine parts & equipment | Ocean Hotspot",
     template: "%s | Ocean Hotspot",
   },
-  description: "The world's leading B2B maritime marketplace. Buy and sell curated marine products, equipment, boats, parts, and services from verified sellers worldwide.",
+  description:
+    "Parts, equipment and spares for boats up to 24m — sold by makers and distributors you can talk to. UK marketplace.",
   keywords: ["marine", "maritime", "boat", "yacht", "marine equipment", "boat parts", "maritime marketplace", "marine products"],
   authors: [{ name: "Ocean Hotspot" }],
   creator: "Ocean Hotspot",
@@ -36,8 +37,8 @@ export const metadata: Metadata = {
     locale: "en_GB",
     url: "https://www.oceanhotspot.com",
     siteName: "Ocean Hotspot",
-    title: "B2B Maritime Marketplace | Ocean Hotspot",
-    description: "Buy and sell marine products and services in one place.",
+    title: "Marine parts & equipment | Ocean Hotspot",
+    description: "Parts and equipment for boats up to 24m from verified sellers.",
     images: [
       {
         url: "https://www.oceanhotspot.com/og-image.jpg",

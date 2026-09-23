@@ -12,6 +12,9 @@ import { supabase } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { getProductCategoryLabel } from "@/config/productCategories";
+import { CONTACT_EMAIL } from "@/config/contact";
+import { isCustomerCheckoutEnabled } from "@/config/launch";
+import { OpeningSoonWatermark } from "@/components/launch/OpeningSoonWatermark";
 import {
   Loader2, Package, Globe, Mail, Phone, ExternalLink,
   MapPin, Calendar, Instagram, Linkedin, Twitter, Facebook,
@@ -285,13 +288,13 @@ const ShowroomPublic = () => {
                 <Award className="h-4 w-4" style={{ color: S }} />
                 <span className="text-sm font-semibold text-gray-700">Verified Supplier</span>
               </div>
-              {showroom.website_url && (
-                <a href={showroom.website_url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-sm font-bold ml-auto transition-opacity hover:opacity-75"
-                  style={{ color: P }}>
-                  <Globe className="h-4 w-4" /> Visit Website <ExternalLink className="h-3 w-3" />
-                </a>
-              )}
+              <Link
+                href="/contact"
+                className="flex items-center gap-1.5 text-sm font-bold ml-auto transition-opacity hover:opacity-75"
+                style={{ color: P }}
+              >
+                <Mail className="h-4 w-4" /> Order via Ocean Hotspot
+              </Link>
             </div>
           </div>
         </div>
@@ -318,34 +321,22 @@ const ShowroomPublic = () => {
             <div className="rounded-2xl p-6 shadow-xl text-white" style={{ background: `linear-gradient(160deg, ${P} 0%, #0d2347 100%)` }}>
               <h3 className="text-lg font-black mb-5" style={{ color: S }}>Get in Touch</h3>
               <div className="space-y-3">
-                {showroom.contact_email && (
-                  <a href={`mailto:${showroom.contact_email}`}
-                    className="flex items-center gap-3 text-white/85 hover:text-white transition-colors">
-                    <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center" style={{ backgroundColor: S + "30" }}>
-                      <Mail className="h-4 w-4" style={{ color: S }} />
-                    </div>
-                    <span className="text-sm break-all">{showroom.contact_email}</span>
-                  </a>
-                )}
-                {showroom.contact_phone && (
-                  <a href={`tel:${showroom.contact_phone}`}
-                    className="flex items-center gap-3 text-white/85 hover:text-white transition-colors">
-                    <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center" style={{ backgroundColor: S + "30" }}>
-                      <Phone className="h-4 w-4" style={{ color: S }} />
-                    </div>
-                    <span className="text-sm">{showroom.contact_phone}</span>
-                  </a>
-                )}
-                {showroom.website_url && (
-                  <a href={showroom.website_url} target="_blank" rel="noopener noreferrer"
-                    className="flex items-center gap-3 text-white/85 hover:text-white transition-colors">
-                    <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center" style={{ backgroundColor: S + "30" }}>
-                      <Globe className="h-4 w-4" style={{ color: S }} />
-                    </div>
-                    <span className="text-sm">Website</span>
-                    <ExternalLink className="h-3 w-3 ml-auto opacity-60" />
-                  </a>
-                )}
+                <a
+                  href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`Order enquiry — ${showroom.brand_name} showroom`)}`}
+                  className="flex items-center gap-3 text-white/85 hover:text-white transition-colors"
+                >
+                  <div
+                    className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center"
+                    style={{ backgroundColor: S + "30" }}
+                  >
+                    <Mail className="h-4 w-4" style={{ color: S }} />
+                  </div>
+                  <span className="text-sm break-all">{CONTACT_EMAIL}</span>
+                </a>
+                <p className="text-xs text-white/70 leading-relaxed">
+                  Purchases go through Ocean Hotspot. We confirm price, payment (including bank transfer), and
+                  dispatch with the supplier.
+                </p>
               </div>
 
               {/* Social */}
@@ -442,6 +433,7 @@ const ShowroomPublic = () => {
                           {getProductCategoryLabel(product.domain_category)}
                         </span>
                       )}
+                      {!isCustomerCheckoutEnabled() && <OpeningSoonWatermark />}
                     </div>
                     <div className="p-4">
                       <h3 className="font-bold text-gray-800 leading-snug line-clamp-2 mb-2 group-hover:text-primary transition-colors text-sm">
@@ -618,14 +610,6 @@ const ShowroomPublic = () => {
                   onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = P; e.currentTarget.style.color = "#fff"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = ""; }}>
                   <Linkedin className="h-4 w-4" />
-                </a>
-              )}
-              {showroom.website_url && (
-                <a href={showroom.website_url} target="_blank" rel="noopener noreferrer"
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-gray-400 hover:text-white transition-all"
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = P; e.currentTarget.style.color = "#fff"; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "transparent"; e.currentTarget.style.color = ""; }}>
-                  <Globe className="h-4 w-4" />
                 </a>
               )}
             </div>

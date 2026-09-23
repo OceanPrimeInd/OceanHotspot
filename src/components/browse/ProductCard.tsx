@@ -2,6 +2,8 @@ import Link from "next/link";
 import { ImageIcon } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import { getPlaceholderSvg } from "@/lib/productPlaceholders";
+import { isCustomerCheckoutEnabled } from "@/config/launch";
+import { OpeningSoonWatermark } from "@/components/launch/OpeningSoonWatermark";
 
 interface Product {
   id: string;
@@ -14,7 +16,16 @@ interface Product {
   domain_category?: string | null;
   image_url?: string | null;
   images?: string[] | null;
+  part_number?: string | null;
+  availability_status?: string | null;
+  seller_company?: string | null;
 }
+
+const STOCK_LABEL: Record<string, string> = {
+  in_stock: "In stock",
+  made_to_order: "Made to order",
+  pre_order: "Pre-order",
+};
 
 interface ProductCardProps {
   product: Product;
@@ -22,6 +33,7 @@ interface ProductCardProps {
 }
 
 export function ProductCard({ product, index = 0 }: ProductCardProps) {
+  const showOpeningSoon = !isCustomerCheckoutEnabled();
   const allImages = [
     ...(product.image_url ? [product.image_url] : []),
     ...(product.images || []),
@@ -87,15 +99,22 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
             </span>
           </div>
         )}
+        {showOpeningSoon && product.pricing_type !== "coming_soon" && <OpeningSoonWatermark />}
       </div>
 
       <div className="space-y-1 px-3 pb-3 pt-2">
         <h3 className="line-clamp-2 text-[15px] font-medium leading-snug text-[#1f2a37]">
           {product.title}
         </h3>
-        {product.description && (
-          <p className="line-clamp-2 text-xs leading-relaxed text-muted-foreground">
-            {product.description}
+        {product.part_number && (
+          <p className="text-xs text-muted-foreground">Part no. {product.part_number}</p>
+        )}
+        {product.seller_company && (
+          <p className="text-xs text-[#53616d]">{product.seller_company}</p>
+        )}
+        {product.availability_status && (
+          <p className="text-xs font-medium text-emerald-700">
+            {STOCK_LABEL[product.availability_status] ?? product.availability_status.replace(/_/g, " ")}
           </p>
         )}
         <div className="pt-0.5">{renderPrice()}</div>

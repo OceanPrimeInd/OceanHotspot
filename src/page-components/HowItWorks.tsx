@@ -39,13 +39,13 @@ const HowItWorks = () => {
                 <li>Register for free at oceanhotspot.com</li>
                 <li>Browse showrooms or use AI discovery to find what you need</li>
                 <li>Place your order and pay securely through the Platform</li>
-                <li>Receive your product and confirm you are happy</li>
+                <li>Receive your product and contact us if something is wrong</li>
                 <li>If anything is wrong, raise a return or dispute and we will help resolve it</li>
               </ol>
             </section>
 
             <section>
-              <h2 className="text-xl font-semibold text-headline mb-4">For Vendors</h2>
+              <h2 className="text-xl font-semibold text-headline mb-4">For suppliers</h2>
 
               <h3 className="font-semibold text-headline mt-4 mb-2">List your products</h3>
               <p>
@@ -68,7 +68,7 @@ const HowItWorks = () => {
                 <li>Set up your showroom with your branding</li>
                 <li>Upload your products</li>
                 <li>Receive orders and fulfil them</li>
-                <li>Get paid after buyer acceptance</li>
+                <li>Get paid via Stripe according to your seller payout setup</li>
               </ol>
             </section>
 
@@ -82,7 +82,7 @@ const HowItWorks = () => {
                 </div>
                 <div className="rounded-lg border border-border/60 bg-muted/30 p-4">
                   <p className="font-semibold text-headline mb-1">Trust is built in.</p>
-                  <p className="text-muted-foreground">Every vendor is verified. Payments are processed securely via Stripe. Buyer protection covers every transaction.</p>
+                  <p className="text-muted-foreground">Sellers complete onboarding. Payments run through Stripe. See Buyer Protection for what applies today.</p>
                 </div>
                 <div className="rounded-lg border border-border/60 bg-muted/30 p-4">
                   <p className="font-semibold text-headline mb-1">People when you need them.</p>
@@ -101,7 +101,7 @@ const HowItWorks = () => {
                 Buyers:{" "}
                 <ContactEmailLink />
                 <br />
-                Vendors:{" "}
+                Suppliers:{" "}
                 <ContactEmailLink />
               </p>
             </section>

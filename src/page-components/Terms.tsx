@@ -4,6 +4,7 @@
 import { Layout } from "@/components/layout/Layout";
 import { ContactEmailLink } from "@/components/ContactEmailLink";
 import Link from "next/link";
+import { PLATFORM_COMMISSION_PERCENT_LABEL } from "@/config/platform";
 
 const Terms = () => {
   return (
@@ -62,7 +63,9 @@ const Terms = () => {
 
               <h3 className="font-semibold text-headline mt-4 mb-2">Commission</h3>
               <p>
-                Ocean Hotspot charges a commission on completed sales calculated as a percentage of the product price and excluding shipping, duty and taxes. Commission is charged after the buyer confirms acceptance of the product. Full details of the commission model are set out on our{" "}
+                Ocean Hotspot charges a platform commission on completed sales. Today this is{" "}
+                {PLATFORM_COMMISSION_PERCENT_LABEL} of the order total (including VAT where it applies), recorded when
+                the order is placed. Full details are set out on our{" "}
                 <Link href="/pricing" className="text-primary hover:underline">Pricing page</Link>.
               </p>
               <p className="mt-3">

@@ -39,8 +39,9 @@ const Contact = () => {
         <div className="rounded-2xl border border-border bg-card p-8 shadow-lg">
           <h1 className="text-3xl font-bold text-headline mb-2">Contact Us</h1>
           <p className="text-muted-foreground mb-4">
-            Get in touch with the Ocean Hotspot team. Use one email for all enquiries — tell us
-            what you need help with in your message.
+            Get in touch with the Ocean Hotspot team. While the online checkout is opening soon,{" "}
+            <strong>all orders and product questions</strong> come through us — include part numbers, links to
+            listings, and your boat details. We can quote card and bank-transfer prices.
           </p>
 
           <div className="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4">

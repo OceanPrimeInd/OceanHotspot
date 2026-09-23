@@ -34,6 +34,9 @@ interface Product {
   domain_category: string | null;
   image_url: string | null;
   created_at: string;
+  part_number?: string | null;
+  availability_status?: string | null;
+  seller_company?: string | null;
 }
 
 const DOMAIN_CODE_TO_PRODUCT_VALUES: Record<string, string[]> = {
@@ -120,9 +123,10 @@ const Browse = () => {
     const params = searchParams;
     const domain = params.get("domain");
     const entity = params.get("entity");
+    const cat = params.get("cat");
     const q = params.get("q") || "";
 
-    setSelectedDomains(domain ? [domain] : []);
+    setSelectedDomains(domain ? [domain] : cat ? [cat] : []);
     setSelectedEntities(entity ? [entity] : []);
     setSearchQuery(q);
     if (q.trim().length >= 2) {
@@ -167,16 +171,19 @@ const Browse = () => {
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
-      let query = supabase
+      const { data, error } = await supabase
         .from("products")
-        .select("*")
+        .select("*, profiles(company_name)")
         .eq("is_published", true)
         .order("created_at", { ascending: false });
 
-      const { data, error } = await query;
-
       if (!error && data) {
-        setProducts(data);
+        setProducts(
+          (data || []).map((row: any) => ({
+            ...row,
+            seller_company: row.profiles?.company_name ?? null,
+          })),
+        );
         // Calculate max price from data
         if (data.length > 0) {
           const max = Math.max(...data.map((p) => p.price));
@@ -234,6 +241,7 @@ const Browse = () => {
     return (
       product.title.toLowerCase().includes(q) ||
       product.description?.toLowerCase().includes(q) ||
+      product.part_number?.toLowerCase().includes(q) ||
       product.domain_category?.toLowerCase().includes(q) ||
       product.entity_type?.toLowerCase().includes(q)
     );

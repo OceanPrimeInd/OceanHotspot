@@ -17,13 +17,14 @@ const BuyerProtection = () => {
 
           <div className="space-y-8 text-sm text-foreground leading-relaxed">
             <p className="text-base font-medium text-headline">
-              Every purchase on Ocean Hotspot is protected. Here is how.
+              How we handle payments and disputes on Ocean Hotspot today.
             </p>
 
             <section>
-              <h2 className="text-lg font-semibold text-headline mb-3">Your Money Is Protected</h2>
+              <h2 className="text-lg font-semibold text-headline mb-3">Payments</h2>
               <p>
-                Payments are processed securely via Stripe. We are building an enhanced buyer protection system with payment holding and verified delivery confirmation, launching soon.
+                Checkout is processed securely via Stripe. Payment holding until you accept delivery is planned; card
+                payments capture at checkout today.
               </p>
               <p className="mt-3">
                 Our goal is to ensure that if something goes wrong with your order, your money is protected.
@@ -31,9 +32,10 @@ const BuyerProtection = () => {
             </section>
 
             <section>
-              <h2 className="text-lg font-semibold text-headline mb-3">Every Vendor Is Verified</h2>
+              <h2 className="text-lg font-semibold text-headline mb-3">Seller checks</h2>
               <p>
-                Before a vendor can list a single product on Ocean Hotspot, they must complete identity verification, including a real payment method linked to a named individual or business, email and phone verification, and acceptance of our marketplace terms and buyer protection commitments.
+                Sellers complete onboarding and KYC before listing. Verification depth varies by seller; check the
+                showroom and listing for what applies to that supplier.
               </p>
               <p className="mt-3">
                 For vendors listing higher-value products, we require additional checks including business registration validation, government ID verification, and for the highest-value listings, trade references and financial health checks.

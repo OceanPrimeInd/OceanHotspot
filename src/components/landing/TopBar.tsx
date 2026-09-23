@@ -54,6 +54,9 @@ import {
   getNavIcon,
   getSubgroupIcon,
 } from "@/components/browse/categoryIcons";
+import { browseUrlForNavLabel, navLabelToCategorySlug, browseCategoryUrl } from "@/lib/navBrowse";
+import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from "@/config/contact";
+import { isCustomerCheckoutEnabled } from "@/config/launch";
 
 interface SearchSuggestion {
   id: string;
@@ -135,12 +138,26 @@ export function TopBar() {
     }
 
     setLoadingSuggestions(true);
-    const { data, error } = await supabase
+    const escaped = query.replace(/[%_,]/g, " ");
+    let { data, error } = await supabase
       .from("products")
-      .select("id, title, price, currency")
+      .select("id, title, price, currency, part_number")
       .eq("is_published", true)
-      .ilike("title", `%${query}%`)
+      .or(
+        `title.ilike.%${escaped}%,part_number.ilike.%${escaped}%,description.ilike.%${escaped}%`,
+      )
       .limit(5);
+
+    if (error) {
+      const fallback = await supabase
+        .from("products")
+        .select("id, title, price, currency")
+        .eq("is_published", true)
+        .ilike("title", `%${escaped}%`)
+        .limit(5);
+      data = fallback.data;
+      error = fallback.error;
+    }
 
     if (!error && data) setSuggestions(data);
     setLoadingSuggestions(false);
@@ -189,6 +206,13 @@ export function TopBar() {
   };
 
   const browseLink = (parts: string[]) => {
+    const navLabel = parts[0];
+    const slug = navLabel ? navLabelToCategorySlug(navLabel) : null;
+    const tail = parts.slice(1).filter(Boolean).join(" ");
+    if (slug && parts.length === 1) return browseCategoryUrl(slug);
+    if (slug && tail) {
+      return `/browse?cat=${encodeURIComponent(slug)}&q=${encodeURIComponent(tail)}`;
+    }
     return `/browse?q=${encodeURIComponent(parts.filter(Boolean).join(" "))}`;
   };
 
@@ -229,7 +253,7 @@ export function TopBar() {
                     setShowSuggestions(true);
                   }}
                   onFocus={() => suggestions.length > 0 && setShowSuggestions(true)}
-                  placeholder="Search for items"
+                  placeholder="Search by part number, product or boat"
                   className="min-w-0 flex-1 bg-transparent py-2.5 text-sm text-[#1d2a2f] placeholder:text-[#8a969e] focus:outline-none"
                 />
               </PopoverTrigger>
@@ -282,6 +306,14 @@ export function TopBar() {
         )}
 
         <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
+          {showMarketplaceChrome && SUPPORT_PHONE && (
+            <a
+              href={`tel:${SUPPORT_PHONE.replace(/\s/g, "")}`}
+              className="hidden text-xs font-semibold text-primary hover:underline lg:inline"
+            >
+              Call {SUPPORT_PHONE_DISPLAY}
+            </a>
+          )}
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -334,14 +366,16 @@ export function TopBar() {
               </Link>
               <Link
                 href="/sell"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
               >
-                Sell now
+                Sell
               </Link>
             </div>
           )}
 
-          {showMarketplaceChrome && (
+          {showMarketplaceChrome && isCustomerCheckoutEnabled() && (
           <Link
             href="/cart"
             className="relative flex items-center justify-center rounded-lg border border-[#e0e0e0] bg-white p-2 text-[#2e3d44] transition hover:border-[#c8c8c8]"
@@ -399,10 +433,11 @@ export function TopBar() {
                 <button
                   key={category.label}
                   type="button"
-                  onMouseEnter={() => {
-                    if (isMenuOpen) setActiveNavCategory(category.label);
+                  onMouseEnter={() => openCategoryMenu(category.label)}
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    router.push(browseUrlForNavLabel(category.label));
                   }}
-                  onClick={() => openCategoryMenu(category.label)}
                   className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm font-medium transition md:px-3 md:text-[15px] ${
                     isActive
                       ? "bg-[#f4f4f4] text-[#1d2a2f] shadow-[0_1px_4px_rgba(24,39,52,0.08)]"

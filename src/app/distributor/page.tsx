@@ -1,11 +1,6 @@
-import type { Metadata } from "next";
-import PageComponent from "@/page-components/distributor/DistributorLanding";
+import { redirect } from "next/navigation";
 
-export const metadata: Metadata = {
-  title: "Become a Distributor | OceanHotspot",
-  description: "Join the OceanHotspot Virtual Distributor Network. Earn commission representing world-class marine brands in your region — no stock required.",
-};
-
+/** Public selling entry is unified at /sell (website map 18 Sep). */
 export default function Page() {
-  return <PageComponent />;
+  redirect("/sell");
 }

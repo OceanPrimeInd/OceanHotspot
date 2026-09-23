@@ -9,6 +9,18 @@ serve(async (req) => {
   }
 
   try {
+    if (Deno.env.get("CUSTOMER_CHECKOUT_ENABLED") !== "true") {
+      return new Response(
+        JSON.stringify({
+          error: "Online checkout is not open yet. Please contact Ocean Hotspot to place an order.",
+        }),
+        {
+          status: 403,
+          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
+        },
+      );
+    }
+
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",
     });

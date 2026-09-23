@@ -3,6 +3,7 @@
 
 import { Layout } from "@/components/layout/Layout";
 import { ContactEmailLink } from "@/components/ContactEmailLink";
+import { PLATFORM_COMMISSION_PERCENT_LABEL } from "@/config/platform";
 
 const Pricing = () => {
   return (
@@ -21,18 +22,21 @@ const Pricing = () => {
             <section>
               <h2 className="text-lg font-semibold text-headline mb-3">Commission</h2>
               <p>
-                Ocean Hotspot charges 10% of completed sales. This is charged on the product price only, not shipping or taxes, and only after the buyer confirms acceptance.
+                Ocean Hotspot charges {PLATFORM_COMMISSION_PERCENT_LABEL} on each completed sale today. This is
+                calculated on the order total (including VAT where it applies) when the order is placed, and recorded as
+                the platform fee on the order.
               </p>
               <p className="mt-3">
-                The 10% covers AI-powered discovery, payment processing, buyer protection, your branded showroom, and analytics.
+                No listing fees and no joining fees — we only earn when you sell.
               </p>
 
-              <h3 className="font-semibold text-headline mt-4 mb-2">What 10% Replaces</h3>
+              <h3 className="font-semibold text-headline mt-4 mb-2">What the commission covers</h3>
               <p>
                 If you were to replicate what the commission covers independently, you would be paying for some combination of Google Ads and SEO, payment processing and PCI compliance, fraud prevention and dispute resolution, web hosting and product catalogue management, analytics and conversion tracking, and trust and verification infrastructure.
               </p>
               <p className="mt-3">
-                For a small brand, that is £10,000 to £25,000 a year. For a mid-sized brand, £50,000 to £150,000. At 10% commission, you would need to sell £100,000 to £250,000 on the platform before you have paid the equivalent, and even then you would still lack the qualified buyer traffic.
+                For a small brand, that is £10,000 to £25,000 a year. For a mid-sized brand, £50,000 to £150,000. At{" "}
+                {PLATFORM_COMMISSION_PERCENT_LABEL} commission, you pay proportionally only on sales you actually make.
               </p>
 
               <h3 className="font-semibold text-headline mt-4 mb-2">How Commission Works as a Partnership</h3>
@@ -40,7 +44,8 @@ const Pricing = () => {
                 Ocean Hotspot uses intelligent pricing. Just as airlines and hotels adjust prices based on demand and seasonality, we may adjust commission rates to maximise the number of sales you make. When the market is quiet, commission may come down to stimulate demand. When the market is strong, commission may increase because conversion rates are higher. Over a year, commission averages out.
               </p>
               <p className="mt-3">
-                The rules are simple. Commission starts at 10%, and this baseline will not change without a conversation. We never impose changes; any adjustment is proposed, explained, and agreed with you before it takes effect. Your dashboard shows your current rate and the factors behind it. The buyer comes first; commission is set to maximise sales volume, not our margin. It averages out over the year.
+                The live rate is shown on each order in your seller dashboard. We will agree any future rate changes
+                with you before they apply.
               </p>
             </section>
 
@@ -65,7 +70,7 @@ const Pricing = () => {
                     </tr>
                     <tr className="border-b border-border/50">
                       <td className="py-3 pr-4 font-medium text-foreground">Commission</td>
-                      <td className="py-3 px-4">From 10%</td>
+                      <td className="py-3 px-4">{PLATFORM_COMMISSION_PERCENT_LABEL} per sale (today)</td>
                     </tr>
                     <tr className="border-b border-border/50">
                       <td className="py-3 pr-4 font-medium text-foreground">Product listings</td>
@@ -97,13 +102,16 @@ const Pricing = () => {
               <p><strong>No listing fees.</strong> We want you to list everything you sell, not do mental arithmetic about which products are worth the listing cost.</p>
               <p className="mt-3"><strong>No joining fees or setup charges.</strong> The answer to "what does it cost to try?" is "nothing".</p>
               <p className="mt-3"><strong>No paid ranking.</strong> Products are recommended on merit. You cannot buy your way to the top of search results.</p>
-              <p className="mt-3"><strong>No commission variation by tier.</strong> The commission stays at 10% regardless of subscription level. The subscription is about better tools, not cheaper transactions.</p>
+              <p className="mt-3">
+                <strong>No listing fees.</strong> Commission applies only when you make a sale.
+              </p>
             </section>
 
             <section>
               <h2 className="text-lg font-semibold text-headline mb-3">The Maths</h2>
               <p>
-                At 10%, a vendor selling a £10,000 piece of marine electronics pays £1,000 in commission, but pays nothing unless we deliver a paying customer.
+                At {PLATFORM_COMMISSION_PERCENT_LABEL}, a £10,000 order carries a £500 platform fee — and you pay nothing
+                unless the sale completes.
               </p>
 
               <div className="mt-4 overflow-x-auto">
@@ -143,7 +151,7 @@ const Pricing = () => {
                     </tr>
                     <tr className="bg-primary/5">
                       <td className="py-3 pr-4 font-semibold text-headline">Ocean Hotspot</td>
-                      <td className="py-3 px-4 font-semibold text-headline">From 10%</td>
+                      <td className="py-3 px-4 font-semibold text-headline">{PLATFORM_COMMISSION_PERCENT_LABEL} per sale</td>
                       <td className="py-3 px-4 font-semibold text-headline">AI discovery, payments, buyer protection, showroom, analytics. All included.</td>
                     </tr>
                   </tbody>

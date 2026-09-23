@@ -127,10 +127,9 @@ const Discover = () => {
   };
 
   const suggestedQuestions = [
-    "Bow thruster for a 40ft motor yacht",
-    "Rugged tablet for the helm",
-    "12V bilge pump",
-    "Sailproof or marine tablet",
+    "Bilge pump for a motor yacht",
+    "Chartplotter for the helm",
+    "Engine service kit",
   ];
 
   return (
@@ -142,10 +141,10 @@ const Discover = () => {
               <Sparkles className="h-6 w-6 text-white" />
             </div>
             <h1 className="text-2xl font-bold text-headline mb-1">
-              AI Discovery Assistant
+              Find products
             </h1>
             <p className="text-sm text-muted-foreground max-w-xl mx-auto">
-              Ask in plain English — answers only include live products from our catalog.
+             We search live listings on Ocean Hotspot — no redirects to other websites.
             </p>
           </div>
 
@@ -159,21 +158,6 @@ const Discover = () => {
                   <h3 className="font-semibold text-headline mb-2">
                     How can I help you today?
                   </h3>
-                  <p className="text-sm text-muted-foreground max-w-sm mb-4">
-                    Try one of these buyer questions:
-                  </p>
-                  <div className="flex flex-wrap justify-center gap-2 max-w-lg">
-                    {suggestedQuestions.map((q) => (
-                      <button
-                        key={q}
-                        type="button"
-                        className="text-left text-xs rounded-full border border-border px-3 py-1.5 hover:bg-muted transition"
-                        onClick={() => handleSend(q)}
-                      >
-                        {q}
-                      </button>
-                    ))}
-                  </div>
                 </div>
               ) : (
                 messages.map((msg, idx) => (
@@ -262,16 +246,21 @@ const Discover = () => {
             </div>
           </div>
 
-          <div className="mt-4 text-center">
-            <p className="text-sm text-muted-foreground mb-2">
-              Want to browse all products?
+          <div className="mt-4 space-y-3 text-center">
+            <p className="text-sm text-muted-foreground">
+              To order, contact Ocean Hotspot — we handle payment and supplier dispatch.
             </p>
-            <Button variant="outline" asChild>
-              <Link href="/browse">
-                Browse Catalog
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
+            <div className="flex flex-wrap justify-center gap-2">
+              <Button variant="o42Primary" asChild>
+                <Link href="/contact">Contact us to buy</Link>
+              </Button>
+              <Button variant="outline" asChild>
+                <Link href="/browse">
+                  Browse catalogue
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Link>
+              </Button>
+            </div>
           </div>
         </div>
       </div>

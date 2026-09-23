@@ -81,6 +81,11 @@ const EditProduct = () => {
 
   // Section 1 - Basic Information
   const [title, setTitle] = useState("");
+  const [partNumber, setPartNumber] = useState("");
+  const [technicalDetail, setTechnicalDetail] = useState("");
+  const [fits, setFits] = useState("");
+  const [replaces, setReplaces] = useState("");
+  const [supplierNote, setSupplierNote] = useState("");
   const [brand, setBrand] = useState("");
   const [condition, setCondition] = useState("");
 
@@ -155,6 +160,11 @@ const EditProduct = () => {
       }
 
       setTitle(data.title);
+      setPartNumber(data.part_number || "");
+      setTechnicalDetail(data.technical_detail || "");
+      setFits(data.fits || "");
+      setReplaces(data.replaces || "");
+      setSupplierNote(data.supplier_note || "");
       setBrand(data.brand || "");
       setCondition(data.condition || "");
       setEntityType(data.entity_type || "");
@@ -257,6 +267,11 @@ const EditProduct = () => {
 
     const updateData: Record<string, any> = {
       title: title.trim(),
+      part_number: partNumber.trim() || null,
+      technical_detail: technicalDetail.trim() || null,
+      fits: fits.trim() || null,
+      replaces: replaces.trim() || null,
+      supplier_note: supplierNote.trim() || null,
       brand: brand.trim() || null,
       condition: condition || null,
       entity_type: entityType || null,
@@ -396,6 +411,16 @@ const EditProduct = () => {
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="partNumber">Part number</Label>
+                    <Input
+                      id="partNumber"
+                      value={partNumber}
+                      onChange={(e) => setPartNumber(e.target.value)}
+                      className="h-12"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="brand">Brand / Manufacturer *</Label>
                     <Input
                       id="brand"
@@ -471,6 +496,34 @@ const EditProduct = () => {
                     rows={3}
                   />
                   <p className="text-xs text-muted-foreground">{shortDescription.length}/300 characters</p>
+                  <div className="space-y-2 pt-2">
+                    <Label htmlFor="technicalDetail">Technical detail</Label>
+                    <Textarea
+                      id="technicalDetail"
+                      value={technicalDetail}
+                      onChange={(e) => setTechnicalDetail(e.target.value)}
+                      rows={3}
+                    />
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="fits">Fits</Label>
+                      <Input id="fits" value={fits} onChange={(e) => setFits(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="replaces">Replaces</Label>
+                      <Input id="replaces" value={replaces} onChange={(e) => setReplaces(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="supplierNote">Supplier&apos;s note</Label>
+                    <Textarea
+                      id="supplierNote"
+                      value={supplierNote}
+                      onChange={(e) => setSupplierNote(e.target.value)}
+                      rows={2}
+                    />
+                  </div>
                 </div>
               </div>
 

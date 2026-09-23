@@ -75,6 +75,11 @@ const SHIPPING_COST_OPTIONS = [
 const CreateProduct = () => {
   // Section 1 - Basic Information
   const [title, setTitle] = useState("");
+  const [partNumber, setPartNumber] = useState("");
+  const [technicalDetail, setTechnicalDetail] = useState("");
+  const [fits, setFits] = useState("");
+  const [replaces, setReplaces] = useState("");
+  const [supplierNote, setSupplierNote] = useState("");
   const [brand, setBrand] = useState("");
   const [condition, setCondition] = useState("");
 
@@ -172,6 +177,7 @@ const CreateProduct = () => {
 
   const validateForSubmission = (): boolean => {
     if (!title.trim()) { toast({ title: "Required", description: "Product Title is required.", variant: "destructive" }); return false; }
+    if (!partNumber.trim()) { toast({ title: "Required", description: "Part number is required.", variant: "destructive" }); return false; }
     if (!brand.trim()) { toast({ title: "Required", description: "Brand / Manufacturer is required.", variant: "destructive" }); return false; }
     if (!condition) { toast({ title: "Required", description: "Condition is required.", variant: "destructive" }); return false; }
     if (!entityType) { toast({ title: "Required", description: "Listing type is required.", variant: "destructive" }); return false; }
@@ -215,6 +221,11 @@ const CreateProduct = () => {
     const productData: Record<string, any> = {
       seller_id: user.id,
       title: title.trim(),
+      part_number: partNumber.trim(),
+      technical_detail: technicalDetail.trim() || null,
+      fits: fits.trim() || null,
+      replaces: replaces.trim() || null,
+      supplier_note: supplierNote.trim() || null,
       brand: brand.trim() || null,
       condition: condition || null,
       entity_type: entityType || null,
@@ -295,6 +306,17 @@ const CreateProduct = () => {
                   </div>
 
                   <div className="space-y-2">
+                    <Label htmlFor="partNumber">Part number *</Label>
+                    <Input
+                      id="partNumber"
+                      value={partNumber}
+                      onChange={(e) => setPartNumber(e.target.value)}
+                      placeholder="Manufacturer or SKU part number"
+                      className="h-12"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
                     <Label htmlFor="brand">Brand / Manufacturer *</Label>
                     <Input
                       id="brand"
@@ -370,6 +392,36 @@ const CreateProduct = () => {
                     rows={3}
                   />
                   <p className="text-xs text-muted-foreground">{shortDescription.length}/300 characters</p>
+                  <div className="space-y-2 pt-2">
+                    <Label htmlFor="technicalDetail">Technical detail</Label>
+                    <Textarea
+                      id="technicalDetail"
+                      value={technicalDetail}
+                      onChange={(e) => setTechnicalDetail(e.target.value)}
+                      rows={3}
+                      placeholder="Dimensions, voltage, material, certifications…"
+                    />
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="fits">Fits (compatibility)</Label>
+                      <Input id="fits" value={fits} onChange={(e) => setFits(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="replaces">Replaces</Label>
+                      <Input id="replaces" value={replaces} onChange={(e) => setReplaces(e.target.value)} />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="supplierNote">Supplier&apos;s note</Label>
+                    <Textarea
+                      id="supplierNote"
+                      value={supplierNote}
+                      onChange={(e) => setSupplierNote(e.target.value)}
+                      rows={2}
+                      placeholder="Optional note shown on the listing"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -378,6 +430,10 @@ const CreateProduct = () => {
                 <h2 className="text-lg font-semibold mb-4">Images</h2>
                 <div className="space-y-2">
                   <Label>Main Product Image *</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Use a clear photo on a plain background; include connectors or the part-number label where relevant.
+                    (Guidance only — not enforced automatically.)
+                  </p>
                   {imagePreview ? (
                     <div className="relative w-48 h-48">
                       <img

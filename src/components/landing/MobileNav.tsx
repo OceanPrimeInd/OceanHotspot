@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Home, Search, ShoppingCart, User, Shield, Store, Package } from "lucide-react";
+import { Home, Search, ShoppingCart, User, Shield, Store, Package, Mail } from "lucide-react";
+import { isCustomerCheckoutEnabled } from "@/config/launch";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
@@ -54,6 +55,14 @@ export function MobileNav() {
     }
 
     // Customer/Guest navigation
+    if (!isCustomerCheckoutEnabled()) {
+      return [
+        ...baseItems,
+        { icon: Mail, label: "Contact", path: "/contact", badge: 0 },
+        { icon: User, label: "Account", path: user ? "/account/settings" : "/login", badge: 0 },
+      ];
+    }
+
     return [
       ...baseItems,
       { icon: ShoppingCart, label: "Cart", path: "/cart", badge: itemCount },

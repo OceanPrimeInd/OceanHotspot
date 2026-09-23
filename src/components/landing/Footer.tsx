@@ -19,10 +19,7 @@ const footerSections = [
   },
   {
     title: "Sellers",
-    links: [
-      { label: "Sell on Ocean Hotspot", path: "/sell" },
-      { label: "Pricing", path: "/pricing" },
-    ],
+    links: [{ label: "Sell with Ocean Hotspot", path: "/sell" }],
   },
   {
     title: "Company",
