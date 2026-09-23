@@ -1,5 +1,6 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.7";
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { isShopCheckoutOpen, shopClosedResponse } from "../_shared/shopOpen.ts";
 import { bankOrderPlacedHtml, sendEmail } from "../_shared/email.ts";
 
 Deno.serve(async (req) => {
@@ -8,6 +9,10 @@ Deno.serve(async (req) => {
   }
 
   try {
+    if (!isShopCheckoutOpen()) {
+      return shopClosedResponse(req, getCorsHeaders(req));
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);

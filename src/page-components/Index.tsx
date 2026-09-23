@@ -5,9 +5,33 @@ import Link from "next/link";
 import { Layout } from "@/components/layout/Layout";
 import { ProductGrid } from "@/components/landing/ProductGrid";
 import { RecentlyViewed } from "@/components/landing/RecentlyViewed";
-import { ArrowRight, Phone, ShieldCheck, Sparkles, Store, MessageCircle } from "lucide-react";
+import { ArrowRight, ShieldCheck, Sparkles, Store, MessageCircle, Heart } from "lucide-react";
 import { HOME_CATEGORY_TILES, browseCategoryUrl } from "@/lib/navBrowse";
-import { CONTACT_EMAIL, SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from "@/config/contact";
+import { CONTACT_EMAIL } from "@/config/contact";
+import { isShopOpen } from "@/config/shop";
+import { WhatsAppLink } from "@/components/shop/WhatsAppButton";
+import { isWhatsAppConfigured } from "@/lib/whatsapp";
+import { OpeningSoonHeroStamp } from "@/components/shop/OpeningSoonHeroStamp";
+
+function HeroQuestionsLine({ className = "" }: { className?: string }) {
+  return (
+    <p className={className}>
+      Questions now?{" "}
+      {isWhatsAppConfigured() ? (
+        <WhatsAppLink className="font-bold text-[#128C7E] hover:underline">WhatsApp us</WhatsAppLink>
+      ) : (
+        <Link href="/contact" className="font-bold text-[#128C7E] hover:underline">
+          WhatsApp us
+        </Link>
+      )}{" "}
+      or{" "}
+      <a href={`mailto:${CONTACT_EMAIL}`} className="font-bold text-primary hover:underline">
+        email us
+      </a>
+      .
+    </p>
+  );
+}
 
 const reasons = [
   {
@@ -23,69 +47,97 @@ const reasons = [
   {
     icon: Store,
     title: "UK company",
-    text: "UK company — contact us by email; phone support when our line is live.",
+    text: "Ocean Prime Industries Ltd, a UK registered company.",
   },
   {
-    icon: Phone,
+    icon: MessageCircle,
     title: "People who know boats",
     text: "Questions go to real people who know boats, not a ticket black hole.",
   },
 ];
 
+const UNTIL_WE_OPEN_STEPS = [
+  { title: "Browse and save", text: "Add anything you want to your wish list." },
+  { title: "Send us your list", text: "By form or WhatsApp, with the details of your boat." },
+  {
+    title: "We come back to you",
+    text: "We confirm price, availability and delivery, and tell you the day we open.",
+  },
+];
+
 const Index = () => {
+  const shopOpen = isShopOpen();
+
   return (
     <Layout>
       <div className="pb-14">
         <section className="section-shell pt-6 md:pt-8">
-          <div className="relative overflow-hidden rounded-[28px] border border-[#dce4ed] bg-[linear-gradient(135deg,#f0f6fc_0%,#ffffff_45%,#fff8f4_100%)] shadow-[0_20px_50px_-30px_rgba(15,76,129,0.25)]">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(242,109,42,0.08),_transparent_40%),radial-gradient(circle_at_bottom_left,_rgba(15,76,129,0.06),_transparent_35%)]" />
+          <div className="relative overflow-hidden rounded-[28px] border border-[#dce4ed] bg-[linear-gradient(135deg,#eaf2fa_0%,#ffffff_48%,#fff4ee_100%)] shadow-[0_22px_50px_-30px_rgba(15,76,129,0.35)]">
+            {!shopOpen && <OpeningSoonHeroStamp />}
 
-            <div className="relative z-10 flex min-h-[360px] flex-col items-center px-5 py-10 md:px-10 md:py-12">
-              <h1 className="mb-4 max-w-3xl text-center text-[2rem] font-black tracking-[-0.05em] text-primary md:text-[3rem] md:leading-[1.08]">
-                The right part for your boat, from people you can talk to.
-              </h1>
+            <div
+              className={`relative z-[1] grid min-h-[360px] gap-8 px-5 py-8 md:items-center md:gap-[34px] md:px-10 md:py-12 lg:px-12 lg:py-14 ${
+                !shopOpen ? "md:grid-cols-[1.25fr_0.9fr]" : "md:grid-cols-1"
+              }`}
+            >
+              <div className="relative flex flex-col items-center text-center md:items-start md:text-left">
+                <p className="mb-2 text-base font-extrabold uppercase tracking-[0.14em] text-primary">
+                  Marine parts, equipment and spares
+                </p>
 
-              <p className="mb-4 max-w-2xl text-center text-base leading-relaxed text-[#53616d] md:text-lg">
-                Parts, equipment and spares for boats up to 24m, sold by the people who make and know them.
-              </p>
-              <p className="mb-8 text-center text-sm font-semibold text-amber-800">
-                Store opening soon — browse now and contact us to order.
-              </p>
+                <h1 className="mb-[18px] max-w-[640px] text-[1.9375rem] font-black leading-[1.15] tracking-[-0.025em] text-primary sm:text-[2.375rem] md:text-[3.125rem]">
+                  The right part for your boat, from people you can talk to.
+                </h1>
 
-              <div className="mb-6 flex w-full max-w-xl flex-col gap-4 sm:flex-row sm:items-center sm:justify-center">
-                <Link
-                  href="/browse"
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-[#f26d2a] px-7 py-3.5 text-sm font-semibold text-white shadow-[0_8px_24px_rgba(242,109,42,0.3)] transition hover:bg-[#d95a1a] sm:flex-none md:text-base"
-                >
-                  Browse the catalogue
-                </Link>
-                <Link
-                  href="/discover"
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-primary bg-white px-7 py-3.5 text-sm font-semibold text-primary shadow-sm transition hover:bg-primary/10 sm:flex-none md:text-base"
-                >
-                  <Sparkles className="h-4 w-4 md:h-5 md:w-5" />
-                  Find products
-                </Link>
-                <Link
-                  href="/showrooms"
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border border-[#dfe3e7] bg-white px-7 py-3.5 text-sm font-semibold text-[#32414a] transition hover:border-primary/35 sm:flex-none md:text-base"
-                >
-                  <Store className="h-4 w-4 md:h-5 md:w-5" />
-                  Showrooms
-                </Link>
+                <p className="mb-[26px] max-w-[600px] text-lg leading-relaxed text-[#46545f] md:text-[19px]">
+                  Parts, equipment and spares for boats up to 24m, sold by the people who make and know them.
+                </p>
+
+                <div className="flex w-full max-w-xl flex-col gap-3 sm:flex-row sm:flex-wrap">
+                  <Link
+                    href="/browse"
+                    className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-transparent bg-[#f26d2a] px-[22px] py-3.5 text-base font-extrabold text-white shadow-[0_10px_24px_-10px_rgba(242,109,42,0.7)] transition hover:bg-[#c9521a] sm:flex-none"
+                  >
+                    Browse the catalogue
+                  </Link>
+                  {!shopOpen ? (
+                    <Link
+                      href="/wishlist"
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-primary bg-white px-[22px] py-3.5 text-base font-extrabold text-primary transition hover:bg-[#f2f6fa] sm:flex-none"
+                    >
+                      <Heart className="h-4 w-4" strokeWidth={2.5} />
+                      Start your wish list
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/discover"
+                      className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-primary bg-white px-[22px] py-3.5 text-base font-extrabold text-primary transition hover:bg-[#f2f6fa] sm:flex-none"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      Find products
+                    </Link>
+                  )}
+                </div>
               </div>
 
-              {SUPPORT_PHONE ? (
-                <a
-                  href={`tel:${SUPPORT_PHONE.replace(/\s/g, "")}`}
-                  className="text-sm font-semibold text-primary hover:underline"
-                >
-                  Call us on {SUPPORT_PHONE_DISPLAY}
-                </a>
-              ) : (
-                <a href={`mailto:${CONTACT_EMAIL}`} className="text-sm text-[#53616d] hover:text-primary">
-                  Questions? {CONTACT_EMAIL}
-                </a>
+              {!shopOpen && (
+                <div className="rounded-[20px] border border-[#dce4ed] bg-white p-6 shadow-[0_18px_40px_-28px_rgba(15,34,87,0.45)] md:p-6">
+                  <h2 className="mb-3.5 text-xl font-bold text-primary">Until we open</h2>
+                  <ol className="m-0 list-none space-y-3.5 p-0">
+                    {UNTIL_WE_OPEN_STEPS.map((step, i) => (
+                      <li key={step.title} className="grid grid-cols-[40px_1fr] items-start gap-3">
+                        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-sm font-black text-primary-foreground">
+                          {i + 1}
+                        </span>
+                        <div className="text-left">
+                          <p className="font-bold text-headline">{step.title}</p>
+                          <p className="mt-0.5 text-base leading-snug text-[#46545f]">{step.text}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                  <HeroQuestionsLine className="mt-[18px] text-base text-[#46545f]" />
+                </div>
               )}
             </div>
           </div>
@@ -142,6 +194,37 @@ const Index = () => {
             ))}
           </div>
         </section>
+
+        {!shopOpen && (
+          <section className="section-shell mb-16">
+            <div className="rounded-[2rem] border border-[#dce4ed] bg-[linear-gradient(135deg,#07172f_0%,#0f2847_100%)] p-8 text-white md:p-10">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#ffab7e]">For suppliers</p>
+              <h2 className="mt-2 text-2xl font-black tracking-tight md:text-3xl">
+                Your showroom. Your brand. Your customers.
+              </h2>
+              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-200 md:text-base">
+                Suppliers can join now and load their products ahead of opening day. You pay nothing until something
+                sells.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link
+                  href="/sell"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center rounded-xl bg-[#f26d2a] px-6 py-3 text-sm font-semibold text-white hover:bg-[#d95a1a]"
+                >
+                  Start selling
+                </Link>
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center rounded-xl border border-white/30 px-6 py-3 text-sm font-semibold text-white hover:bg-white/10"
+                >
+                  Contact us first
+                </Link>
+              </div>
+            </div>
+          </section>
+        )}
       </div>
 
       <RecentlyViewed />

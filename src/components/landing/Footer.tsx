@@ -4,51 +4,54 @@ import Link from "next/link";
 import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Shield, Lock, CreditCard, Loader2 } from "lucide-react";
+import { Lock, Loader2 } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
+import { COMPANY_LEGAL_LINE } from "@/config/contact";
+import { isShopOpen } from "@/config/shop";
 
-const footerSections = [
-  {
-    title: "Customer Service",
-    links: [
-      { label: "Help Centre", path: "/help" },
-      { label: "Contact Us", path: "/contact" },
-      { label: "Returns & Refunds", path: "/returns" },
-      { label: "Buyer Protection", path: "/buyer-protection" },
-    ],
-  },
-  {
-    title: "Sellers",
-    links: [{ label: "Sell with Ocean Hotspot", path: "/sell" }],
-  },
-  {
-    title: "Company",
-    links: [
-      { label: "Our Story", path: "/about" },
-      { label: "How It Works", path: "/how-it-works" },
-    ],
-  },
-  {
-    title: "Legal",
-    links: [
-      { label: "Terms & Conditions", path: "/terms" },
-      { label: "Privacy Policy", path: "/privacy" },
-      { label: "Cookie Policy", path: "/cookies" },
-    ],
-  },
-];
+const trustBadges = [{ icon: Lock, label: "SSL Secured" }];
 
-const trustBadges = [
-  { icon: Lock, label: "SSL Secured" },
-  { icon: Shield, label: "Buyer Protection" },
-  { icon: CreditCard, label: "Secure Payments via Stripe" },
-];
+function footerSections() {
+  const shopOpen = isShopOpen();
+  const customerLinks = [
+    { label: "Browse", path: "/browse" },
+    { label: "Wish list", path: "/wishlist" },
+    ...(shopOpen ? [{ label: "Checkout", path: "/cart" }] : []),
+  ];
+
+  return [
+    {
+      title: "Ocean Hotspot",
+      links: [
+        ...(shopOpen ? [] : [{ label: "Opening soon", path: "/" }]),
+        { label: "Contact us", path: "/contact" },
+      ],
+    },
+    {
+      title: "Customers",
+      links: customerLinks,
+    },
+    {
+      title: "Suppliers",
+      links: [{ label: "Sell with Ocean Hotspot", path: "/sell" }],
+    },
+    {
+      title: "Legal",
+      links: [
+        { label: "Terms and conditions", path: "/terms" },
+        { label: "Privacy policy", path: "/privacy" },
+        { label: "Cookie policy", path: "/cookies" },
+      ],
+    },
+  ];
+}
 
 export function Footer() {
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const sections = footerSections();
 
   const handleNewsletterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +82,7 @@ export function Footer() {
 
       setSubscribed(true);
       setEmail("");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Newsletter subscription error:", err);
       setError("Something went wrong. Please try again.");
     } finally {
@@ -119,7 +122,7 @@ export function Footer() {
         </div>
 
         <div className="mb-10 grid grid-cols-2 gap-8 sm:grid-cols-4">
-          {footerSections.map((section) => (
+          {sections.map((section) => (
             <div key={section.title}>
               <h4 className="mb-4 text-sm font-bold uppercase tracking-[0.18em] text-slate-300">{section.title}</h4>
               <ul className="space-y-2.5">
@@ -157,7 +160,7 @@ export function Footer() {
         </div>
 
         <div className="pt-6 text-center text-sm text-slate-400">
-          <p>© 2026 Ocean Hotspot. All rights reserved.</p>
+          <p>{COMPANY_LEGAL_LINE}</p>
         </div>
       </div>
     </footer>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Home, Search, ShoppingCart, User, Shield, Store, Package, Mail } from "lucide-react";
-import { isCustomerCheckoutEnabled } from "@/config/launch";
+import { isShopOpen } from "@/config/shop";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
@@ -55,7 +55,7 @@ export function MobileNav() {
     }
 
     // Customer/Guest navigation
-    if (!isCustomerCheckoutEnabled()) {
+    if (!isShopOpen()) {
       return [
         ...baseItems,
         { icon: Mail, label: "Contact", path: "/contact", badge: 0 },

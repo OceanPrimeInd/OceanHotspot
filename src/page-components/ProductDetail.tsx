@@ -17,8 +17,9 @@ import { useRecentlyViewed } from "@/contexts/RecentlyViewedContext";
 import { useToast } from "@/hooks/use-toast";
 import { formatPrice } from "@/lib/utils";
 import { getProductCategoryLabel } from "@/config/productCategories";
-import { isCustomerCheckoutEnabled } from "@/config/launch";
-import { ContactToOrderCTA } from "@/components/launch/ContactToOrderCTA";
+import { isShopOpen } from "@/config/shop";
+import { WhatsAppLink } from "@/components/shop/WhatsAppButton";
+import { buildProductWhatsAppMessage } from "@/lib/whatsapp";
 import { OpeningSoonWatermark } from "@/components/launch/OpeningSoonWatermark";
 import { ProductReviews } from "@/components/ProductReviews";
 import { ProductImageGallery } from "@/components/product/ProductImageGallery";
@@ -105,7 +106,9 @@ const ProductDetail = () => {
   } | null>(null);
 
   const isOwner = user && product && user.id === product.seller_id;
-  const checkoutLive = isCustomerCheckoutEnabled();
+  const checkoutLive = isShopOpen();
+  const supplierLabel =
+    sellerShowroom?.brand_name || sellerShowroom?.company_name || null;
   const isInCart = product && items.some((item) => item.id === product.id);
   const inWishlist = product ? isInWishlist(product.id) : false;
 
@@ -117,10 +120,14 @@ const ProductDetail = () => {
       price: product.price,
       currency: product.currency,
       image_url: product.image_url,
-      
       description: product.description,
       entity_type: product.entity_type,
       domain_category: product.domain_category,
+      seller_id: product.seller_id,
+      part_number: product.part_number,
+      supplier_name: supplierLabel,
+      quantity: 1,
+      note: "",
     });
     toast({
       title: inWishlist ? "Removed from wishlist" : "Added to wishlist",
@@ -176,7 +183,7 @@ const ProductDetail = () => {
         setProduct(data);
 
         // Auto-open enquiry form for non-fixed-price products
-        if (data.pricing_type && data.pricing_type !== "fixed_price") {
+        if (isShopOpen() && data.pricing_type && data.pricing_type !== "fixed_price") {
           setShowEnquiryForm(true);
         }
 
@@ -522,7 +529,34 @@ const ProductDetail = () => {
             ) : (
               <div className="space-y-4">
                 {!checkoutLive && (
-                  <ContactToOrderCTA productTitle={product.title} />
+                  <div className="space-y-3 rounded-xl border border-[rgba(214,31,38,0.35)] bg-[#fff7f7] p-5">
+                    <p className="text-sm font-semibold text-[#b3161c]">Order when we open</p>
+                    <div className="flex flex-wrap gap-3">
+                      <Button
+                        variant={inWishlist ? "secondary" : "o42Primary"}
+                        size="lg"
+                        className="flex-1"
+                        onClick={handleToggleWishlist}
+                      >
+                        <Heart className={`mr-2 h-5 w-5 ${inWishlist ? "fill-red-500 text-red-500" : ""}`} />
+                        {inWishlist ? "On your wish list" : "Add to wish list"}
+                      </Button>
+                      <WhatsAppLink
+                        message={buildProductWhatsAppMessage({
+                          title: product.title,
+                          partNumber: product.part_number,
+                          supplierName: supplierLabel,
+                          productUrl:
+                            typeof window !== "undefined"
+                              ? `${window.location.origin}/product/${product.id}`
+                              : undefined,
+                        })}
+                        className="inline-flex h-14 flex-1 items-center justify-center rounded-md border-2 border-[#128C7E] bg-[#128C7E]/10 px-4 text-base font-semibold text-[#128C7E] hover:bg-[#128C7E]/20"
+                      >
+                        Ask on WhatsApp
+                      </WhatsAppLink>
+                    </div>
+                  </div>
                 )}
 
                 {checkoutLive && (
@@ -597,33 +631,8 @@ const ProductDetail = () => {
                 </>
                 )}
 
-                {!checkoutLive && (
-                  <div className="flex justify-end">
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="lg"
-                          className={`h-14 w-14 ${
-                            inWishlist
-                              ? "text-red-500 hover:text-red-600 border-red-200 hover:border-red-300"
-                              : ""
-                          }`}
-                          onClick={handleToggleWishlist}
-                          aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
-                        >
-                          <Heart className={`h-6 w-6 ${inWishlist ? "fill-current" : ""}`} />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{inWishlist ? "Remove from wishlist" : "Save for later"}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </div>
-                )}
-
                 {/* Non-fixed-price: show prominent CTA box */}
-                {product.pricing_type && product.pricing_type !== "fixed_price" && (
+                {checkoutLive && product.pricing_type && product.pricing_type !== "fixed_price" && (
                   <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
                     <div className="flex items-center gap-2 mb-1">
                       <MessageSquare className="h-4 w-4 text-primary" />
@@ -645,6 +654,8 @@ const ProductDetail = () => {
                   </div>
                 )}
 
+                {checkoutLive && (
+                <>
                 {/* Enquiry Toggle */}
                 <div className="border-t border-border pt-4">
                   <button
@@ -742,6 +753,8 @@ const ProductDetail = () => {
                       </div>
                     )}
                   </div>
+                )}
+                </>
                 )}
               </div>
             )}

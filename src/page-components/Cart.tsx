@@ -25,10 +25,9 @@ import {
   Package,
   ShieldCheck,
   LogIn,
-  MessageSquare,
 } from "lucide-react";
-import { isCustomerCheckoutEnabled } from "@/config/launch";
-import { CONTACT_EMAIL } from "@/config/contact";
+import { isShopOpen } from "@/config/shop";
+import { CheckoutClosedPlaceholder } from "@/components/shop/CheckoutClosedPlaceholder";
 
 const Cart = () => {
   const { items, removeItem, updateQuantity, clearCart, total } = useCart();
@@ -40,24 +39,8 @@ const Cart = () => {
     router.push("/cart-checkout");
   };
 
-  if (!isCustomerCheckoutEnabled()) {
-    return (
-      <Layout>
-        <div className="container max-w-lg py-16 text-center">
-          <MessageSquare className="mx-auto h-12 w-12 text-primary mb-4" />
-          <h1 className="text-2xl font-bold text-headline mb-2">Ordering is opening soon</h1>
-          <p className="text-muted-foreground mb-6">
-            Browse the catalogue and email us what you need — we will confirm price and bank-transfer options.
-          </p>
-          <Button variant="o42Primary" asChild>
-            <a href={`mailto:${CONTACT_EMAIL}`}>Contact Ocean Hotspot</a>
-          </Button>
-          <Button variant="link" asChild className="mt-2">
-            <Link href="/browse">Back to catalogue</Link>
-          </Button>
-        </div>
-      </Layout>
-    );
+  if (!isShopOpen()) {
+    return <CheckoutClosedPlaceholder />;
   }
 
   if (items.length === 0) {

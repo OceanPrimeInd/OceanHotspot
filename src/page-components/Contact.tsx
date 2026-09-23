@@ -4,80 +4,68 @@
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { Mail, Store, Lock, MessageSquare } from "lucide-react";
-import { CONTACT_EMAIL } from "@/config/contact";
+import { Mail, Heart, MessageCircle } from "lucide-react";
+import { CONTACT_EMAIL, COMPANY_LEGAL_LINE } from "@/config/contact";
 import { ContactEmailLink } from "@/components/ContactEmailLink";
-
-const enquiryTopics = [
-  {
-    icon: Store,
-    title: "Vendor enquiries",
-    description:
-      "Interested in selling on Ocean Hotspot, or have questions about your vendor account?",
-  },
-  {
-    icon: Mail,
-    title: "Buyer support",
-    description: "Need help with an order, return, or dispute?",
-  },
-  {
-    icon: Lock,
-    title: "Privacy and data",
-    description: "Questions about your personal data or our privacy practices?",
-  },
-  {
-    icon: MessageSquare,
-    title: "General enquiries",
-    description: "Anything else — include your topic in the subject line.",
-  },
-];
+import { WhatsAppLink } from "@/components/shop/WhatsAppButton";
 
 const Contact = () => {
   return (
     <Layout>
       <div className="container max-w-3xl py-12">
         <div className="rounded-2xl border border-border bg-card p-8 shadow-lg">
-          <h1 className="text-3xl font-bold text-headline mb-2">Contact Us</h1>
-          <p className="text-muted-foreground mb-4">
-            Get in touch with the Ocean Hotspot team. While the online checkout is opening soon,{" "}
-            <strong>all orders and product questions</strong> come through us — include part numbers, links to
-            listings, and your boat details. We can quote card and bank-transfer prices.
+          <h1 className="text-3xl font-bold text-headline mb-2">Talk to someone who knows boats</h1>
+          <p className="text-muted-foreground mb-8 leading-relaxed">
+            Ask about a product, send us a part number or a photo, or send us your product list. We reply by WhatsApp
+            or email, whichever you prefer.
           </p>
 
-          <div className="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-4">
-            <p className="text-sm font-medium text-foreground">Email</p>
-            <p className="mt-1 text-lg">
-              <ContactEmailLink className="text-primary underline hover:text-primary/80 font-medium" />
-            </p>
-          </div>
-
-          <div className="grid gap-4">
-            {enquiryTopics.map(({ icon: Icon, title, description }) => (
-              <div
-                key={title}
-                className="rounded-xl border border-border/60 bg-muted/30 p-4"
-              >
-                <div className="flex items-center gap-2 font-semibold text-foreground">
-                  <Icon className="h-4 w-4 text-primary" />
-                  {title}
-                </div>
-                <p className="mt-1 text-sm text-muted-foreground">{description}</p>
+          <div className="space-y-6">
+            <section className="rounded-xl border border-[#128C7E]/30 bg-[#128C7E]/5 p-5">
+              <div className="flex items-center gap-2 font-semibold text-[#128C7E]">
+                <MessageCircle className="h-5 w-5" />
+                WhatsApp
               </div>
-            ))}
+              <p className="mt-2 text-sm text-muted-foreground">
+                Send us a message or a photo of the part you need.
+              </p>
+              <WhatsAppLink
+                message="Hi Ocean Hotspot — I need help with a marine part."
+                className="mt-4 inline-flex h-10 items-center rounded-md border border-[#128C7E] bg-background px-4 text-sm font-medium text-[#128C7E] hover:bg-[#128C7E]/10"
+              >
+                Message us on WhatsApp
+              </WhatsAppLink>
+            </section>
+
+            <section className="rounded-xl border border-primary/20 bg-primary/5 p-5">
+              <div className="flex items-center gap-2 font-semibold text-primary">
+                <Mail className="h-5 w-5" />
+                Email
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Write to us at{" "}
+                <ContactEmailLink className="font-medium text-primary underline hover:text-primary/80" />.
+              </p>
+              <Button variant="o42Primary" className="mt-4" asChild>
+                <a href={`mailto:${CONTACT_EMAIL}`}>Email us</a>
+              </Button>
+            </section>
+
+            <section className="rounded-xl border border-border bg-muted/30 p-5">
+              <div className="flex items-center gap-2 font-semibold text-foreground">
+                <Heart className="h-5 w-5 text-red-500" />
+                Your product list
+              </div>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Save the products you want to your wish list and send it to us. You and we both get a copy by email.
+              </p>
+              <Button variant="outline" className="mt-4" asChild>
+                <Link href="/wishlist">Go to my wish list</Link>
+              </Button>
+            </section>
           </div>
 
-          <p className="mt-6 text-xs text-muted-foreground">
-            Ocean Hotspot is operated by Ocean Prime Industries Ltd, registered in England and Wales.
-          </p>
-
-          <div className="mt-6 flex flex-col sm:flex-row gap-3">
-            <Button variant="o42Primary" asChild>
-              <a href={`mailto:${CONTACT_EMAIL}`}>Email us</a>
-            </Button>
-            <Button variant="outline" asChild>
-              <Link href="/help">Back to Help Centre</Link>
-            </Button>
-          </div>
+          <p className="mt-8 text-sm text-muted-foreground">{COMPANY_LEGAL_LINE.replace("© ", "")}</p>
         </div>
       </div>
     </Layout>

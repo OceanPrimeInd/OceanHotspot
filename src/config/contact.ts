@@ -1,10 +1,9 @@
 /** Single public contact address for Ocean Hotspot */
 export const CONTACT_EMAIL = "oceanhotspotservices@gmail.com" as const;
 
-/** Set NEXT_PUBLIC_SUPPORT_PHONE when a staffed line is live (e.g. +441234567890). */
-export const SUPPORT_PHONE =
-  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_SUPPORT_PHONE?.trim()) || "";
+/** WhatsApp Business number (E.164, e.g. 447700900123). Set NEXT_PUBLIC_WHATSAPP_NUMBER in Vercel. */
+export const WHATSAPP_NUMBER =
+  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_WHATSAPP_NUMBER?.trim()) || "";
 
-export const SUPPORT_PHONE_DISPLAY =
-  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_SUPPORT_PHONE_DISPLAY?.trim()) ||
-  SUPPORT_PHONE;
+export const COMPANY_LEGAL_LINE =
+  "© 2026 Ocean Hotspot, a trading name of Ocean Prime Industries Ltd, company number 14306464.";

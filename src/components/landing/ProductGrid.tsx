@@ -6,6 +6,8 @@ import { supabase } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
 import { Package, Loader2, Star } from "lucide-react";
 import { getPlaceholderSvg } from "@/lib/productPlaceholders";
+import { PreOpeningProductActions } from "@/components/shop/PreOpeningProductActions";
+import { isShopOpen } from "@/config/shop";
 
 interface Product {
   id: string;
@@ -15,23 +17,32 @@ interface Product {
   image_url: string | null;
   images: string[] | null;
   description: string | null;
+  part_number?: string | null;
+  seller_id?: string;
+  seller_company?: string | null;
 }
 
 export function ProductGrid() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const shopOpen = isShopOpen();
 
   useEffect(() => {
     const fetchProducts = async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, title, price, currency, image_url, images, description")
+        .select("id, title, price, currency, image_url, images, description, part_number, seller_id, profiles(company_name)")
         .eq("is_published", true)
         .order("created_at", { ascending: false })
         .limit(8);
 
       if (!error && data) {
-        setProducts(data);
+        setProducts(
+          (data as any[]).map((row) => ({
+            ...row,
+            seller_company: row.profiles?.company_name ?? null,
+          })),
+        );
       }
       setLoading(false);
     };
@@ -76,66 +87,75 @@ export function ProductGrid() {
           const placeholder = getPlaceholderSvg(product.title);
 
           return (
-            <Link
-              href={`/product/${product.id}`}
+            <div
               key={product.id}
-              className="group overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_18px_40px_-30px_rgba(15,34,87,0.35)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_40px_-20px_rgba(15,34,87,0.55)]"
+              className="group flex flex-col overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_18px_40px_-30px_rgba(15,34,87,0.35)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_40px_-20px_rgba(15,34,87,0.55)]"
             >
-              <div className="relative aspect-square overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(17,63,186,0.08),_rgba(255,255,255,0.5)_60%)]">
-                {hasImage ? (
-                  <>
-                    <img
-                      src={allImages[0]}
-                      alt={product.title}
-                      className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                    />
-                    {imageCount > 1 && (
-                      <span className="absolute bottom-3 right-3 rounded-full bg-slate-900/75 px-2.5 py-1 text-[10px] font-medium text-white">
-                        +{imageCount - 1} more
-                      </span>
-                    )}
-                  </>
-                ) : placeholder ? (
-                  <div className="h-full w-full transition-transform duration-300 group-hover:scale-105">
-                    {placeholder}
-                  </div>
-                ) : (
-                  <div className="flex h-full flex-col items-center justify-center text-slate-500">
-                    <Package className="mb-2 h-8 w-8" />
-                    <span className="text-xs uppercase tracking-[0.15em]">Product</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="space-y-3 p-4">
-                <div className="flex items-center justify-between gap-2 text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
-                  <span>Marine essentials</span>
-                  <span className="flex items-center gap-1 text-[#ff7a35]">
-                    <Star className="h-3 w-3 fill-current" />
-                    4.9
-                  </span>
+              <Link href={`/product/${product.id}`} className="block">
+                <div className="relative aspect-square overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(17,63,186,0.08),_rgba(255,255,255,0.5)_60%)]">
+                  {hasImage ? (
+                    <>
+                      <img
+                        src={allImages[0]}
+                        alt={product.title}
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                      {imageCount > 1 && (
+                        <span className="absolute bottom-3 right-3 rounded-full bg-slate-900/75 px-2.5 py-1 text-[10px] font-medium text-white">
+                          +{imageCount - 1} more
+                        </span>
+                      )}
+                    </>
+                  ) : placeholder ? (
+                    <div className="h-full w-full transition-transform duration-300 group-hover:scale-105">
+                      {placeholder}
+                    </div>
+                  ) : (
+                    <div className="flex h-full flex-col items-center justify-center text-slate-500">
+                      <Package className="mb-2 h-8 w-8" />
+                      <span className="text-xs uppercase tracking-[0.15em]">Product</span>
+                    </div>
+                  )}
                 </div>
+              </Link>
 
-                <h3 className="line-clamp-2 text-base font-semibold leading-snug text-slate-900 group-hover:text-primary">
-                  {product.title}
-                </h3>
-
-                {product.description && (
-                  <p className="line-clamp-2 text-sm text-slate-600">{product.description}</p>
+              <div className="flex flex-1 flex-col space-y-2 p-4">
+                {product.seller_company && (
+                  <p className="text-xs font-medium text-[#53616d]">{product.seller_company}</p>
                 )}
-
+                <Link href={`/product/${product.id}`}>
+                  <h3 className="line-clamp-2 text-base font-semibold leading-snug text-slate-900 group-hover:text-primary">
+                    {product.title}
+                  </h3>
+                </Link>
+                {product.part_number && (
+                  <p className="text-xs text-muted-foreground">Part number {product.part_number}</p>
+                )}
                 <div className="flex items-center justify-between pt-1">
                   {product.price > 0 ? (
-                    <span className="text-lg font-black text-slate-900">{formatPrice(product.currency, product.price)}</span>
+                    <span className="text-lg font-black text-slate-900">
+                      {formatPrice(product.currency, product.price)}{" "}
+                      <span className="text-xs font-normal text-muted-foreground">ex VAT</span>
+                    </span>
                   ) : (
                     <span className="text-sm text-slate-500">Price on request</span>
                   )}
-                  <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-primary">
-                    In stock
-                  </span>
                 </div>
+                {!shopOpen && (
+                  <PreOpeningProductActions
+                    compact
+                    productId={product.id}
+                    title={product.title}
+                    price={product.price}
+                    currency={product.currency}
+                    image_url={product.image_url}
+                    partNumber={product.part_number}
+                    supplierName={product.seller_company}
+                    sellerId={product.seller_id}
+                  />
+                )}
               </div>
-            </Link>
+            </div>
           );
         })}
       </div>

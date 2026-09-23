@@ -24,6 +24,7 @@ export type { WishlistItem } from "@/types/buyerLists";
 interface WishlistContextType {
   items: WishlistItem[];
   addItem: (item: Omit<WishlistItem, "addedAt">) => void;
+  updateItem: (productId: string, patch: Partial<Omit<WishlistItem, "id" | "addedAt">>) => void;
   removeItem: (productId: string) => void;
   isInWishlist: (productId: string) => boolean;
   toggleItem: (item: Omit<WishlistItem, "addedAt">) => void;
@@ -62,11 +63,35 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
 
   const addItem = (item: Omit<WishlistItem, "addedAt">) => {
     setItems((current) => {
-      if (current.some((i) => i.id === item.id)) {
-        return current;
+      const existing = current.find((i) => i.id === item.id);
+      if (existing) {
+        return current.map((i) =>
+          i.id === item.id
+            ? {
+                ...i,
+                ...item,
+                quantity: item.quantity ?? i.quantity ?? 1,
+                note: item.note ?? i.note ?? "",
+              }
+            : i,
+        );
       }
-      return [...current, { ...item, addedAt: Date.now() }];
+      return [
+        ...current,
+        {
+          ...item,
+          quantity: item.quantity ?? 1,
+          note: item.note ?? "",
+          addedAt: Date.now(),
+        },
+      ];
     });
+  };
+
+  const updateItem = (productId: string, patch: Partial<Omit<WishlistItem, "id" | "addedAt">>) => {
+    setItems((current) =>
+      current.map((i) => (i.id === productId ? { ...i, ...patch } : i)),
+    );
   };
 
   const removeItem = (productId: string) => {
@@ -82,7 +107,15 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
       if (current.some((i) => i.id === item.id)) {
         return current.filter((i) => i.id !== item.id);
       }
-      return [...current, { ...item, addedAt: Date.now() }];
+      return [
+        ...current,
+        {
+          ...item,
+          quantity: item.quantity ?? 1,
+          note: item.note ?? "",
+          addedAt: Date.now(),
+        },
+      ];
     });
   };
 
@@ -101,6 +134,7 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
       value={{
         items,
         addItem,
+        updateItem,
         removeItem,
         isInWishlist,
         toggleItem,

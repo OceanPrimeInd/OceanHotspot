@@ -15,6 +15,8 @@ import { useToast } from "@/hooks/use-toast";
 import { formatPrice } from "@/lib/utils";
 import { getPlaceholderSvg } from "@/lib/productPlaceholders";
 import { Loader2, ArrowLeft, ShieldCheck, CreditCard, Package, Landmark, Phone, Copy, CheckCircle2, AlertTriangle } from "lucide-react";
+import { isShopOpen } from "@/config/shop";
+import { CheckoutClosedPlaceholder } from "@/components/shop/CheckoutClosedPlaceholder";
 
 // ─── Payment Tier Logic ──────────────────────────────────────────────────────
 const ESCROW_THRESHOLD = 500;   // £500
@@ -52,6 +54,10 @@ const Checkout = () => {
   const router = useRouter();
   const { user, profile } = useAuth();
   const { toast } = useToast();
+
+  if (!isShopOpen()) {
+    return <CheckoutClosedPlaceholder />;
+  }
 
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);

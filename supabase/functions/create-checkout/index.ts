@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { isShopCheckoutOpen, shopClosedResponse } from "../_shared/shopOpen.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -9,16 +10,8 @@ serve(async (req) => {
   }
 
   try {
-    if (Deno.env.get("CUSTOMER_CHECKOUT_ENABLED") !== "true") {
-      return new Response(
-        JSON.stringify({
-          error: "Online checkout is not open yet. Please contact Ocean Hotspot to place an order.",
-        }),
-        {
-          status: 403,
-          headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
-        },
-      );
+    if (!isShopCheckoutOpen()) {
+      return shopClosedResponse(req, getCorsHeaders(req));
     }
 
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {

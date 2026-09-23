@@ -17,7 +17,8 @@ import { formatPrice } from "@/lib/utils";
 import { getPlaceholderSvg } from "@/lib/productPlaceholders";
 import { Loader2, ShieldCheck, CreditCard, Package } from "lucide-react";
 import { trackAnalyticsEvent } from "@/lib/analytics";
-import { isCustomerCheckoutEnabled } from "@/config/launch";
+import { isShopOpen } from "@/config/shop";
+import { CheckoutClosedPlaceholder } from "@/components/shop/CheckoutClosedPlaceholder";
 
 const paymentTier = "card" as const;
 
@@ -36,11 +37,9 @@ const CartCheckout = () => {
   const { items, total, clearCart } = useCart();
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (!isCustomerCheckoutEnabled()) {
-      router.replace("/contact");
-    }
-  }, [router]);
+  if (!isShopOpen()) {
+    return <CheckoutClosedPlaceholder />;
+  }
 
   const [processing, setProcessing] = useState(false);
 

@@ -21,6 +21,7 @@ import {
   Building2,
   Loader2,
 } from "lucide-react";
+import { SupplierApplicationWizard } from "@/components/sell/SupplierApplicationWizard";
 
 const SellOnOceanHotspot = () => {
   const { user, profile } = useAuth();
@@ -69,15 +70,18 @@ const SellOnOceanHotspot = () => {
         <div className="container max-w-6xl">
           <h1 className="text-3xl md:text-4xl font-bold text-headline mb-3">Sell with Ocean Hotspot</h1>
           <p className="text-muted-foreground max-w-2xl mb-10">
-            One place for suppliers selling online today and for physical stores joining soon.
+            Your showroom. Your brand. Your customers. You pay nothing until something sells.
           </p>
 
           <div className="grid gap-8 lg:grid-cols-2">
             {/* Online panel */}
             <div className="rounded-2xl border border-border bg-white p-6 md:p-8 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-wider text-primary mb-2">Sell online</p>
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <p className="text-xs font-semibold uppercase tracking-wider text-primary">Sell online with Ocean Hotspot</p>
+                <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-800">Open now</span>
+              </div>
               <h2 className="text-2xl font-bold text-headline mb-4 leading-snug">
-                Your showroom. Your brand. Your customers. You pay nothing until something sells.
+                Set up your showroom and load your products now, ready for opening day.
               </h2>
 
               <div className="space-y-4 text-sm text-muted-foreground leading-relaxed mb-6">
@@ -143,11 +147,13 @@ const SellOnOceanHotspot = () => {
               <p className="mt-6 text-xs text-muted-foreground" id="commission">
                 Commission today: {PLATFORM_COMMISSION_PERCENT_LABEL} of the order total (including VAT where
                 applicable), recorded when the order is placed. See{" "}
-                <Link href="/terms" className="text-primary hover:underline">
-                  Terms
+                <Link href="/terms/supplier" className="text-primary hover:underline">
+                  Supplier terms
                 </Link>
                 .
               </p>
+
+              {!isSeller && <SupplierApplicationWizard />}
             </div>
 
             {/* In-store panel */}

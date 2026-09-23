@@ -23,7 +23,9 @@ import {
   MessageSquare,
   AlertTriangle,
   ArrowRight,
+  Download,
 } from "lucide-react";
+import { isShopOpen } from "@/config/shop";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { SalesChart } from "@/components/dashboard/SalesChart";
 import { DashboardSkeleton } from "@/components/dashboard/DashboardSkeleton";
@@ -255,8 +257,31 @@ const SellerDashboard = () => {
           </p>
         </div>
 
+        {stats.totalProducts === 0 && (
+          <div className="mb-8 rounded-xl border border-primary/20 bg-primary/5 p-5">
+            <h3 className="font-semibold text-headline">Welcome — load your products</h3>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Download the CSV template, add products one by one, or use bulk upload when your range is ready.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Button variant="outline" size="sm" asChild>
+                <a href="/ocean-hotspot-product-template.csv" download>
+                  <Download className="mr-2 h-4 w-4" />
+                  Product template (CSV)
+                </a>
+              </Button>
+              <Button variant="o42Primary" size="sm" asChild>
+                <Link href="/seller/products/new">Add a product</Link>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link href="/seller/bulk-upload">Bulk upload</Link>
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Stripe Connection Banner */}
-        {!profile.stripe_charges_enabled && (
+        {isShopOpen() && !profile.stripe_charges_enabled && (
           <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 p-5 flex flex-col sm:flex-row items-start sm:items-center gap-4">
             <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-amber-100">
               <AlertTriangle className="h-5 w-5 text-amber-600" />

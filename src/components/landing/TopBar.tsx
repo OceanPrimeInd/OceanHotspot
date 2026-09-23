@@ -55,8 +55,7 @@ import {
   getSubgroupIcon,
 } from "@/components/browse/categoryIcons";
 import { browseUrlForNavLabel, navLabelToCategorySlug, browseCategoryUrl } from "@/lib/navBrowse";
-import { SUPPORT_PHONE, SUPPORT_PHONE_DISPLAY } from "@/config/contact";
-import { isCustomerCheckoutEnabled } from "@/config/launch";
+import { isShopOpen } from "@/config/shop";
 
 interface SearchSuggestion {
   id: string;
@@ -294,14 +293,6 @@ export function TopBar() {
         )}
 
         <div className="flex shrink-0 items-center gap-1.5 md:gap-2">
-          {showMarketplaceChrome && SUPPORT_PHONE && (
-            <a
-              href={`tel:${SUPPORT_PHONE.replace(/\s/g, "")}`}
-              className="hidden text-xs font-semibold text-primary hover:underline lg:inline"
-            >
-              Call {SUPPORT_PHONE_DISPLAY}
-            </a>
-          )}
           {user ? (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -363,7 +354,7 @@ export function TopBar() {
             </div>
           )}
 
-          {showMarketplaceChrome && isCustomerCheckoutEnabled() && (
+          {showMarketplaceChrome && isShopOpen() && (
           <Link
             href="/cart"
             className="relative flex items-center justify-center rounded-lg border border-[#e0e0e0] bg-white p-2 text-[#2e3d44] transition hover:border-[#c8c8c8]"
@@ -384,13 +375,14 @@ export function TopBar() {
           {showMarketplaceChrome && !isAdmin && !isSeller && (
             <Link
               href="/wishlist"
-              className="relative flex items-center justify-center rounded-lg border border-[#e0e0e0] bg-white p-2 text-[#2e3d44] transition hover:border-[#c8c8c8]"
+              className="relative inline-flex items-center gap-1.5 rounded-lg border-2 border-primary bg-white px-2.5 py-1.5 text-sm font-semibold text-primary transition hover:bg-primary/10 md:px-3"
               onClick={() => setIsMenuOpen(false)}
             >
               <Heart className="h-4 w-4" />
+              <span className="hidden sm:inline">Wish list</span>
               {mounted && wishlistCount > 0 && (
                 <span
-                  className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[9px] font-bold text-white"
+                  className="flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
                   style={{ backgroundColor: BRAND.orange }}
                 >
                   {wishlistCount > 9 ? "9+" : wishlistCount}

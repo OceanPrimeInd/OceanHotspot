@@ -19,5 +19,10 @@ export interface WishlistItem {
   description?: string | null;
   entity_type?: string | null;
   domain_category?: string | null;
+  seller_id?: string;
+  part_number?: string | null;
+  supplier_name?: string | null;
+  quantity?: number;
+  note?: string;
   addedAt: number;
 }

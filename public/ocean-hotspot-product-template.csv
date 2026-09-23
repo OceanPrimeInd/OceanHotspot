@@ -1,0 +1,2 @@
+part_number,title,brand,condition,category,short_description,technical_detail,fits,replaces,supplier_note,price_ex_vat,vat_rate,availability,lead_time,ships_from,shipping_cost,image_url
+EXAMPLE-001,Example product title,Brand name,new,maintenance_consumables,Short description for buyers,,,,,99.00,20,in_stock,2-3 days,United Kingdom,POA,https://example.com/photo.jpg

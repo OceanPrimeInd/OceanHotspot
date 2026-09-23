@@ -3,6 +3,7 @@ import Stripe from "https://esm.sh/stripe@14.21.0?target=deno&no-check";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.7';
 
 import { getCorsHeaders } from "../_shared/cors.ts";
+import { isShopCheckoutOpen, shopClosedResponse } from "../_shared/shopOpen.ts";
 
 interface CartItem {
   productId: string;
@@ -17,6 +18,10 @@ Deno.serve(async (req) => {
   }
 
   try {
+    if (!isShopCheckoutOpen()) {
+      return shopClosedResponse(req, getCorsHeaders(req));
+    }
+
     // 5. Initialize Stripe with the Secret Key from your Supabase Secrets
     const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") || "", {
       apiVersion: "2023-10-16",

@@ -19,6 +19,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { isShopOpen } from "@/config/shop";
 import {
   Loader2,
   Upload,
@@ -564,7 +565,7 @@ const SellerOnboarding = () => {
                   </>
                 ) : (
                   <>
-                    Next: Connect Payments
+                    {isShopOpen() ? "Next: Connect Payments" : "Next: Getting paid"}
                     <ChevronRight className="ml-2 h-4 w-4" />
                   </>
                 )}
@@ -573,9 +574,31 @@ const SellerOnboarding = () => {
           </div>
         )}
 
-        {/* Step 2: Stripe Connect */}
+        {/* Step 2: Stripe Connect (or pre-opening placeholder) */}
         {currentStep === 2 && (
           <div className="animate-slide-up space-y-6">
+            {!isShopOpen() ? (
+              <>
+                <div>
+                  <h1 className="text-2xl font-bold text-headline">Getting paid</h1>
+                  <p className="mt-1 text-sm text-muted-foreground">Coming soon</p>
+                </div>
+                <div className="rounded-xl border border-border bg-card p-8 shadow-sm space-y-4">
+                  <p className="text-sm text-muted-foreground leading-relaxed">
+                    Payments open when the shop opens. We will set up your payout details with you before your first
+                    sale. You pay nothing until something sells.
+                  </p>
+                  <p className="text-sm text-foreground">
+                    I agree to the supplier terms and privacy policy (confirmed at sign-up).
+                  </p>
+                  <Button variant="o42Primary" className="h-12" onClick={() => router.push("/seller/dashboard")}>
+                    Load your products
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <>
             <div>
               <h1 className="text-2xl font-bold text-headline">Connect Payments</h1>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -720,6 +743,8 @@ const SellerOnboarding = () => {
                   Back
                 </Button>
               </div>
+            )}
+              </>
             )}
           </div>
         )}
