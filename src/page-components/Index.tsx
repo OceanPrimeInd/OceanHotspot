@@ -199,7 +199,7 @@ const Index = () => {
           <section className="section-shell mb-16">
             <div className="rounded-[2rem] border border-[#dce4ed] bg-[linear-gradient(135deg,#07172f_0%,#0f2847_100%)] p-8 text-white md:p-10">
               <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#ffab7e]">For suppliers</p>
-              <h2 className="mt-2 text-2xl font-black tracking-tight md:text-3xl">
+              <h2 className="mt-2 text-2xl font-black tracking-tight text-white md:text-3xl">
                 Your showroom. Your brand. Your customers.
               </h2>
               <p className="mt-4 max-w-2xl text-sm leading-relaxed text-slate-200 md:text-base">
@@ -209,8 +209,6 @@ const Index = () => {
               <div className="mt-6 flex flex-wrap gap-3">
                 <Link
                   href="/sell"
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="inline-flex items-center rounded-xl bg-[#f26d2a] px-6 py-3 text-sm font-semibold text-white hover:bg-[#d95a1a]"
                 >
                   Start selling

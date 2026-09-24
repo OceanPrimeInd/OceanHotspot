@@ -1,7 +1,7 @@
 // @ts-nocheck
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { DistributorLayout } from "@/components/layout/DistributorLayout";
@@ -23,6 +23,7 @@ import {
   Globe,
   Users,
 } from "lucide-react";
+import { PLATFORM_COMMISSION_PERCENT_LABEL, PLATFORM_COMMISSION_RATE } from "@/config/platform";
 
 const COVERAGE_AREAS = [
   "United Kingdom", "Ireland", "France", "Spain", "Portugal",
@@ -434,7 +435,8 @@ export default function Register() {
             <div>
               <h2 className="text-lg font-semibold mb-1">Commission Rate</h2>
               <p className="text-sm text-muted-foreground mb-6">
-                Set your default commission rate. Individual vendor agreements can be negotiated separately. The platform fee is 5% on top.
+                Set your default commission rate. Individual vendor agreements can be negotiated separately. The platform fee is{" "}
+                {PLATFORM_COMMISSION_PERCENT_LABEL} on top.
               </p>
               <div className="mb-6">
                 <Label>Your Commission (%)</Label>
@@ -446,12 +448,30 @@ export default function Register() {
                   Example: £1,000 order
                 </div>
                 <div className="divide-y divide-border bg-white">
-                  {[
-                    { label: "Order Total", value: "£1,000.00" },
-                    { label: `Your Commission (${commissionRate}%)`, value: `£${(10 * parseFloat(commissionRate || "0")).toFixed(2)}`, color: "text-green-600" },
-                    { label: "Platform Fee (5%)", value: "£50.00", color: "text-muted-foreground" },
-                    { label: "Vendor Payout", value: `£${(1000 - (10 * parseFloat(commissionRate || "0")) - 50).toFixed(2)}`, bold: true },
-                  ].map(({ label, value, bold, color }) => (
+                  {(() => {
+                    const exampleOrderTotal = 1000;
+                    const platformFee = exampleOrderTotal * PLATFORM_COMMISSION_RATE;
+                    const distRate = parseFloat(commissionRate || "0");
+                    const distCommission = (exampleOrderTotal * distRate) / 100;
+                    return [
+                      { label: "Order Total", value: "£1,000.00" },
+                      {
+                        label: `Your Commission (${commissionRate}%)`,
+                        value: `£${distCommission.toFixed(2)}`,
+                        color: "text-green-600",
+                      },
+                      {
+                        label: `Platform Fee (${PLATFORM_COMMISSION_PERCENT_LABEL})`,
+                        value: `£${platformFee.toFixed(2)}`,
+                        color: "text-muted-foreground",
+                      },
+                      {
+                        label: "Vendor Payout",
+                        value: `£${(exampleOrderTotal - distCommission - platformFee).toFixed(2)}`,
+                        bold: true,
+                      },
+                    ];
+                  })().map(({ label, value, bold, color }) => (
                     <div key={label} className="flex justify-between px-4 py-2.5 text-sm">
                       <span className={bold ? "font-semibold" : ""}>{label}</span>
                       <span className={`font-medium ${color || ""} ${bold ? "font-bold" : ""}`}>{value}</span>

@@ -17,6 +17,7 @@ import { getPlaceholderSvg } from "@/lib/productPlaceholders";
 import { Loader2, ArrowLeft, ShieldCheck, CreditCard, Package, Landmark, Phone, Copy, CheckCircle2, AlertTriangle } from "lucide-react";
 import { isShopOpen } from "@/config/shop";
 import { CheckoutClosedPlaceholder } from "@/components/shop/CheckoutClosedPlaceholder";
+import { PLATFORM_COMMISSION_RATE } from "@/config/platform";
 
 // ─── Payment Tier Logic ──────────────────────────────────────────────────────
 const ESCROW_THRESHOLD = 500;   // £500
@@ -184,8 +185,6 @@ const Checkout = () => {
 
     // ─── Payment splitting: look up distributor for this seller ───────────────
     const total = calculateTotal();
-    const PLATFORM_FEE_RATE = 0.05; // 5%
-
     const { data: distProduct } = await supabase
       .from("distributor_products")
       .select("distributor_id, commission_rate, distributors(id, commission_rate)")
@@ -200,7 +199,7 @@ const Checkout = () => {
     const distributorCommission = distributorId
       ? Number((total * distributorCommissionRate / 100).toFixed(2))
       : 0;
-    const platformFee = Number((total * PLATFORM_FEE_RATE).toFixed(2));
+    const platformFee = Number((total * PLATFORM_COMMISSION_RATE).toFixed(2));
     const sellerPayout = Number((total - distributorCommission - platformFee).toFixed(2));
     // ─────────────────────────────────────────────────────────────────────────
 
@@ -614,7 +613,7 @@ const Checkout = () => {
                     {paymentTier === "premium" && (
                       <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-xs text-blue-800 flex items-start gap-2">
                         <Phone className="h-4 w-4 shrink-0 mt-0.5" />
-                        <span>For orders over £10,000 our team will call you to complete <strong>identity verification</strong> before funds are released. Alternatively, pay a <strong>10% refundable deposit</strong> now to reserve this item.</span>
+                        <span>For orders over £10,000 our team will call you to complete <strong>identity verification</strong> before funds are released. Alternatively, pay a <strong>5% refundable deposit</strong> now to reserve this item.</span>
                       </div>
                     )}
 

@@ -3,6 +3,7 @@ import Stripe from "https://esm.sh/stripe@14.21.0?target=deno";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { getCorsHeaders } from "../_shared/cors.ts";
 import { isShopCheckoutOpen, shopClosedResponse } from "../_shared/shopOpen.ts";
+import { platformFeeFromOrderTotal } from "../_shared/platformCommission.ts";
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -140,14 +141,14 @@ serve(async (req) => {
         validDistributorId = dist.id;
         const rate = (dist.commission_rate || 10) / 100;
         distributorCommission = Math.round(orderTotal * rate * 100) / 100;
-        platformFee = Math.round(orderTotal * 0.05 * 100) / 100;
+        platformFee = platformFeeFromOrderTotal(orderTotal);
         sellerPayout = Math.round((orderTotal - distributorCommission - platformFee) * 100) / 100;
       }
     }
 
     if (!validDistributorId) {
       // No distributor — platform takes 5%, seller gets the rest
-      platformFee = Math.round(orderTotal * 0.05 * 100) / 100;
+      platformFee = platformFeeFromOrderTotal(orderTotal);
       sellerPayout = Math.round((orderTotal - platformFee) * 100) / 100;
     }
     // ────────────────────────────────────────────────────────────────────────
