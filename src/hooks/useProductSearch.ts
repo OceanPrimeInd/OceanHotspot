@@ -31,10 +31,14 @@ export function useProductSearch() {
     setError(null);
 
     try {
-      const { data, error: searchError } = await supabase.rpc('search_products', {
-        search_query: query,
-        result_limit: limit
-      });
+      const escapedQuery = query.trim().replace(/[%_,]/g, " ");
+      const { data, error: searchError } = await supabase
+        .from("products")
+        .select("id, title, description, price, currency, image_url, entity_type, domain_category")
+        .eq("is_published", true)
+        .or(`title.ilike.%${escapedQuery}%,description.ilike.%${escapedQuery}%`)
+        .order("created_at", { ascending: false })
+        .limit(limit);
 
       if (searchError) throw searchError;
 

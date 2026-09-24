@@ -9,6 +9,7 @@ import {
   ChevronRight,
   User,
   Shield,
+  ShieldCheck,
   Store,
   Heart,
 } from "lucide-react";
@@ -429,6 +430,14 @@ export function TopBar() {
                 </button>
               );
             })}
+            <Link
+              href={browseUrlForNavLabel("Insurance")}
+              onClick={() => setIsMenuOpen(false)}
+              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm font-medium text-[#4a5861] transition hover:bg-[#f7f7f7] hover:shadow-[0_1px_3px_rgba(24,39,52,0.06)] md:px-3 md:text-[15px]"
+            >
+              <ShieldCheck className="h-4 w-4 shrink-0 text-[#6b7a84]" />
+              Insurance
+            </Link>
           </div>
         </div>
       </nav>

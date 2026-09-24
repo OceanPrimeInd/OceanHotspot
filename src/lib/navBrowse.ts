@@ -10,6 +10,7 @@ const NAV_LABEL_TO_CAT: Record<string, string> = {
   Maintenance: "maintenance",
   Safety: "safety",
   Leisure: "leisure",
+  Insurance: "services",
 };
 
 export function navLabelToCategorySlug(label: string): string | null {
@@ -23,7 +24,9 @@ export function browseCategoryUrl(slug: string): string {
 
 export function browseUrlForNavLabel(label: string): string {
   const slug = navLabelToCategorySlug(label);
-  return slug ? browseCategoryUrl(slug) : `/browse?q=${encodeURIComponent(label)}`;
+  if (!slug) return `/browse?q=${encodeURIComponent(label)}`;
+  if (label === "Insurance") return `${browseCategoryUrl(slug)}&label=Insurance`;
+  return browseCategoryUrl(slug);
 }
 
 export const HOME_CATEGORY_TILES = NAV_CATEGORIES.map((c) => ({

@@ -146,6 +146,11 @@ const Browse = () => {
   useEffect(() => {
     const fetchCategoryName = async () => {
       if (selectedDomains.length === 1) {
+        const requestedLabel = searchParams.get("label");
+        if (requestedLabel) {
+          setCategoryName(requestedLabel);
+          return;
+        }
         const { data } = await supabase
           .from("domain_labels")
           .select("label")
