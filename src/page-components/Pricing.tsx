@@ -3,7 +3,7 @@
 
 import { Layout } from "@/components/layout/Layout";
 import { ContactEmailLink } from "@/components/ContactEmailLink";
-import { PLATFORM_COMMISSION_PERCENT_LABEL } from "@/config/platform";
+import { PLATFORM_COMMISSION_MARKETING_LABEL } from "@/config/platform";
 
 const Pricing = () => {
   return (
@@ -22,7 +22,7 @@ const Pricing = () => {
             <section>
               <h2 className="text-lg font-semibold text-headline mb-3">Commission</h2>
               <p>
-                Ocean Hotspot charges {PLATFORM_COMMISSION_PERCENT_LABEL} on each completed sale today. This is
+                Ocean Hotspot charges {PLATFORM_COMMISSION_MARKETING_LABEL} on each completed sale. This is
                 calculated on the order total (including VAT where it applies) when the order is placed, and recorded as
                 the platform fee on the order.
               </p>
@@ -35,8 +35,8 @@ const Pricing = () => {
                 If you were to replicate what the commission covers independently, you would be paying for some combination of Google Ads and SEO, payment processing and PCI compliance, fraud prevention and dispute resolution, web hosting and product catalogue management, analytics and conversion tracking, and trust and verification infrastructure.
               </p>
               <p className="mt-3">
-                For a small brand, that is £10,000 to £25,000 a year. For a mid-sized brand, £50,000 to £150,000. At{" "}
-                {PLATFORM_COMMISSION_PERCENT_LABEL} commission, you pay proportionally only on sales you actually make.
+                For a small brand, that is £10,000 to £25,000 a year. For a mid-sized brand, £50,000 to £150,000. With{" "}
+                With our {PLATFORM_COMMISSION_MARKETING_LABEL}, you pay proportionally only on sales you actually make.
               </p>
 
               <h3 className="font-semibold text-headline mt-4 mb-2">How Commission Works as a Partnership</h3>
@@ -70,7 +70,7 @@ const Pricing = () => {
                     </tr>
                     <tr className="border-b border-border/50">
                       <td className="py-3 pr-4 font-medium text-foreground">Commission</td>
-                      <td className="py-3 px-4">{PLATFORM_COMMISSION_PERCENT_LABEL} per sale (today)</td>
+                      <td className="py-3 px-4">Low commission per sale</td>
                     </tr>
                     <tr className="border-b border-border/50">
                       <td className="py-3 pr-4 font-medium text-foreground">Product listings</td>
@@ -110,7 +110,7 @@ const Pricing = () => {
             <section>
               <h2 className="text-lg font-semibold text-headline mb-3">The Maths</h2>
               <p>
-                At {PLATFORM_COMMISSION_PERCENT_LABEL}, a £10,000 order carries a £500 platform fee — and you pay nothing
+                With {PLATFORM_COMMISSION_MARKETING_LABEL}, your platform fee scales with each order — and you pay nothing
                 unless the sale completes.
               </p>
 
@@ -151,7 +151,7 @@ const Pricing = () => {
                     </tr>
                     <tr className="bg-primary/5">
                       <td className="py-3 pr-4 font-semibold text-headline">Ocean Hotspot</td>
-                      <td className="py-3 px-4 font-semibold text-headline">{PLATFORM_COMMISSION_PERCENT_LABEL} per sale</td>
+                      <td className="py-3 px-4 font-semibold text-headline">Low commission per sale</td>
                       <td className="py-3 px-4 font-semibold text-headline">AI discovery, payments, buyer protection, showroom, analytics. All included.</td>
                     </tr>
                   </tbody>

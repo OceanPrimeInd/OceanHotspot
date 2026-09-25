@@ -4,7 +4,7 @@
 import Link from "next/link";
 import { Layout } from "@/components/layout/Layout";
 import { COMPANY_LEGAL_LINE } from "@/config/contact";
-import { PLATFORM_COMMISSION_PERCENT_LABEL } from "@/config/platform";
+import { PLATFORM_COMMISSION_MARKETING_LABEL } from "@/config/platform";
 
 const SupplierTerms = () => {
   return (
@@ -23,7 +23,7 @@ const SupplierTerms = () => {
         <ul>
           <li>No listing fee and no joining fee.</li>
           <li>
-            Platform commission is {PLATFORM_COMMISSION_PERCENT_LABEL} of the order total when a product sells, as
+            Platform commission is {PLATFORM_COMMISSION_MARKETING_LABEL} on the order total when a product sells, as
             recorded at checkout.
           </li>
           <li>You set your own prices on each product.</li>

@@ -23,7 +23,10 @@ import {
   Globe,
   Users,
 } from "lucide-react";
-import { PLATFORM_COMMISSION_PERCENT_LABEL, PLATFORM_COMMISSION_RATE } from "@/config/platform";
+import {
+  PLATFORM_COMMISSION_MARKETING_LABEL,
+  PLATFORM_COMMISSION_RATE,
+} from "@/config/platform";
 
 const COVERAGE_AREAS = [
   "United Kingdom", "Ireland", "France", "Spain", "Portugal",
@@ -436,7 +439,7 @@ export default function Register() {
               <h2 className="text-lg font-semibold mb-1">Commission Rate</h2>
               <p className="text-sm text-muted-foreground mb-6">
                 Set your default commission rate. Individual vendor agreements can be negotiated separately. The platform fee is{" "}
-                {PLATFORM_COMMISSION_PERCENT_LABEL} on top.
+                {PLATFORM_COMMISSION_MARKETING_LABEL} on top.
               </p>
               <div className="mb-6">
                 <Label>Your Commission (%)</Label>
@@ -461,7 +464,7 @@ export default function Register() {
                         color: "text-green-600",
                       },
                       {
-                        label: `Platform Fee (${PLATFORM_COMMISSION_PERCENT_LABEL})`,
+                        label: "Platform fee (low commission)",
                         value: `£${platformFee.toFixed(2)}`,
                         color: "text-muted-foreground",
                       },

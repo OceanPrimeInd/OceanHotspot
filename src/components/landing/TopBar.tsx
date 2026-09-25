@@ -213,6 +213,7 @@ export function TopBar() {
     <header
       ref={headerRef}
       className="sticky top-0 z-50 border-b border-[#e8e8e8] bg-white text-[#1d2a2f] shadow-[0_1px_8px_rgba(24,39,52,0.06)]"
+      onMouseLeave={() => setIsMenuOpen(false)}
     >
       {/* Top row */}
       <div className="page-container flex items-center gap-2 py-2.5 md:gap-3">
@@ -346,8 +347,6 @@ export function TopBar() {
               </Link>
               <Link
                 href="/sell"
-                target="_blank"
-                rel="noopener noreferrer"
                 className="whitespace-nowrap rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition hover:bg-primary/90"
               >
                 Sell

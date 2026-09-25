@@ -233,7 +233,7 @@ const SellerOrders = () => {
                   <TableHead className="font-semibold text-foreground">Customer</TableHead>
                   <TableHead className="font-semibold text-foreground">Total</TableHead>
                   <TableHead className="font-semibold text-foreground">Ex VAT</TableHead>
-                  <TableHead className="font-semibold text-foreground">Platform fee (5%)</TableHead>
+                  <TableHead className="font-semibold text-foreground">Platform fee</TableHead>
                   <TableHead className="font-semibold text-foreground">Status</TableHead>
                   <TableHead className="font-semibold text-foreground">Tracking</TableHead>
                   <TableHead className="font-semibold text-foreground">Date</TableHead>

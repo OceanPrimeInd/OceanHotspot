@@ -28,8 +28,7 @@ Migration: [`supabase/migrations/20260917000001_website_map_fields.sql`](../supa
 
 ## Commission (as-is in code)
 
-- **5%** of order total (including VAT where applicable) as `platform_fee` at checkout (`create-checkout`).
-- **Pricing**, **Sell**, and **Terms** copy aligned to **5%** platform commission only (no alternate 10% model in code).
+- Checkout still calculates `platform_fee` at **5%** of order total in code (`create-checkout`); public **Pricing**, **Sell**, and **Terms** copy says **low commission** (no fixed % on the website).
 
 ## Env
 

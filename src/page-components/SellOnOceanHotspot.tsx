@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/lib/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { PRODUCT_DOMAIN_CATEGORIES } from "@/config/productCategories";
-import { PLATFORM_COMMISSION_PERCENT_LABEL } from "@/config/platform";
+import { PLATFORM_COMMISSION_MARKETING_LABEL } from "@/config/platform";
 import {
   Store,
   ArrowRight,
@@ -87,8 +87,9 @@ const SellOnOceanHotspot = () => {
               <div className="space-y-4 text-sm text-muted-foreground leading-relaxed mb-6">
                 <p>
                   A showroom that carries your brand, not ours. A direct line to your customers, so you keep the
-                  relationship. One commission ({PLATFORM_COMMISSION_PERCENT_LABEL} of the order total today), only when a
-                  product sells. No listing fee and no joining fee.
+                  relationship. {PLATFORM_COMMISSION_MARKETING_LABEL.charAt(0).toUpperCase() +
+                    PLATFORM_COMMISSION_MARKETING_LABEL.slice(1)} on the order total, only when a product sells. No
+                  listing fee and no joining fee.
                 </p>
                 <p className="font-medium text-foreground">How it works</p>
                 <ol className="list-decimal list-inside space-y-1">
@@ -145,7 +146,7 @@ const SellOnOceanHotspot = () => {
               </div>
 
               <p className="mt-6 text-xs text-muted-foreground" id="commission">
-                Commission today: {PLATFORM_COMMISSION_PERCENT_LABEL} of the order total (including VAT where
+                Commission: {PLATFORM_COMMISSION_MARKETING_LABEL} on the order total (including VAT where
                 applicable), recorded when the order is placed. See{" "}
                 <Link href="/terms/supplier" className="text-primary hover:underline">
                   Supplier terms

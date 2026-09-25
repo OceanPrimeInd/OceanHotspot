@@ -24,8 +24,10 @@ function walkApp(dir, prefix = "") {
                 : ent.name === "[productId]"
                   ? "sample-product"
                   : "sample";
-        routes.push(`${prefix}/${sample}`);
-        walkApp(p, `${prefix}/${sample}`);
+        const segmentPrefix = `${prefix}/${sample}`;
+        const hasPageHere = fs.existsSync(path.join(p, "page.tsx"));
+        if (hasPageHere) routes.push(segmentPrefix);
+        walkApp(p, segmentPrefix);
       } else {
         walkApp(p, `${prefix}/${ent.name}`);
       }
