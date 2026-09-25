@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { isShopOpen } from "@/config/shop";
 import { WhatsAppLink } from "@/components/shop/WhatsAppButton";
-import { buildProductWhatsAppMessage } from "@/lib/whatsapp";
+import { buildProductWhatsAppMessage, isWhatsAppConfigured } from "@/lib/whatsapp";
+import { useToast } from "@/hooks/use-toast";
 
 type Props = {
   productId: string;
@@ -25,6 +26,7 @@ export function PreOpeningProductActions(props: Props) {
   if (isShopOpen()) return null;
 
   const { toggleItem, isInWishlist } = useWishlist();
+  const { toast } = useToast();
   const inList = isInWishlist(props.productId);
   const productUrl =
     typeof window !== "undefined" ? `${window.location.origin}/product/${props.productId}` : undefined;
@@ -48,6 +50,7 @@ export function PreOpeningProductActions(props: Props) {
           onClick={(e) => {
             e.preventDefault();
             e.stopPropagation();
+            const wasInList = inList;
             toggleItem({
               id: props.productId,
               title: props.title,
@@ -60,17 +63,27 @@ export function PreOpeningProductActions(props: Props) {
               quantity: 1,
               note: "",
             });
+            toast({
+              title: wasInList ? "Removed from wish list" : "Added to wish list",
+              description: wasInList ? props.title : `${props.title} — view your list anytime from the header.`,
+            });
           }}
         >
           <Heart className={`h-4 w-4 ${inList ? "fill-red-500 text-red-500" : ""}`} />
           Wish list
         </Button>
-        <WhatsAppLink
-          message={waMessage}
-          className="inline-flex h-9 items-center rounded-md border border-[#128C7E] bg-[#128C7E]/10 px-3 text-xs font-semibold text-[#128C7E] hover:bg-[#128C7E]/20"
-        >
-          Ask on WhatsApp
-        </WhatsAppLink>
+        {isWhatsAppConfigured() ? (
+          <WhatsAppLink
+            message={waMessage}
+            className="inline-flex h-9 items-center rounded-md border border-[#128C7E] bg-[#128C7E]/10 px-3 text-xs font-semibold text-[#128C7E] hover:bg-[#128C7E]/20"
+          >
+            Ask on WhatsApp
+          </WhatsAppLink>
+        ) : (
+          <Button type="button" size="sm" variant="outline" className="border-[#128C7E] text-[#128C7E]" asChild>
+            <Link href="/contact">Contact us</Link>
+          </Button>
+        )}
       </div>
       {!props.compact && (
         <Link href={`/product/${props.productId}`} className="text-xs text-primary hover:underline">

@@ -2,7 +2,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,6 +18,7 @@ import { formatPrice } from "@/lib/utils";
 import { getPlaceholderSvg } from "@/lib/productPlaceholders";
 import { isShopOpen } from "@/config/shop";
 import { WhatsAppLink } from "@/components/shop/WhatsAppButton";
+import { isWhatsAppConfigured } from "@/lib/whatsapp";
 import { buildWishlistWhatsAppMessage } from "@/lib/wishlistMessage";
 import { supabase } from "@/lib/supabase/client";
 import { CONTACT_EMAIL } from "@/config/contact";
@@ -54,6 +55,10 @@ const Wishlist = () => {
   const [submitted, setSubmitted] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState("");
 
+  useEffect(() => {
+    if (user?.email && !email) setEmail(user.email);
+  }, [user?.email, email]);
+
   const handleAddToCart = (item: (typeof items)[0]) => {
     addToCart({
       id: item.id,
@@ -77,9 +82,6 @@ const Wishlist = () => {
     if (honeypot) return;
 
     setSubmitting(true);
-    const contactVia =
-      contactPref === "whatsapp" ? "WhatsApp" : contactPref === "both" ? "Both" : "Email";
-
     const payloadItems = items.map((i) => ({
       id: i.id,
       title: i.title,
@@ -91,40 +93,9 @@ const Wishlist = () => {
       note: i.note || "",
     }));
 
-    const { data: row, error } = await supabase
-      .from("wishlist_requests")
-      .insert({
-        name: name.trim(),
-        email: email.trim().toLowerCase(),
-        phone: mobile.trim() || null,
-        delivery_postcode: postcode.trim() || null,
-        boat: boat.trim() || null,
-        harbour: boatLocation.trim() || null,
-        contact_via: contactVia,
-        notes: extraNotes.trim() || null,
-        consent_contact: true,
-        consent_opening: consentOpening,
-        items: payloadItems,
-      })
-      .select("id")
-      .single();
-
-    if (error) {
-      setSubmitting(false);
-      toast({
-        title: "Could not send",
-        description: error.message.includes("wishlist_requests")
-          ? "Apply the wishlist_requests migration in Supabase, then try again."
-          : error.message,
-        variant: "destructive",
-      });
-      return;
-    }
-
-    await supabase.functions.invoke("notify-ocean-hotspot", {
+    const { data: fnData, error: fnError } = await supabase.functions.invoke("notify-ocean-hotspot", {
       body: {
         type: "wishlist_request",
-        requestId: row.id,
         customerName: name.trim(),
         email: email.trim().toLowerCase(),
         mobile: mobile.trim(),
@@ -139,6 +110,19 @@ const Wishlist = () => {
     });
 
     setSubmitting(false);
+
+    if (fnError || fnData?.error) {
+      toast({
+        title: "Could not send",
+        description:
+          fnData?.error ||
+          fnError?.message ||
+          "Something went wrong. Try again or email us from the contact page.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setSubmitted(true);
     setSubmittedEmail(email.trim());
   };
@@ -382,12 +366,18 @@ const Wishlist = () => {
                 <Button type="submit" variant="o42Primary" disabled={submitting}>
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send us your wish list"}
                 </Button>
-                <WhatsAppLink
-                  message={waMessage}
-                  className="inline-flex h-10 items-center rounded-md border border-[#128C7E] px-4 text-sm font-semibold text-[#128C7E] hover:bg-[#128C7E]/10"
-                >
-                  Send by WhatsApp
-                </WhatsAppLink>
+                {isWhatsAppConfigured() ? (
+                  <WhatsAppLink
+                    message={waMessage}
+                    className="inline-flex h-10 items-center rounded-md border border-[#128C7E] px-4 text-sm font-semibold text-[#128C7E] hover:bg-[#128C7E]/10"
+                  >
+                    Send by WhatsApp
+                  </WhatsAppLink>
+                ) : (
+                  <Button type="button" variant="outline" className="border-[#128C7E] text-[#128C7E]" asChild>
+                    <Link href="/contact">Message us instead</Link>
+                  </Button>
+                )}
               </div>
             </form>
 

@@ -16,6 +16,7 @@ import { FilterBar } from "@/components/browse/FilterBar";
 import { ActiveFilterChip } from "@/components/browse/filterConfig";
 import { applyBrowseFilters } from "@/lib/browseFilters";
 import { trackSiteSearch } from "@/lib/analytics";
+import { attachSellerCompanies } from "@/lib/attachSellerCompanies";
 import {
   Sheet,
   SheetContent,
@@ -178,17 +179,12 @@ const Browse = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from("products")
-        .select("*, profiles(company_name)")
+        .select("*")
         .eq("is_published", true)
         .order("created_at", { ascending: false });
 
       if (!error && data) {
-        setProducts(
-          (data || []).map((row: any) => ({
-            ...row,
-            seller_company: row.profiles?.company_name ?? null,
-          })),
-        );
+        setProducts(await attachSellerCompanies(supabase, data || []));
         // Calculate max price from data
         if (data.length > 0) {
           const max = Math.max(...data.map((p) => p.price));

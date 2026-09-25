@@ -11,7 +11,8 @@ function openingAlertEmail(): string {
 
 type WishlistPayload = {
   type: "wishlist_request";
-  requestId: string;
+  /** Set when the row was already inserted client-side; otherwise the function persists with service role. */
+  requestId?: string;
   customerName: string;
   email: string;
   mobile?: string;
@@ -134,6 +135,52 @@ serve(async (req) => {
       });
     }
 
+    let requestId = b.requestId?.trim() || "";
+    if (!requestId) {
+      const pref = (b.contactPreference || "email").toLowerCase();
+      const contactVia =
+        pref === "whatsapp" ? "WhatsApp" : pref === "both" ? "Both" : "Email";
+
+      let userId: string | null = null;
+      const authHeader = req.headers.get("Authorization");
+      const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
+      if (authHeader && anonKey) {
+        const userClient = createClient(supabaseUrl, anonKey, {
+          global: { headers: { Authorization: authHeader } },
+        });
+        const { data: userData } = await userClient.auth.getUser();
+        userId = userData.user?.id ?? null;
+      }
+
+      const { data: row, error: insertError } = await supabase
+        .from("wishlist_requests")
+        .insert({
+          user_id: userId,
+          name: b.customerName.trim(),
+          email: b.email.trim().toLowerCase(),
+          phone: b.mobile?.trim() || null,
+          delivery_postcode: b.deliveryPostcode?.trim() || null,
+          boat: b.boatDescription?.trim() || null,
+          harbour: b.boatLocation?.trim() || null,
+          contact_via: contactVia,
+          notes: b.extraNotes?.trim() || null,
+          consent_contact: true,
+          consent_opening: !!b.consentOpeningAnnounce,
+          items: b.items || [],
+        })
+        .select("id")
+        .single();
+
+      if (insertError || !row?.id) {
+        console.error("wishlist_requests insert", insertError);
+        return new Response(
+          JSON.stringify({ error: insertError?.message || "Could not save wish list" }),
+          { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
+        );
+      }
+      requestId = row.id;
+    }
+
     const itemsHtml = formatItemsHtml(b.items || []);
 
     const adminHtml = `
@@ -147,7 +194,7 @@ serve(async (req) => {
       Opening announcement: ${b.consentOpeningAnnounce ? "Yes" : "No"}</p>
       ${b.extraNotes ? `<p>Notes: ${b.extraNotes}</p>` : ""}
       <ul>${itemsHtml}</ul>
-      <p>Request ID: ${b.requestId}</p>
+      <p>Request ID: ${requestId}</p>
     `;
 
     const customerHtml = `
@@ -179,6 +226,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         ok: true,
+        requestId,
         shopOpen: isShopCheckoutOpen(),
         emailAdmin: adminSend,
         emailCustomer: customerSend,

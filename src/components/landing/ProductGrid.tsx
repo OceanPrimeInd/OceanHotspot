@@ -8,6 +8,7 @@ import { Package, Loader2, Star } from "lucide-react";
 import { getPlaceholderSvg } from "@/lib/productPlaceholders";
 import { PreOpeningProductActions } from "@/components/shop/PreOpeningProductActions";
 import { isShopOpen } from "@/config/shop";
+import { attachSellerCompanies } from "@/lib/attachSellerCompanies";
 
 interface Product {
   id: string;
@@ -31,18 +32,15 @@ export function ProductGrid() {
     const fetchProducts = async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("id, title, price, currency, image_url, images, description, part_number, seller_id, profiles(company_name)")
+        .select(
+          "id, title, price, currency, image_url, images, description, part_number, seller_id, pricing_type, availability_status",
+        )
         .eq("is_published", true)
         .order("created_at", { ascending: false })
         .limit(8);
 
       if (!error && data) {
-        setProducts(
-          (data as any[]).map((row) => ({
-            ...row,
-            seller_company: row.profiles?.company_name ?? null,
-          })),
-        );
+        setProducts(await attachSellerCompanies(supabase, data as unknown as Product[]));
       }
       setLoading(false);
     };

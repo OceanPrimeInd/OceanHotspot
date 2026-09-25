@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Home, Search, ShoppingCart, User, Shield, Store, Package, Mail } from "lucide-react";
+import { Home, Search, ShoppingCart, User, Shield, Store, Package, Mail, Heart } from "lucide-react";
 import { isShopOpen } from "@/config/shop";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
+import { useWishlist } from "@/contexts/WishlistContext";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 
 function isPortalPath(pathname: string | null) {
@@ -21,6 +22,7 @@ export function MobileNav() {
   const pathname = usePathname();
   const { user, profile } = useAuth();
   const { itemCount } = useCart();
+  const { itemCount: wishlistCount } = useWishlist();
   const { isAdmin } = useAdminCheck();
 
   if (isPortalPath(pathname)) {
@@ -58,6 +60,7 @@ export function MobileNav() {
     if (!isShopOpen()) {
       return [
         ...baseItems,
+        { icon: Heart, label: "Wish list", path: "/wishlist", badge: wishlistCount },
         { icon: Mail, label: "Contact", path: "/contact", badge: 0 },
         { icon: User, label: "Account", path: user ? "/account/settings" : "/login", badge: 0 },
       ];
