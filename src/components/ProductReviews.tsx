@@ -38,6 +38,8 @@ interface Question {
 interface ProductReviewsProps {
   productId: string;
   sellerId: string;
+  /** Inside product detail tab — hide outer section chrome */
+  embedded?: boolean;
 }
 
 const StarRating = ({ rating, onRate, interactive = false }: { 
@@ -66,7 +68,7 @@ const StarRating = ({ rating, onRate, interactive = false }: {
   </div>
 );
 
-export const ProductReviews = ({ productId, sellerId }: ProductReviewsProps) => {
+export const ProductReviews = ({ productId, sellerId, embedded = false }: ProductReviewsProps) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -191,7 +193,7 @@ export const ProductReviews = ({ productId, sellerId }: ProductReviewsProps) => 
   }
 
   return (
-    <div className="mt-12 border-t border-border pt-8">
+    <div className={embedded ? "" : "mt-12 border-t border-border pt-8"}>
       {/* Tabs */}
       <div className="flex gap-4 mb-6">
         <button

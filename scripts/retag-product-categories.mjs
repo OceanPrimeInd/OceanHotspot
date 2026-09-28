@@ -2,6 +2,7 @@
 /** Re-assign domain_category from title/brand keywords (fixes bulk import mis-tags). */
 
 import { createClient } from "@supabase/supabase-js";
+import { execSync } from "child_process";
 import fs from "fs";
 import path from "path";
 
@@ -43,27 +44,42 @@ function inferSlug(row) {
 
 function loadEnv() {
   const file = path.join(process.cwd(), ".env.local");
-  if (!fs.existsSync(file)) return process.env;
-  return {
-    ...Object.fromEntries(
-      fs
-        .readFileSync(file, "utf8")
-        .split("\n")
-        .filter((l) => l && !l.startsWith("#"))
-        .map((l) => {
-          const i = l.indexOf("=");
-          return [l.slice(0, i), l.slice(i + 1).replace(/^["']|["']$/g, "")];
-        }),
-    ),
-    ...process.env,
-  };
+  const fromFile = fs.existsSync(file)
+    ? Object.fromEntries(
+        fs
+          .readFileSync(file, "utf8")
+          .split("\n")
+          .filter((l) => l && !l.startsWith("#"))
+          .map((l) => {
+            const i = l.indexOf("=");
+            return [l.slice(0, i), l.slice(i + 1).replace(/^["']|["']$/g, "")];
+          }),
+      )
+    : {};
+  return { ...fromFile, ...process.env };
+}
+
+function resolveServiceRoleKey(env) {
+  if (env.SUPABASE_SERVICE_ROLE_KEY) return env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL || env.SUPABASE_URL || "";
+  const ref = supabaseUrl.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1];
+  if (!ref) return null;
+  try {
+    const json = execSync(`supabase projects api-keys --project-ref ${ref} -o json`, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    return JSON.parse(json).find((k) => k.name === "service_role")?.api_key ?? null;
+  } catch {
+    return null;
+  }
 }
 
 const env = loadEnv();
 const url = env.NEXT_PUBLIC_SUPABASE_URL || env.SUPABASE_URL;
-const key = env.SUPABASE_SERVICE_ROLE_KEY;
+const key = resolveServiceRoleKey(env);
 if (!url || !key) {
-  console.error("Need SUPABASE_SERVICE_ROLE_KEY and SUPABASE_URL");
+  console.error("Need SUPABASE_SERVICE_ROLE_KEY and SUPABASE_URL (or Supabase CLI login)");
   process.exit(1);
 }
 

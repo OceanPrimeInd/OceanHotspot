@@ -18,7 +18,11 @@
 
 import fs from "fs";
 import path from "path";
+import { execSync } from "child_process";
 import { createClient } from "@supabase/supabase-js";
+
+const JPC_SHIPS_FROM = "Brundall, Norfolk, UK";
+const JPC_SHIPPING_RULE = "calculated_after_order";
 
 const SITEMAP = "https://www.jpcdirect.com/product-sitemap.xml";
 const SHOWROOM_SLUG = "jpc-direct";
@@ -30,6 +34,7 @@ const scrapeOnly = args.includes("--scrape-only");
 const fromCache = args.includes("--from-cache");
 const createSeller = args.includes("--create-seller");
 const dryRun = args.includes("--dry-run");
+const clearImportNotes = args.includes("--clear-import-notes");
 const limitIdx = args.indexOf("--limit");
 const limit = limitIdx >= 0 ? parseInt(args[limitIdx + 1], 10) : 0;
 
@@ -110,11 +115,105 @@ function guessBrand(title) {
   return "JPC Direct";
 }
 
-function stripHtml(text) {
+function decodeHtmlEntities(text) {
   return (text || "")
-    .replace(/<[^>]+>/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+    .replace(/&#(\d+);/g, (_, n) => String.fromCharCode(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCharCode(parseInt(h, 16)))
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&rsquo;/gi, "'")
+    .replace(/&lsquo;/gi, "'")
+    .replace(/&mdash;/gi, "—")
+    .replace(/&ndash;/gi, "–")
+    .replace(/&times;/gi, "×");
+}
+
+function stripHtml(text) {
+  return decodeHtmlEntities(
+    (text || "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim(),
+  );
+}
+
+function extractWooTabPanel(html, panelId) {
+  const open = html.indexOf(`id="${panelId}"`);
+  if (open < 0) return "";
+  const contentStart = html.indexOf(">", open) + 1;
+  const nextPanel = html.indexOf('<div class="woocommerce-Tabs-panel', contentStart);
+  const chunk = nextPanel > contentStart ? html.slice(contentStart, nextPanel) : html.slice(contentStart);
+  return chunk.trim();
+}
+
+/** Rich text from WooCommerce description tab (paragraphs + bullet lists). */
+function htmlToProductDescription(html) {
+  if (!html) return "";
+  let s = html;
+  s = s.replace(/<h2[^>]*>\s*Description\s*<\/h2>/gi, "");
+  s = s.replace(/<li[^>]*>/gi, "\n• ");
+  s = s.replace(/<\/li>/gi, "\n");
+  s = s.replace(/<\/p>/gi, "\n\n");
+  s = s.replace(/<p[^>]*>/gi, "");
+  s = s.replace(/<br\s*\/?>/gi, "\n");
+  s = s.replace(/<[^>]+>/g, "");
+  s = decodeHtmlEntities(s);
+  return s
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join("\n")
+    .slice(0, 12000);
+}
+
+function parseAdditionalInformation(html) {
+  const panel = extractWooTabPanel(html, "tab-additional_information");
+  if (!panel) return "";
+
+  const rows = [
+    ...panel.matchAll(
+      /<tr[^>]*class="[^"]*woocommerce-product-attributes-item[^"]*"[^>]*>[\s\S]*?<th[^>]*>([\s\S]*?)<\/th>[\s\S]*?<td[^>]*>([\s\S]*?)<\/td>/gi,
+    ),
+  ];
+  if (rows.length === 0) return stripHtml(panel).slice(0, 4000);
+
+  return rows
+    .map((match) => `${stripHtml(match[1])}: ${stripHtml(match[2])}`)
+    .join("\n")
+    .slice(0, 4000);
+}
+
+function parseShortDescription(html) {
+  const match = html.match(
+    /class="[^"]*woocommerce-product-details__short-description[^"]*"[^>]*>([\s\S]*?)<\/div>/i,
+  );
+  if (!match) return "";
+  return htmlToProductDescription(match[1]).slice(0, 800);
+}
+
+function parseBrandFromJsonLd(product, title) {
+  const raw = product.brand;
+  if (typeof raw === "string" && raw.trim()) return raw.trim();
+  if (raw?.name) return String(raw.name).trim();
+  return guessBrand(title);
+}
+
+function parseGalleryImages(html) {
+  const urls = new Set();
+  for (const match of html.matchAll(
+    /data-large_image="(https:\/\/www\.jpcdirect\.com\/wp-content\/uploads\/[^"]+)"/gi,
+  )) {
+    urls.add(match[1]);
+  }
+  for (const match of html.matchAll(
+    /woocommerce-product-gallery__image[^>]*>[\s\S]*?<img[^>]+src="(https:\/\/www\.jpcdirect\.com\/wp-content\/uploads\/[^"]+)"/gi,
+  )) {
+    urls.add(match[1]);
+  }
+  return [...urls];
 }
 
 async function fetchText(url) {
@@ -146,7 +245,17 @@ async function scrapeProduct(url) {
     sku = slugMatch ? slugMatch[1].slice(0, 64) : "";
   }
   const image = typeof product.image === "string" ? product.image : product.image?.[0] || null;
-  const description = stripHtml(product.description || "").slice(0, 8000);
+  const tabDescription = htmlToProductDescription(extractWooTabPanel(html, "tab-description"));
+  const jsonDescription = stripHtml(product.description || "");
+  const shortDescription = parseShortDescription(html);
+  let description = tabDescription || jsonDescription;
+  if (shortDescription && !description.includes(shortDescription.slice(0, 48))) {
+    description = description ? `${shortDescription}\n\n${description}` : shortDescription;
+  }
+  description = description.slice(0, 12000);
+  const technical_detail = parseAdditionalInformation(html);
+  const gallery = parseGalleryImages(html);
+  const images = gallery.length > 0 ? gallery : image ? [image] : [];
   const offer = Array.isArray(product.offers) ? product.offers[0] : product.offers;
   const inStock =
     offer?.availability === "https://schema.org/InStock" ||
@@ -160,7 +269,7 @@ async function scrapeProduct(url) {
     price: exVat,
     currency: "GBP",
     image_url: image,
-    brand: guessBrand(product.name),
+    brand: parseBrandFromJsonLd(product, product.name),
     domain_category: guessDomainCategory(html, product.name),
     entity_type: "physical_product",
     vat_treatment: "plus_vat",
@@ -168,8 +277,66 @@ async function scrapeProduct(url) {
     availability_status: inStock ? "in_stock" : "made_to_order",
     condition: "new",
     pricing_type: "fixed_price",
-    supplier_note: `Imported from JPC Direct with permission. Original: ${url}`,
+    supplier_note: null,
+    technical_detail: technical_detail || null,
+    images,
+    ships_from: JPC_SHIPS_FROM,
+    shipping_cost_rule: JPC_SHIPPING_RULE,
+    lead_time_text: inStock ? null : "Contact seller for lead time",
   };
+}
+
+function supabaseProjectRef(env) {
+  const url = env.NEXT_PUBLIC_SUPABASE_URL || env.SUPABASE_URL || "";
+  const match = url.match(/https:\/\/([^.]+)\.supabase\.co/);
+  return match?.[1] || "";
+}
+
+function resolveServiceRoleKey(env) {
+  if (env.SUPABASE_SERVICE_ROLE_KEY) return env.SUPABASE_SERVICE_ROLE_KEY;
+  const ref = supabaseProjectRef(env);
+  if (!ref) return null;
+  try {
+    const json = execSync(`supabase projects api-keys --project-ref ${ref} -o json`, {
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "ignore"],
+    });
+    const keys = JSON.parse(json);
+    const row = keys.find((k) => k.name === "service_role");
+    return row?.api_key ?? null;
+  } catch {
+    return null;
+  }
+}
+
+async function findExistingProductId(supabase, sellerId, row) {
+  if (includeSourceUrl && row.source_url) {
+    const { data, error } = await supabase
+      .from("products")
+      .select("id")
+      .eq("seller_id", sellerId)
+      .eq("source_url", row.source_url)
+      .maybeSingle();
+    if (!error && data?.id) return data.id;
+  }
+
+  if (row.part_number) {
+    const { data } = await supabase
+      .from("products")
+      .select("id")
+      .eq("seller_id", sellerId)
+      .eq("part_number", row.part_number)
+      .maybeSingle();
+    if (data?.id) return data.id;
+  }
+
+  const { data: byTitle } = await supabase
+    .from("products")
+    .select("id")
+    .eq("seller_id", sellerId)
+    .eq("title", row.title)
+    .maybeSingle();
+  return byTitle?.id ?? null;
 }
 
 async function poolMap(items, fn, concurrency) {
@@ -270,6 +437,23 @@ async function ensureShowroom(supabase, sellerId, dry) {
   return data;
 }
 
+async function clearJpcImportNotes(supabase, sellerId, dry) {
+  if (dry) {
+    console.log("[dry-run] Would clear supplier_note on JPC products");
+    return;
+  }
+  const { data, error } = await supabase
+    .from("products")
+    .update({ supplier_note: null })
+    .eq("seller_id", sellerId)
+    .ilike("supplier_note", "%Imported from JPC Direct%")
+    .select("id");
+  if (error) throw error;
+  console.log(`Cleared import supplier notes on ${data?.length ?? 0} products`);
+}
+
+let includeSourceUrl = true;
+
 async function upsertProduct(supabase, sellerId, row, dry) {
   const base = {
     seller_id: sellerId,
@@ -288,29 +472,46 @@ async function upsertProduct(supabase, sellerId, row, dry) {
     availability_status: row.availability_status,
     condition: row.condition,
     pricing_type: row.pricing_type,
-    supplier_note: row.supplier_note,
+    supplier_note: null,
+    technical_detail: row.technical_detail || null,
+    ships_from: row.ships_from || JPC_SHIPS_FROM,
+    shipping_cost_rule: row.shipping_cost_rule || JPC_SHIPPING_RULE,
+    lead_time_text: row.lead_time_text ?? null,
+    ...(includeSourceUrl ? { source_url: row.source_url || null } : {}),
     status: "active",
     is_published: true,
+    updated_at: new Date().toISOString(),
   };
+
+  if (row.images?.length) {
+    base.images = row.images;
+    base.image_url = row.images[0];
+  }
 
   if (dry) return { action: "dry-run", title: row.title };
 
-  if (row.part_number) {
-    const { data: existing } = await supabase
-      .from("products")
-      .select("id")
-      .eq("seller_id", sellerId)
-      .eq("part_number", row.part_number)
-      .maybeSingle();
-
-    if (existing?.id) {
-      const { error } = await supabase.from("products").update(base).eq("id", existing.id);
-      if (error) throw error;
-      return { action: "updated", id: existing.id };
+  const existingId = await findExistingProductId(supabase, sellerId, row);
+  if (existingId) {
+    const { error } = await supabase.from("products").update(base).eq("id", existingId);
+    if (error?.message?.includes("source_url") && includeSourceUrl) {
+      includeSourceUrl = false;
+      delete base.source_url;
+      const retry = await supabase.from("products").update(base).eq("id", existingId);
+      if (retry.error) throw retry.error;
+      return { action: "updated", id: existingId };
     }
+    if (error) throw error;
+    return { action: "updated", id: existingId };
   }
 
   const { data, error } = await supabase.from("products").insert(base).select("id").single();
+  if (error?.message?.includes("source_url") && includeSourceUrl) {
+    includeSourceUrl = false;
+    delete base.source_url;
+    const retry = await supabase.from("products").insert(base).select("id").single();
+    if (retry.error) throw retry.error;
+    return { action: "inserted", id: retry.data.id };
+  }
   if (error) throw error;
   return { action: "inserted", id: data.id };
 }
@@ -347,11 +548,10 @@ async function main() {
   if (scrapeOnly) return;
 
   const supabaseUrl = env.NEXT_PUBLIC_SUPABASE_URL || env.SUPABASE_URL;
-  const serviceKey = env.SUPABASE_SERVICE_ROLE_KEY;
+  const serviceKey = resolveServiceRoleKey(env);
   if (!supabaseUrl || !serviceKey) {
     console.error(
-      "Missing SUPABASE_SERVICE_ROLE_KEY. Add to .env.local or run:\n" +
-        "  SUPABASE_SERVICE_ROLE_KEY=... node scripts/import-jpc-direct.mjs",
+      "Missing Supabase credentials. Add SUPABASE_SERVICE_ROLE_KEY to .env.local or log in with Supabase CLI.",
     );
     process.exit(1);
   }
@@ -362,6 +562,13 @@ async function main() {
 
   const showroom = await ensureShowroom(supabase, sellerId, dryRun);
   console.log(`Showroom: /showroom/${showroom.slug}`);
+
+  await clearJpcImportNotes(supabase, sellerId, dryRun);
+  if (clearImportNotes && products.length === 0) return;
+  if (products.length === 0) {
+    console.error("No products to import. Run scrape first or use --from-cache.");
+    process.exit(1);
+  }
 
   await supabase
     .from("profiles")

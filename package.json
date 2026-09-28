@@ -10,7 +10,9 @@
     "test:discovery:local": "node scripts/test-ai-discovery.mjs http://127.0.0.1:3000/api/discovery",
     "test:legal": "node scripts/test-legal-pages.mjs http://127.0.0.1:3000",
     "import:jpc": "node scripts/import-jpc-direct.mjs",
-    "import:jpc:scrape": "node scripts/import-jpc-direct.mjs --scrape-only"
+    "import:jpc:scrape": "node scripts/import-jpc-direct.mjs --scrape-only",
+    "import:jpc:clear-notes": "node scripts/import-jpc-direct.mjs --clear-import-notes",
+    "import:jpc:sync": "node scripts/import-jpc-direct.mjs && node scripts/retag-product-categories.mjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
