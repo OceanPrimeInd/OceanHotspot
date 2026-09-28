@@ -20,7 +20,6 @@ import { getProductCategoryLabel } from "@/config/productCategories";
 import { isShopOpen } from "@/config/shop";
 import { WhatsAppLink } from "@/components/shop/WhatsAppButton";
 import { buildProductWhatsAppMessage } from "@/lib/whatsapp";
-import { OpeningSoonWatermark } from "@/components/launch/OpeningSoonWatermark";
 import { ProductReviews } from "@/components/ProductReviews";
 import { ProductImageGallery } from "@/components/product/ProductImageGallery";
 import {
@@ -97,9 +96,16 @@ const ProductDetail = () => {
   const { addItem: addToRecentlyViewed } = useRecentlyViewed();
   const { toast } = useToast();
   const [addedToCart, setAddedToCart] = useState(false);
-  const [detailTab, setDetailTab] = useState<"description" | "additional" | "reviews">(
-    "description",
-  );
+  const [detailTab, setDetailTab] = useState<
+    "description" | "additional" | "reviews" | "qa"
+  >("description");
+
+  const productDetailTabs = [
+    { id: "description" as const, label: "Description" },
+    { id: "additional" as const, label: "Additional information" },
+    { id: "reviews" as const, label: "Reviews" },
+    { id: "qa" as const, label: "Q&A" },
+  ];
   const [sellerShowroom, setSellerShowroom] = useState<{
     slug: string;
     brand_name: string;
@@ -376,16 +382,15 @@ const ProductDetail = () => {
         <div className="grid lg:grid-cols-2 gap-12 animate-slide-up">
           {/* Product Image */}
           {/* Product Image Gallery */}
-          <div className="relative">
-            <ProductImageGallery
-              images={[
-                ...(product.image_url ? [product.image_url] : []),
-                ...(product.images || []),
-              ].filter((img, idx, arr) => arr.indexOf(img) === idx)}
-              title={product.title}
-            />
-            {!checkoutLive && !isOwner && <OpeningSoonWatermark />}
-          </div>
+          <ProductImageGallery
+            images={[
+              ...(product.image_url ? [product.image_url] : []),
+              ...(product.images || []),
+            ]
+              .filter(Boolean)
+              .filter((img, idx, arr) => arr.indexOf(img) === idx)}
+            title={product.title}
+          />
 
           {/* Product Details */}
           <div>
@@ -475,91 +480,11 @@ const ProductDetail = () => {
               </div>
             )}
 
-            <div className="mb-8 rounded-xl border border-border bg-white overflow-hidden">
-              <div className="flex flex-col sm:flex-row">
-                <nav
-                  className="flex sm:flex-col gap-0 border-b sm:border-b-0 sm:border-r border-border bg-muted/20 shrink-0"
-                  aria-label="Product information"
-                >
-                  {(
-                    [
-                      { id: "description" as const, label: "Description" },
-                      { id: "additional" as const, label: "Additional information" },
-                      { id: "reviews" as const, label: "Reviews" },
-                    ] as const
-                  ).map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setDetailTab(tab.id)}
-                      className={`px-5 py-3.5 text-left text-sm font-medium transition sm:min-w-[200px] ${
-                        detailTab === tab.id
-                          ? "bg-white text-headline border-l-2 border-l-primary sm:border-l-0 sm:border-r-2 sm:border-r-primary"
-                          : "text-muted-foreground hover:text-headline hover:bg-muted/40"
-                      }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </nav>
-                <div className="flex-1 p-5 sm:p-6 min-w-0">
-                  {detailTab === "description" && (
-                    <div className="prose prose-slate max-w-none">
-                      <h2 className="text-lg font-semibold text-headline mb-3">Description</h2>
-                      <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                        {product.description || "No description provided."}
-                      </p>
-                    </div>
-                  )}
-                  {detailTab === "additional" && (
-                    <div className="prose prose-slate max-w-none space-y-4">
-                      <h2 className="text-lg font-semibold text-headline mb-3">Additional information</h2>
-                      {product.technical_detail ? (
-                        <dl className="space-y-3 text-sm">
-                          {product.technical_detail.split("\n").map((line) => {
-                            const colon = line.indexOf(":");
-                            if (colon <= 0) {
-                              return (
-                                <p key={line} className="text-muted-foreground">
-                                  {line}
-                                </p>
-                              );
-                            }
-                            return (
-                              <div key={line} className="grid gap-1 sm:grid-cols-[minmax(8rem,12rem)_1fr]">
-                                <dt className="font-semibold text-foreground">{line.slice(0, colon).trim()}</dt>
-                                <dd className="text-muted-foreground">{line.slice(colon + 1).trim()}</dd>
-                              </div>
-                            );
-                          })}
-                        </dl>
-                      ) : (
-                        <p className="text-muted-foreground">No additional specifications listed for this product.</p>
-                      )}
-                      {product.fits && (
-                        <p className="text-sm pt-2 border-t border-border">
-                          <span className="font-semibold text-foreground">Fits: </span>
-                          {product.fits}
-                        </p>
-                      )}
-                      {product.replaces && (
-                        <p className="text-sm">
-                          <span className="font-semibold text-foreground">Replaces: </span>
-                          {product.replaces}
-                        </p>
-                      )}
-                    </div>
-                  )}
-                  {detailTab === "reviews" && product && (
-                    <ProductReviews
-                      productId={product.id}
-                      sellerId={product.seller_id}
-                      embedded
-                    />
-                  )}
-                </div>
-              </div>
-            </div>
+            {!checkoutLive && !isOwner && (
+              <p className="mb-4 text-sm text-muted-foreground">
+                Catalogue is live for browsing. Checkout opens soon — use wish list or WhatsApp to enquire.
+              </p>
+            )}
 
             {/* Actions */}
             {isOwner ? (
@@ -817,6 +742,97 @@ const ProductDetail = () => {
                 )}
               </div>
             )}
+          </div>
+        </div>
+
+        <div className="mt-10 rounded-xl border border-border bg-white overflow-hidden">
+          <nav
+            className="flex gap-1 sm:gap-4 border-b border-border bg-muted/20 px-3 sm:px-6 overflow-x-auto"
+            aria-label="Product information"
+          >
+            {productDetailTabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setDetailTab(tab.id)}
+                className={`shrink-0 whitespace-nowrap px-3 sm:px-4 py-3.5 text-sm font-medium transition border-b-2 -mb-px ${
+                  detailTab === tab.id
+                    ? "border-primary text-headline bg-white"
+                    : "border-transparent text-muted-foreground hover:text-headline"
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+          <div className="p-5 sm:p-8 min-w-0">
+              {detailTab === "description" && (
+                <div className="prose prose-slate max-w-none">
+                  <h2 className="text-lg font-semibold text-headline mb-3">Description</h2>
+                  <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
+                    {product.description || "No description provided."}
+                  </p>
+                </div>
+              )}
+              {detailTab === "additional" && (
+                <div className="prose prose-slate max-w-none space-y-4">
+                  <h2 className="text-lg font-semibold text-headline mb-3">Additional information</h2>
+                  {product.technical_detail ? (
+                    <dl className="space-y-3 text-sm">
+                      {product.technical_detail.split("\n").map((line) => {
+                        const colon = line.indexOf(":");
+                        if (colon <= 0) {
+                          return (
+                            <p key={line} className="text-muted-foreground">
+                              {line}
+                            </p>
+                          );
+                        }
+                        return (
+                          <div key={line} className="grid gap-1 sm:grid-cols-[minmax(8rem,12rem)_1fr]">
+                            <dt className="font-semibold text-foreground">{line.slice(0, colon).trim()}</dt>
+                            <dd className="text-muted-foreground">{line.slice(colon + 1).trim()}</dd>
+                          </div>
+                        );
+                      })}
+                    </dl>
+                  ) : (
+                    <p className="text-muted-foreground">No additional specifications listed for this product.</p>
+                  )}
+                  {product.fits && (
+                    <p className="text-sm pt-2 border-t border-border">
+                      <span className="font-semibold text-foreground">Fits: </span>
+                      {product.fits}
+                    </p>
+                  )}
+                  {product.replaces && (
+                    <p className="text-sm">
+                      <span className="font-semibold text-foreground">Replaces: </span>
+                      {product.replaces}
+                    </p>
+                  )}
+                </div>
+              )}
+              {detailTab === "reviews" && (
+                <div className="relative z-10">
+                  <ProductReviews
+                    productId={product.id}
+                    sellerId={product.seller_id}
+                    embedded
+                    section="reviews"
+                  />
+                </div>
+              )}
+              {detailTab === "qa" && (
+                <div className="relative z-10">
+                  <ProductReviews
+                    productId={product.id}
+                    sellerId={product.seller_id}
+                    embedded
+                    section="questions"
+                  />
+                </div>
+              )}
           </div>
         </div>
 

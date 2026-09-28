@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -40,42 +41,86 @@ interface ProductReviewsProps {
   sellerId: string;
   /** Inside product detail tab — hide outer section chrome */
   embedded?: boolean;
+  /** When set, show only reviews or Q&A (no nested sub-tabs). */
+  section?: "reviews" | "questions";
 }
 
-const StarRating = ({ rating, onRate, interactive = false }: { 
-  rating: number; 
+function StarRating({
+  rating,
+  onRate,
+  interactive = false,
+  size = "md",
+}: {
+  rating: number;
   onRate?: (r: number) => void;
   interactive?: boolean;
-}) => (
-  <div className="flex gap-1">
-    {[1, 2, 3, 4, 5].map((star) => (
-      <button
-        key={star}
-        type="button"
-        onClick={() => onRate?.(star)}
-        disabled={!interactive}
-        className={`${interactive ? "cursor-pointer hover:scale-110" : "cursor-default"} transition-transform`}
-      >
-        <Star
-          className={`h-5 w-5 ${
-            star <= rating
-              ? "fill-yellow-400 text-yellow-400"
-              : "text-muted-foreground"
-          }`}
-        />
-      </button>
-    ))}
-  </div>
-);
+  size?: "md" | "lg";
+}) {
+  const [hover, setHover] = useState(0);
+  const display = hover || rating;
+  const iconClass = size === "lg" ? "h-8 w-8" : "h-6 w-6";
+  const hitClass = size === "lg" ? "h-11 w-11" : "h-10 w-10";
 
-export const ProductReviews = ({ productId, sellerId, embedded = false }: ProductReviewsProps) => {
+  if (!interactive) {
+    return (
+      <div className="flex gap-0.5" role="img" aria-label={`${rating} out of 5 stars`}>
+        {[1, 2, 3, 4, 5].map((star) => (
+          <Star
+            key={star}
+            className={`${iconClass} ${
+              star <= rating ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
+            }`}
+          />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="flex gap-0.5"
+      onMouseLeave={() => setHover(0)}
+      role="group"
+      aria-label="Select a star rating"
+    >
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          aria-label={`${star} star${star === 1 ? "" : "s"}`}
+          aria-pressed={rating === star}
+          onMouseEnter={() => setHover(star)}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onRate?.(star);
+          }}
+          className={`${hitClass} inline-flex items-center justify-center rounded-md transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary pointer-events-auto`}
+        >
+          <Star
+            className={`${iconClass} pointer-events-none ${
+              star <= display ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground"
+            }`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export const ProductReviews = ({
+  productId,
+  sellerId,
+  embedded = false,
+  section,
+}: ProductReviewsProps) => {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"reviews" | "questions">("reviews");
   
   // Review form
-  const [showReviewForm, setShowReviewForm] = useState(false);
+  const [showReviewForm, setShowReviewForm] = useState(true);
   const [reviewRating, setReviewRating] = useState(0);
   const [reviewTitle, setReviewTitle] = useState("");
   const [reviewContent, setReviewContent] = useState("");
@@ -192,36 +237,12 @@ export const ProductReviews = ({ productId, sellerId, embedded = false }: Produc
     );
   }
 
-  return (
-    <div className={embedded ? "" : "mt-12 border-t border-border pt-8"}>
-      {/* Tabs */}
-      <div className="flex gap-4 mb-6">
-        <button
-          onClick={() => setActiveTab("reviews")}
-          className={`flex items-center gap-2 pb-2 px-1 border-b-2 transition-colors ${
-            activeTab === "reviews"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <Star className="h-4 w-4" />
-          Reviews ({reviews.length})
-        </button>
-        <button
-          onClick={() => setActiveTab("questions")}
-          className={`flex items-center gap-2 pb-2 px-1 border-b-2 transition-colors ${
-            activeTab === "questions"
-              ? "border-primary text-primary"
-              : "border-transparent text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          <MessageCircle className="h-4 w-4" />
-          Q&A ({questions.length})
-        </button>
-      </div>
+  const showReviews = !section || section === "reviews";
+  const showQuestions = !section || section === "questions";
+  const reviewsActive = section ? section === "reviews" : activeTab === "reviews";
+  const questionsActive = section ? section === "questions" : activeTab === "questions";
 
-      {/* Reviews Tab */}
-      {activeTab === "reviews" && (
+  const reviewsPanel = (
         <div className="space-y-6">
           {/* Summary */}
           {reviews.length > 0 && (
@@ -236,20 +257,34 @@ export const ProductReviews = ({ productId, sellerId, embedded = false }: Produc
             </div>
           )}
 
-          {/* Write Review Button */}
-          {user && !showReviewForm && (
+          {!showReviewForm && (
             <Button variant="outline" onClick={() => setShowReviewForm(true)}>
               Write a Review
             </Button>
           )}
 
-          {/* Review Form */}
           {showReviewForm && (
-            <div className="rounded-lg border border-border p-4 space-y-4">
-              <h3 className="font-semibold">Write Your Review</h3>
+            <div className="relative z-10 rounded-lg border border-border p-4 space-y-4 bg-white">
+              <div className="flex items-center justify-between gap-2">
+                <h3 className="font-semibold">Write your review</h3>
+                {reviews.length > 0 && (
+                  <Button variant="ghost" size="sm" onClick={() => setShowReviewForm(false)}>
+                    Hide
+                  </Button>
+                )}
+              </div>
+              {!user && (
+                <p className="text-sm text-muted-foreground">
+                  Select a rating below, then{" "}
+                  <Link href="/login" className="font-medium text-primary underline">
+                    log in
+                  </Link>{" "}
+                  to submit.
+                </p>
+              )}
               <div className="space-y-2">
                 <Label>Rating *</Label>
-                <StarRating rating={reviewRating} onRate={setReviewRating} interactive />
+                <StarRating rating={reviewRating} onRate={setReviewRating} interactive size="lg" />
               </div>
               <div className="space-y-2">
                 <Label>Title (Optional)</Label>
@@ -269,21 +304,25 @@ export const ProductReviews = ({ productId, sellerId, embedded = false }: Produc
                 />
               </div>
               <div className="flex gap-2">
-                <Button onClick={handleSubmitReview} disabled={submittingReview}>
+                <Button
+                  onClick={handleSubmitReview}
+                  disabled={submittingReview || reviewRating === 0}
+                >
                   {submittingReview ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                   Submit Review
                 </Button>
-                <Button variant="ghost" onClick={() => setShowReviewForm(false)}>
-                  Cancel
-                </Button>
+                {reviews.length > 0 && (
+                  <Button variant="ghost" onClick={() => setShowReviewForm(false)}>
+                    Cancel
+                  </Button>
+                )}
               </div>
             </div>
           )}
 
-          {/* Reviews List */}
           {reviews.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
-              No reviews yet. Be the first to review this product!
+            <p className="text-muted-foreground text-center py-4 text-sm">
+              No published reviews yet — yours can be the first after moderation.
             </p>
           ) : (
             <div className="space-y-4">
@@ -322,11 +361,19 @@ export const ProductReviews = ({ productId, sellerId, embedded = false }: Produc
             </div>
           )}
         </div>
-      )}
+  );
 
-      {/* Q&A Tab */}
-      {activeTab === "questions" && (
+  const questionsPanel = (
         <div className="space-y-6">
+          <h2 className="text-lg font-semibold text-headline">Q&amp;A</h2>
+          {!user && (
+            <p className="text-sm text-muted-foreground">
+              <Link href="/login" className="font-medium text-primary underline">
+                Log in
+              </Link>{" "}
+              to ask a question about this product.
+            </p>
+          )}
           {/* Ask Question Form */}
           <div className="flex gap-2">
             <Input
@@ -376,7 +423,48 @@ export const ProductReviews = ({ productId, sellerId, embedded = false }: Produc
             </div>
           )}
         </div>
+  );
+
+  return (
+    <div className={embedded ? "" : "mt-12 border-t border-border pt-8"}>
+      {!section && (
+        <div className="flex gap-4 mb-6 border-b border-border">
+          <button
+            type="button"
+            onClick={() => setActiveTab("reviews")}
+            className={`flex items-center gap-2 pb-3 px-1 border-b-2 -mb-px transition-colors ${
+              activeTab === "reviews"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Star className="h-4 w-4" />
+            Reviews ({reviews.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("questions")}
+            className={`flex items-center gap-2 pb-3 px-1 border-b-2 -mb-px transition-colors ${
+              activeTab === "questions"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <MessageCircle className="h-4 w-4" />
+            Q&amp;A ({questions.length})
+          </button>
+        </div>
       )}
+
+      {showReviews && reviewsActive && (
+        <>
+          {section === "reviews" && (
+            <h2 className="text-lg font-semibold text-headline mb-4">Reviews</h2>
+          )}
+          {reviewsPanel}
+        </>
+      )}
+      {showQuestions && questionsActive && questionsPanel}
     </div>
   );
 };
