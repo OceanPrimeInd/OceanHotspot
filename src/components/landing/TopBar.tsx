@@ -56,6 +56,7 @@ import {
   getSubgroupIcon,
 } from "@/components/browse/categoryIcons";
 import { browseUrlForNavLabel, navLabelToCategorySlug, browseCategoryUrl } from "@/lib/navBrowse";
+import { refineLabelFromBrowseParts } from "@/lib/navTaxonomyMatch";
 import { isShopOpen } from "@/config/shop";
 
 interface SearchSuggestion {
@@ -196,10 +197,15 @@ export function TopBar() {
   const browseLink = (parts: string[]) => {
     const navLabel = parts[0];
     const slug = navLabel ? navLabelToCategorySlug(navLabel) : null;
-    const tail = parts.slice(1).filter(Boolean).join(" ");
-    if (slug && parts.length === 1) return browseCategoryUrl(slug);
-    if (slug && tail) {
-      return `/browse?cat=${encodeURIComponent(slug)}&q=${encodeURIComponent(tail)}`;
+    if (slug && parts.length === 1) {
+      return `${browseCategoryUrl(slug)}&label=${encodeURIComponent(navLabel)}`;
+    }
+    if (slug && parts.length > 1) {
+      const label = parts.map((p) => p.trim()).join(" / ");
+      const base = `/browse?cat=${encodeURIComponent(slug)}&label=${encodeURIComponent(label)}`;
+      const refine = refineLabelFromBrowseParts(parts);
+      if (refine) return `${base}&refine=${encodeURIComponent(refine)}`;
+      return base;
     }
     return `/browse?q=${encodeURIComponent(parts.filter(Boolean).join(" "))}`;
   };

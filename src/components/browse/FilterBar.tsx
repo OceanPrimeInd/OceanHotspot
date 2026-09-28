@@ -82,6 +82,41 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
     closeDropdown();
   };
 
+  const commitCategoryFromNavPath = () => {
+    if (activeGroup !== "Category" || navPath.length === 0) {
+      closeDropdown();
+      return;
+    }
+
+    const navLabel = navPath[0];
+    const hasMultipleBackends = navHasMultipleBackends(navLabel);
+    const backendKey = hasMultipleBackends
+      ? navPath[1] ?? ""
+      : getNavBackendKeys(navLabel)[0] ?? "";
+
+    if (navPath.length === 1) {
+      selectNestedFilter("Category", [navLabel, "All"]);
+      return;
+    }
+
+    if (hasMultipleBackends && navPath.length === 2 && backendKey) {
+      selectNestedFilter("Category", [navLabel, backendKey, "All"]);
+      return;
+    }
+
+    const atSubgroupLevel = hasMultipleBackends ? navPath.length === 3 : navPath.length === 2;
+    if (atSubgroupLevel && backendKey) {
+      const subgroup = hasMultipleBackends ? navPath[2] : navPath[1];
+      selectNestedFilter(
+        "Category",
+        hasMultipleBackends ? [navLabel, backendKey, subgroup, "All"] : [navLabel, subgroup, "All"],
+      );
+      return;
+    }
+
+    selectNestedFilter("Category", [...navPath]);
+  };
+
   const isOptionSelected = (group: string, value: string) =>
     activeFilters.some((filter) => filter.group === group && filter.value === value);
 
@@ -474,7 +509,13 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
                   <div className="border-t border-[#edf1f4] bg-white p-3.5">
                     <button
                       type="button"
-                      onClick={closeDropdown}
+                      onClick={() => {
+                        if (activeGroup === "Category" && navPath.length > 0) {
+                          commitCategoryFromNavPath();
+                          return;
+                        }
+                        closeDropdown();
+                      }}
                       className="w-full rounded-[12px] bg-primary px-4 py-3 text-center text-sm font-semibold text-primary-foreground shadow-[0_8px_20px_hsl(var(--primary)/0.22)] transition hover:bg-primary/90 md:text-base"
                     >
                       Show results

@@ -25,8 +25,7 @@ export function browseCategoryUrl(slug: string): string {
 export function browseUrlForNavLabel(label: string): string {
   const slug = navLabelToCategorySlug(label);
   if (!slug) return `/browse?q=${encodeURIComponent(label)}`;
-  if (label === "Insurance") return `${browseCategoryUrl(slug)}&label=Insurance`;
-  return browseCategoryUrl(slug);
+  return `${browseCategoryUrl(slug)}&label=${encodeURIComponent(label)}`;
 }
 
 export const HOME_CATEGORY_TILES = NAV_CATEGORIES.map((c) => ({

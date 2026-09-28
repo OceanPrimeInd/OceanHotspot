@@ -1,9 +1,9 @@
 // @ts-nocheck
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { TopBar } from "@/components/landing/TopBar";
 import { Footer } from "@/components/landing/Footer";
 import { MobileNav } from "@/components/landing/MobileNav";
@@ -13,8 +13,15 @@ import { Loader2, Package, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useProductSearch } from "@/hooks/useProductSearch";
 import { FilterBar } from "@/components/browse/FilterBar";
-import { ActiveFilterChip } from "@/components/browse/filterConfig";
+import { ActiveFilterChip, buildFilterId } from "@/components/browse/filterConfig";
 import { applyBrowseFilters } from "@/lib/browseFilters";
+import {
+  domainSlugFromFilterValue,
+  isNavigationBreadcrumbQuery,
+  matchesCatAndQuery,
+  navLabelFromCategorySlug,
+} from "@/lib/browseCategoryMatch";
+import { matchesBrowseRefine } from "@/lib/navTaxonomyMatch";
 import { trackSiteSearch } from "@/lib/analytics";
 import { attachSellerCompanies } from "@/lib/attachSellerCompanies";
 import {
@@ -24,6 +31,17 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+
+const PAGE_SIZE = 20;
 
 interface Product {
   id: string;
@@ -36,85 +54,42 @@ interface Product {
   image_url: string | null;
   created_at: string;
   part_number?: string | null;
+  brand?: string | null;
   availability_status?: string | null;
   seller_company?: string | null;
 }
 
-const DOMAIN_CODE_TO_PRODUCT_VALUES: Record<string, string[]> = {
-  garmin: ["garmin"],
-  raymarine: ["raymarine"],
-  simrad: ["simrad"],
-  bg: ["bg", "b_and_g"],
-  lowrance: ["lowrance"],
-  victron_energy: ["victron_energy", "victron"],
-  blue_sea_systems: ["blue_sea_systems", "blue_sea"],
-  lewmar: ["lewmar"],
-  harken: ["harken"],
-  vetus: ["vetus"],
-  yanmar: ["yanmar"],
-  mercury: ["mercury"],
-  yamaha: ["yamaha"],
-  volvo_penta: ["volvo_penta", "volvo"],
-  other_vendor: ["other_vendor", "vendor"],
-  sailboats: ["sailboats", "sailing"],
-  motorboats: ["motorboats", "motoryacht"],
-  ribs: ["ribs", "rib"],
-  fishing_boats: ["fishing_boats", "fishing"],
-  catamarans: ["catamarans", "catamaran"],
-  yachts: ["yachts", "yacht"],
-  canal_boats: ["canal_boats", "canal"],
-  commercial_vessels: ["commercial_vessels", "commercial"],
-  engine_brand: ["engine_brand", "engine_brand_name"],
-  engine_model: ["engine_model", "model"],
-  parts_service_kits: ["parts_service_kits", "service_kits", "parts"],
-  manufacturer_part_number: ["manufacturer_part_number", "part_number", "mpn"],
-  eco_rated: ["eco_rated", "eco", "eco-rated"],
-  certified: ["certified", "certification"],
-};
+function buildPageHref(pathname: string, searchParams: URLSearchParams, page: number) {
+  const params = new URLSearchParams(searchParams.toString());
+  if (page <= 1) params.delete("page");
+  else params.set("page", String(page));
+  const qs = params.toString();
+  return qs ? `${pathname}?${qs}` : pathname;
+}
 
-const normalizeDomainValues = (value: string | null): string[] => {
-  if (!value) return [];
-
-  const raw = value.trim();
-  if (!raw) return [];
-
-  const variants = new Set<string>();
-  variants.add(raw);
-  variants.add(raw.toLowerCase());
-  variants.add(raw.replace(/\s+/g, "_"));
-  variants.add(raw.replace(/\s+/g, "_").toLowerCase());
-  variants.add(raw.replace(/-/g, "_"));
-  variants.add(raw.replace(/-/g, "_").toLowerCase());
-
-  return [...variants];
-};
-
-const matchesSelectedDomain = (productDomain: string | null, selectedDomains: string[]) => {
-  if (selectedDomains.length === 0) return true;
-  if (!productDomain) return false;
-
-  const selectedMatches = new Set<string>();
-  selectedDomains.forEach((code) => {
-    const mappedValues = DOMAIN_CODE_TO_PRODUCT_VALUES[code] ?? [code];
-    mappedValues.forEach((value) => {
-      normalizeDomainValues(value).forEach((variant) => selectedMatches.add(variant));
-    });
-  });
-
-  return normalizeDomainValues(productDomain).some((variant) => selectedMatches.has(variant));
-};
+/** Compact page list with ellipsis for large catalogues */
+function visiblePages(current: number, total: number): (number | "ellipsis")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages: (number | "ellipsis")[] = [1];
+  if (current > 3) pages.push("ellipsis");
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  for (let p = start; p <= end; p++) pages.push(p);
+  if (current < total - 2) pages.push("ellipsis");
+  pages.push(total);
+  return pages;
+}
 
 const Browse = () => {
   const searchParams = useSearchParams();
   const pathname = usePathname();
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(searchParams.get("q") || "");
   const [categoryName, setCategoryName] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<ActiveFilterChip[]>([]);
 
-  // Filter states
-  const [selectedDomains, setSelectedDomains] = useState<string[]>([]);
   const [selectedEntities, setSelectedEntities] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000]);
   const [maxPrice, setMaxPrice] = useState(100000);
@@ -122,18 +97,99 @@ const Browse = () => {
   // Sync filter states with URL params when they change (important for header dropdown navigation)
   useEffect(() => {
     const params = searchParams;
-    const domain = params.get("domain");
     const entity = params.get("entity");
     const cat = params.get("cat");
+    const domain = params.get("domain");
     const q = params.get("q") || "";
 
-    setSelectedDomains(domain ? [domain] : cat ? [cat] : []);
     setSelectedEntities(entity ? [entity] : []);
-    setSearchQuery(q);
-    if (q.trim().length >= 2) {
-      trackSiteSearch(q);
+    const breadcrumbQ = isNavigationBreadcrumbQuery(q, params.get("label"), cat || domain);
+    const effectiveSearch = breadcrumbQ ? "" : q;
+    setSearchQuery(effectiveSearch);
+    if (effectiveSearch.trim().length >= 2) {
+      trackSiteSearch(effectiveSearch);
     }
+
+    // Strip legacy breadcrumb &q= from URLs (breaks category browse)
+    if ((cat || domain) && breadcrumbQ && q) {
+      const clean = new URLSearchParams(params.toString());
+      clean.delete("q");
+      const qs = clean.toString();
+      router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+    }
+
+    // Sync category chip with URL (?cat=engines&label=…) — do not bake &q= into chip (too strict)
+    setActiveFilters((prev) => {
+      const rest = prev.filter((f) => f.group !== "Category");
+      if (!cat && !domain) return rest;
+
+      const slug = (cat || domain).toLowerCase();
+      const label = params.get("label") || navLabelFromCategorySlug(slug);
+      const value = `${slug}>all`;
+      const chip: ActiveFilterChip = {
+        id: buildFilterId("Category", value),
+        group: "Category",
+        label,
+        value,
+      };
+      return [...rest, chip];
+    });
   }, [searchParams.toString()]);
+
+  const handleFiltersChange = (filters: ActiveFilterChip[]) => {
+    setActiveFilters(filters);
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("page");
+    const category = filters.find((f) => f.group === "Category");
+    if (category) {
+      const slug = domainSlugFromFilterValue(category.value);
+      if (slug) params.set("cat", slug);
+      params.set("label", category.label);
+      params.delete("q");
+      const pathParts = category.value
+        .split(">")
+        .map((part) => part.trim())
+        .filter((part) => part && !/^all(\s+categories)?$/i.test(part));
+      const tail = pathParts[pathParts.length - 1];
+      if (pathParts.length > 1 && tail && tail !== slug) {
+        const labelParts = category.label.split(" / ").map((part) => part.trim());
+        params.set("refine", labelParts[labelParts.length - 1] ?? tail);
+      } else {
+        params.delete("refine");
+      }
+    } else {
+      params.delete("cat");
+      params.delete("label");
+      params.delete("refine");
+    }
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  };
+
+  const filterFingerprint = [
+    searchQuery,
+    searchParams.get("cat") || "",
+    selectedEntities.join(","),
+    priceRange[0],
+    priceRange[1],
+    activeFilters.map((f) => f.id).join(","),
+  ].join("|");
+  const prevFilterFingerprint = useRef<string | null>(null);
+
+  // Reset to page 1 when filters or search change (not on first paint)
+  useEffect(() => {
+    if (prevFilterFingerprint.current === null) {
+      prevFilterFingerprint.current = filterFingerprint;
+      return;
+    }
+    if (prevFilterFingerprint.current === filterFingerprint) return;
+    prevFilterFingerprint.current = filterFingerprint;
+    if (!searchParams.get("page")) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("page");
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
+  }, [filterFingerprint, pathname, router, searchParams]);
 
   const {
     results: searchResults,
@@ -146,7 +202,8 @@ const Browse = () => {
   // Fetch category name for display
   useEffect(() => {
     const fetchCategoryName = async () => {
-      if (selectedDomains.length === 1) {
+      const cat = searchParams.get("cat");
+      if (cat) {
         const requestedLabel = searchParams.get("label");
         if (requestedLabel) {
           setCategoryName(requestedLabel);
@@ -155,9 +212,10 @@ const Browse = () => {
         const { data } = await supabase
           .from("domain_labels")
           .select("label")
-          .eq("code", selectedDomains[0])
+          .eq("code", cat)
           .single();
         if (data) setCategoryName(data.label);
+        else setCategoryName(navLabelFromCategorySlug(cat));
       } else if (selectedEntities.length === 1) {
         const { data } = await supabase
           .from("entity_labels")
@@ -171,7 +229,7 @@ const Browse = () => {
     };
 
     fetchCategoryName();
-  }, [selectedDomains, selectedEntities]);
+  }, [searchParams.get("cat"), searchParams.get("label"), selectedEntities]);
 
   // Fetch all products from Supabase
   useEffect(() => {
@@ -213,19 +271,12 @@ const Browse = () => {
   const applyFilters = useCallback(
     (productList: Product[]) => {
       return productList.filter((product) => {
-        // Domain filter
-        if (!matchesSelectedDomain(product.domain_category, selectedDomains)) {
-          return false;
-        }
-
-        // Entity filter
         if (selectedEntities.length > 0 && product.entity_type) {
           if (!selectedEntities.includes(product.entity_type)) return false;
         } else if (selectedEntities.length > 0 && !product.entity_type) {
           return false;
         }
 
-        // Price filter
         if (product.price < priceRange[0] || product.price > priceRange[1]) {
           return false;
         }
@@ -233,7 +284,7 @@ const Browse = () => {
         return true;
       });
     },
-    [selectedDomains, selectedEntities, priceRange]
+    [selectedEntities, priceRange]
   );
 
   const matchesSearchQuery = (product: Product, query: string) => {
@@ -243,18 +294,62 @@ const Browse = () => {
       product.title.toLowerCase().includes(q) ||
       product.description?.toLowerCase().includes(q) ||
       product.part_number?.toLowerCase().includes(q) ||
+      product.brand?.toLowerCase().includes(q) ||
       product.domain_category?.toLowerCase().includes(q) ||
       product.entity_type?.toLowerCase().includes(q)
     );
   };
 
-  const searchFilteredProducts = searchQuery.trim()
-    ? products.filter((product) => matchesSearchQuery(product, searchQuery))
-    : products;
+  const catParam = searchParams.get("cat") || searchParams.get("domain");
 
-  const displayProducts = applyFilters(searchFilteredProducts);
+  let displayProducts = applyFilters(products);
+  displayProducts = applyBrowseFilters(displayProducts, activeFilters);
 
-  const filteredDisplayProducts = applyBrowseFilters(displayProducts, activeFilters);
+  const refineParam = searchParams.get("refine")?.trim() || "";
+  const searchTerm = searchQuery.trim();
+  const categoryPathDepth = (value: string | undefined) => {
+    if (!value) return 0;
+    return value
+      .split(">")
+      .map((part) => part.trim())
+      .filter((part) => part && !/^all(\s+categories)?$/i.test(part)).length;
+  };
+  const chipDepth = categoryPathDepth(
+    activeFilters.find((filter) => filter.group === "Category")?.value,
+  );
+
+  if (refineParam && catParam && chipDepth <= 1) {
+    displayProducts = displayProducts.filter((product) =>
+      matchesBrowseRefine(product, catParam, refineParam),
+    );
+  } else if (searchTerm) {
+    displayProducts = displayProducts.filter((product) =>
+      catParam
+        ? matchesCatAndQuery(product, catParam, searchTerm)
+        : matchesSearchQuery(product, searchTerm),
+    );
+  }
+
+  const filteredDisplayProducts = displayProducts;
+
+  const totalProducts = filteredDisplayProducts.length;
+  const totalPages = Math.max(1, Math.ceil(totalProducts / PAGE_SIZE));
+  const rawPage = parseInt(searchParams.get("page") || "1", 10);
+  const currentPage = Math.min(
+    Math.max(1, Number.isFinite(rawPage) ? rawPage : 1),
+    totalPages,
+  );
+  const pageStart = (currentPage - 1) * PAGE_SIZE;
+  const pageEnd = Math.min(pageStart + PAGE_SIZE, totalProducts);
+  const paginatedProducts = useMemo(
+    () => filteredDisplayProducts.slice(pageStart, pageStart + PAGE_SIZE),
+    [filteredDisplayProducts, pageStart],
+  );
+  const pageItems = visiblePages(currentPage, totalPages);
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [currentPage]);
 
   const isLoading = loading || searchLoading;
 
@@ -266,10 +361,20 @@ const Browse = () => {
       : "All Maritime Products & Services";
 
   const handleClearFilters = () => {
-    setSelectedDomains([]);
     setSelectedEntities([]);
     setPriceRange([0, maxPrice]);
     setActiveFilters([]);
+    setSearchQuery("");
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("cat");
+    params.delete("label");
+    params.delete("q");
+    params.delete("refine");
+    params.delete("page");
+    params.delete("domain");
+    params.delete("entity");
+    const qs = params.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
   // Mobile filter sheet content
@@ -332,13 +437,8 @@ const Browse = () => {
                 </p>
               )}
 
-              {(selectedDomains.length > 0 || selectedEntities.length > 0) && (
+              {selectedEntities.length > 0 && (
                 <div className="mb-4 flex flex-wrap gap-2">
-                  {selectedDomains.map((d) => (
-                    <span key={d} className="inline-flex items-center rounded-full bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary">
-                      {d}
-                    </span>
-                  ))}
                   {selectedEntities.map((e) => (
                     <span key={e} className="inline-flex items-center rounded-full bg-[#f4f5f7] px-3 py-1.5 text-xs font-medium text-[#4a5564]">
                       {e}
@@ -348,10 +448,7 @@ const Browse = () => {
               )}
             </div>
 
-            <FilterBar
-              activeFilters={activeFilters}
-              onFiltersChange={setActiveFilters}
-            />
+            <FilterBar activeFilters={activeFilters} onFiltersChange={handleFiltersChange} />
           </div>
         </div>
 
@@ -383,13 +480,60 @@ const Browse = () => {
             ) : (
               <>
                 <p className="mb-4 text-sm text-muted-foreground">
-                  Showing {filteredDisplayProducts.length} products
+                  Showing {pageStart + 1}–{pageEnd} of {totalProducts} products
+                  {totalPages > 1 && (
+                    <span className="text-muted-foreground/80">
+                      {" "}
+                      · Page {currentPage} of {totalPages}
+                    </span>
+                  )}
                 </p>
                 <div className="relative z-0 isolate grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-                  {filteredDisplayProducts.map((product, index) => (
+                  {paginatedProducts.map((product, index) => (
                     <ProductCard key={product.id} product={product} index={index} />
                   ))}
                 </div>
+
+                {totalPages > 1 && (
+                  <Pagination className="mt-10">
+                    <PaginationContent>
+                      <PaginationItem>
+                        {currentPage > 1 ? (
+                          <PaginationPrevious href={buildPageHref(pathname, searchParams, currentPage - 1)} />
+                        ) : (
+                          <span className="pointer-events-none opacity-40">
+                            <PaginationPrevious href="#" aria-disabled />
+                          </span>
+                        )}
+                      </PaginationItem>
+                      {pageItems.map((item, idx) =>
+                        item === "ellipsis" ? (
+                          <PaginationItem key={`e-${idx}`}>
+                            <PaginationEllipsis />
+                          </PaginationItem>
+                        ) : (
+                          <PaginationItem key={item}>
+                            <PaginationLink
+                              href={buildPageHref(pathname, searchParams, item)}
+                              isActive={item === currentPage}
+                            >
+                              {item}
+                            </PaginationLink>
+                          </PaginationItem>
+                        ),
+                      )}
+                      <PaginationItem>
+                        {currentPage < totalPages ? (
+                          <PaginationNext href={buildPageHref(pathname, searchParams, currentPage + 1)} />
+                        ) : (
+                          <span className="pointer-events-none opacity-40">
+                            <PaginationNext href="#" aria-disabled />
+                          </span>
+                        )}
+                      </PaginationItem>
+                    </PaginationContent>
+                  </Pagination>
+                )}
               </>
             )}
           </div>

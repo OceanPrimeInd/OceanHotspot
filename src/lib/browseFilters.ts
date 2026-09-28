@@ -2,47 +2,20 @@ import {
   ActiveFilterChip,
   PRICE_RANGE_MAP,
 } from "@/components/browse/filterConfig";
-import { normalizeDomainCategory } from "@/config/productCategories";
+import { productSearchText, type CategoryMatchable } from "@/lib/browseCategoryMatch";
+import { matchesCategoryFilterPath } from "@/lib/navTaxonomyMatch";
 
-interface FilterableProduct {
+interface FilterableProduct extends CategoryMatchable {
   id: string;
-  title: string;
-  description: string | null;
   price: number;
-  entity_type: string | null;
-  domain_category: string | null;
   created_at: string;
 }
 
 const normalizeText = (value: string | null | undefined) =>
   (value ?? "").toLowerCase().replace(/[_-]/g, " ");
 
-const productSearchText = (product: FilterableProduct) =>
-  [product.title, product.description, product.entity_type, product.domain_category]
-    .map((value) => normalizeText(value))
-    .join(" ");
-
-/** First segment of filter path = nav slug (deck, engines, …) */
-function getCategorySlugFromFilter(filter: ActiveFilterChip): string | null {
-  const parts = filter.value
-    .split(">")
-    .map((part) => part.trim().toLowerCase())
-    .filter((part) => part && part !== "all" && part !== "all categories");
-
-  if (parts.length === 0) return null;
-  return parts[0];
-}
-
-const matchesCategoryFilter = (product: FilterableProduct, filter: ActiveFilterChip) => {
-  const slug = getCategorySlugFromFilter(filter);
-  if (!slug) return true;
-
-  const productCat = normalizeDomainCategory(product.domain_category || "").toLowerCase();
-  if (productCat === slug) return true;
-
-  // Fallback: match nav slug as word in product text (legacy rows)
-  return productSearchText(product).includes(slug);
-};
+const matchesCategoryFilter = (product: FilterableProduct, filter: ActiveFilterChip) =>
+  matchesCategoryFilterPath(product, filter.value);
 
 const matchesPriceFilter = (product: FilterableProduct, filter: ActiveFilterChip) => {
   const range = PRICE_RANGE_MAP[filter.value];
@@ -64,6 +37,16 @@ const matchesGenericFilter = (product: FilterableProduct, filter: ActiveFilterCh
   const text = productSearchText(product);
   const value = normalizeText(filter.value.replace(/_/g, " "));
   const label = normalizeText(filter.label);
+
+  if (filter.group === "Brand") {
+    const brand = normalizeText(product.brand);
+    return (
+      brand.includes(value) ||
+      brand.includes(label) ||
+      text.includes(value) ||
+      text.includes(label)
+    );
+  }
 
   if (filter.group === "Boat Type") {
     return (
