@@ -59,6 +59,12 @@ interface Product {
   seller_company?: string | null;
 }
 
+function searchParamsWithoutPage(raw: string) {
+  const params = new URLSearchParams(raw);
+  params.delete("page");
+  return params.toString();
+}
+
 function buildPageHref(pathname: string, searchParams: URLSearchParams, page: number) {
   const params = new URLSearchParams(searchParams.toString());
   if (page <= 1) params.delete("page");
@@ -93,9 +99,29 @@ const Browse = () => {
   const [selectedEntities, setSelectedEntities] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000]);
   const [maxPrice, setMaxPrice] = useState(100000);
+  const prevBrowseQueryRef = useRef<string | null>(null);
+
+  const goToPage = useCallback(
+    (page: number) => {
+      const href = buildPageHref(pathname, searchParams, page);
+      router.push(href, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
 
   // Sync filter states with URL params when they change (important for header dropdown navigation)
   useEffect(() => {
+    const raw = searchParams.toString();
+    const withoutPage = searchParamsWithoutPage(raw);
+    if (
+      prevBrowseQueryRef.current !== null &&
+      searchParamsWithoutPage(prevBrowseQueryRef.current) === withoutPage
+    ) {
+      prevBrowseQueryRef.current = raw;
+      return;
+    }
+    prevBrowseQueryRef.current = raw;
+
     const params = searchParams;
     const entity = params.get("entity");
     const cat = params.get("cat");
@@ -166,17 +192,19 @@ const Browse = () => {
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
+  const hasPriceFilter = activeFilters.some((f) => f.group === "Price");
   const filterFingerprint = [
     searchQuery,
     searchParams.get("cat") || "",
+    searchParams.get("refine") || "",
+    searchParams.get("q") || "",
     selectedEntities.join(","),
-    priceRange[0],
-    priceRange[1],
+    hasPriceFilter ? `${priceRange[0]}-${priceRange[1]}` : "",
     activeFilters.map((f) => f.id).join(","),
   ].join("|");
   const prevFilterFingerprint = useRef<string | null>(null);
 
-  // Reset to page 1 when filters or search change (not on first paint)
+  // Reset to page 1 when filters or search change (not when only ?page= changes)
   useEffect(() => {
     if (prevFilterFingerprint.current === null) {
       prevFilterFingerprint.current = filterFingerprint;
@@ -184,8 +212,8 @@ const Browse = () => {
     }
     if (prevFilterFingerprint.current === filterFingerprint) return;
     prevFilterFingerprint.current = filterFingerprint;
-    if (!searchParams.get("page")) return;
     const params = new URLSearchParams(searchParams.toString());
+    if (!params.get("page")) return;
     params.delete("page");
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
@@ -499,7 +527,13 @@ const Browse = () => {
                     <PaginationContent>
                       <PaginationItem>
                         {currentPage > 1 ? (
-                          <PaginationPrevious href={buildPageHref(pathname, searchParams, currentPage - 1)} />
+                          <PaginationPrevious
+                            href={buildPageHref(pathname, searchParams, currentPage - 1)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              goToPage(currentPage - 1);
+                            }}
+                          />
                         ) : (
                           <span className="pointer-events-none opacity-40">
                             <PaginationPrevious href="#" aria-disabled />
@@ -516,6 +550,10 @@ const Browse = () => {
                             <PaginationLink
                               href={buildPageHref(pathname, searchParams, item)}
                               isActive={item === currentPage}
+                              onClick={(e) => {
+                                e.preventDefault();
+                                goToPage(item);
+                              }}
                             >
                               {item}
                             </PaginationLink>
@@ -524,7 +562,13 @@ const Browse = () => {
                       )}
                       <PaginationItem>
                         {currentPage < totalPages ? (
-                          <PaginationNext href={buildPageHref(pathname, searchParams, currentPage + 1)} />
+                          <PaginationNext
+                            href={buildPageHref(pathname, searchParams, currentPage + 1)}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              goToPage(currentPage + 1);
+                            }}
+                          />
                         ) : (
                           <span className="pointer-events-none opacity-40">
                             <PaginationNext href="#" aria-disabled />
