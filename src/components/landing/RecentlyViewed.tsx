@@ -18,8 +18,8 @@ export function RecentlyViewed() {
   }
 
   return (
-    <section className="py-12 bg-muted/30">
-      <div className="container">
+    <section className="w-full px-3 pt-4 md:px-4">
+      <div className="bg-white p-4 shadow-sm md:p-5">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-2">

@@ -6,12 +6,14 @@ import {
   Search,
   ShoppingCart,
   ChevronDown,
+  ChevronLeft,
   ChevronRight,
   User,
   Shield,
-  ShieldCheck,
   Store,
   Heart,
+  Menu,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
@@ -19,6 +21,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { useAdminCheck } from "@/hooks/useAdminCheck";
 import { useState, useEffect, FormEvent, useCallback, useRef } from "react";
+import { createPortal } from "react-dom";
 import { supabase } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
 import { trackSiteSearch } from "@/lib/analytics";
@@ -41,22 +44,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  ALL_SUBGROUP,
-  NAV_CATEGORIES,
-  getItemsForSubgroup,
-  getNavBackendKeys,
-  getSubgroupsForBackend,
-  navHasMultipleBackends,
-} from "@/components/browse/filterConfig";
-import {
-  getAllMenuIcon,
-  getCategoryIcon,
-  getNavIcon,
-  getSubgroupIcon,
-} from "@/components/browse/categoryIcons";
-import { browseUrlForNavLabel, navLabelToCategorySlug, browseCategoryUrl } from "@/lib/navBrowse";
-import { refineLabelFromBrowseParts } from "@/lib/navTaxonomyMatch";
+import { NAV_CATEGORIES, getNavBackendKeys, getSubgroupsForBackend } from "@/components/browse/filterConfig";
+import { browseUrlForNavLabel, navLabelToCategorySlug } from "@/lib/navBrowse";
+import { STORE_NAV } from "@/lib/storefront";
 import { isShopOpen } from "@/config/shop";
 
 interface SearchSuggestion {
@@ -90,47 +80,33 @@ export function TopBar() {
   const showMarketplaceChrome = !isPortalPath(pathname);
 
   const [mounted, setMounted] = useState(false);
-  const [activeNavCategory, setActiveNavCategory] = useState<string>(NAV_CATEGORIES[0].label);
-  const [activeBackendKey, setActiveBackendKey] = useState<string>("");
-  const [activeSubgroup, setActiveSubgroup] = useState<string>("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [menuPanel, setMenuPanel] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState<SearchSuggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [loadingSuggestions, setLoadingSuggestions] = useState(false);
 
   const isSeller = profile?.is_seller && profile?.company_name;
-  const backendKeys = getNavBackendKeys(activeNavCategory);
-  const resolvedBackendKey =
-    activeBackendKey || (backendKeys.length === 1 ? backendKeys[0] : "");
-  const subgroups = resolvedBackendKey ? getSubgroupsForBackend(resolvedBackendKey) : [];
-  const isAllSubgroup = activeSubgroup === ALL_SUBGROUP;
-  const activeItems =
-    resolvedBackendKey && !isAllSubgroup
-      ? getItemsForSubgroup(resolvedBackendKey, activeSubgroup)
-      : [];
-  const showBackendPicker = isMenuOpen && navHasMultipleBackends(activeNavCategory) && !resolvedBackendKey;
-  const AllIcon = getAllMenuIcon();
 
   useEffect(() => setMounted(true), []);
 
   useEffect(() => {
-    const keys = getNavBackendKeys(activeNavCategory);
-    const backend = keys.length === 1 ? keys[0] : "";
-    setActiveBackendKey(backend);
-    setActiveSubgroup(ALL_SUBGROUP);
-  }, [activeNavCategory]);
-
-  useEffect(() => {
-    const handlePointerDown = (event: MouseEvent) => {
-      if (!headerRef.current?.contains(event.target as Node)) {
+    if (!isMenuOpen) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
         setIsMenuOpen(false);
+        setMenuPanel(null);
       }
     };
-
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, []);
+    document.addEventListener("keydown", onKey);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isMenuOpen]);
 
   const fetchSuggestions = useCallback(async (query: string) => {
     if (!query.trim() || query.length < 2) {
@@ -185,44 +161,141 @@ export function TopBar() {
     return "My Account";
   };
 
-  const openCategoryMenu = (category: string) => {
-    if (activeNavCategory === category && isMenuOpen) {
-      setIsMenuOpen(false);
-      return;
-    }
-    setActiveNavCategory(category);
-    setIsMenuOpen(true);
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+    setMenuPanel(null);
   };
 
-  const browseLink = (parts: string[]) => {
-    const navLabel = parts[0];
-    const slug = navLabel ? navLabelToCategorySlug(navLabel) : null;
-    if (slug && parts.length === 1) {
-      return `${browseCategoryUrl(slug)}&label=${encodeURIComponent(navLabel)}`;
-    }
-    if (slug && parts.length > 1) {
-      const label = parts.map((p) => p.trim()).join(" / ");
-      const base = `/browse?cat=${encodeURIComponent(slug)}&label=${encodeURIComponent(label)}`;
-      const refine = refineLabelFromBrowseParts(parts);
-      if (refine) return `${base}&refine=${encodeURIComponent(refine)}`;
-      return base;
-    }
-    return `/browse?q=${encodeURIComponent(parts.filter(Boolean).join(" "))}`;
-  };
+  const subgroupsFor = (label: string) =>
+    getNavBackendKeys(label).flatMap((key) => getSubgroupsForBackend(key));
 
-  const selectBackendKey = (backendKey: string) => {
-    setActiveBackendKey(backendKey);
-    setActiveSubgroup(ALL_SUBGROUP);
-  };
+  const helloLabel = user ? `Hello, ${user.email?.split("@")[0]}` : "Hello, sign in";
+
+  const allMenu =
+    mounted && isMenuOpen
+      ? createPortal(
+          <>
+            <button
+              type="button"
+              className="fixed inset-0 z-[80] bg-black/60"
+              aria-label="Close menu"
+              onClick={closeMenu}
+            />
+            <aside className="fixed inset-y-0 left-0 z-[90] flex w-[min(100%,365px)] flex-col bg-white text-[#0f1111] shadow-2xl">
+              <div className="flex items-center justify-between bg-primary px-5 py-3.5 text-white">
+                {menuPanel ? (
+                  <button
+                    type="button"
+                    onClick={() => setMenuPanel(null)}
+                    className="inline-flex items-center gap-2 text-lg font-bold"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                    Main menu
+                  </button>
+                ) : (
+                  <Link
+                    href={user ? getDashboardLink() : "/login"}
+                    onClick={closeMenu}
+                    className="inline-flex items-center gap-3 text-lg font-bold"
+                  >
+                    <User className="h-6 w-6" />
+                    {helloLabel}
+                  </Link>
+                )}
+                <button type="button" onClick={closeMenu} aria-label="Close" className="rounded p-1 hover:bg-white/15">
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+
+              <div className="flex-1 overflow-y-auto pb-8">
+                {menuPanel ? (
+                  <div className="py-2">
+                    <h2 className="px-6 py-3 text-lg font-bold">{menuPanel}</h2>
+                    <Link
+                      href={browseUrlForNavLabel(menuPanel)}
+                      onClick={closeMenu}
+                      className="block px-6 py-2.5 text-sm hover:bg-[#eee]"
+                    >
+                      All {menuPanel}
+                    </Link>
+                    {subgroupsFor(menuPanel).map((subgroup) => {
+                      const slug = navLabelToCategorySlug(menuPanel);
+                      const href = slug
+                        ? `/browse?cat=${encodeURIComponent(slug)}&label=${encodeURIComponent(`${menuPanel} / ${subgroup}`)}`
+                        : `/browse?q=${encodeURIComponent(subgroup)}`;
+                      return (
+                        <Link
+                          key={subgroup}
+                          href={href}
+                          onClick={closeMenu}
+                          className="block px-6 py-2.5 text-sm hover:bg-[#eee]"
+                        >
+                          {subgroup}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <>
+                    <section className="border-b border-[#d5d9d9] py-3">
+                      <h2 className="px-6 py-2 text-lg font-bold">Shop by department</h2>
+                      {NAV_CATEGORIES.map((category) => {
+                        const subgroups = subgroupsFor(category.label);
+                        if (subgroups.length > 0) {
+                          return (
+                            <button
+                              key={category.label}
+                              type="button"
+                              onClick={() => setMenuPanel(category.label)}
+                              className="flex w-full items-center justify-between px-6 py-2.5 text-left text-sm hover:bg-[#eee]"
+                            >
+                              {category.label}
+                              <ChevronRight className="h-4 w-4 text-[#555]" />
+                            </button>
+                          );
+                        }
+                        return (
+                          <Link
+                            key={category.label}
+                            href={browseUrlForNavLabel(category.label)}
+                            onClick={closeMenu}
+                            className="block px-6 py-2.5 text-sm hover:bg-[#eee]"
+                          >
+                            {category.label}
+                          </Link>
+                        );
+                      })}
+                    </section>
+                    <section className="py-3">
+                      <h2 className="px-6 py-2 text-lg font-bold">Explore Ocean Hotspot</h2>
+                      {STORE_NAV.map((item) => (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={closeMenu}
+                          className="flex items-center justify-between px-6 py-2.5 text-sm hover:bg-[#eee]"
+                        >
+                          {item.label}
+                          <ChevronRight className="h-4 w-4 text-[#555]" />
+                        </Link>
+                      ))}
+                    </section>
+                  </>
+                )}
+              </div>
+            </aside>
+          </>,
+          document.body,
+        )
+      : null;
 
   return (
     <header
       ref={headerRef}
       className="sticky top-0 z-50 border-b border-[#e8e8e8] bg-white text-[#1d2a2f] shadow-[0_1px_8px_rgba(24,39,52,0.06)]"
-      onMouseLeave={() => setIsMenuOpen(false)}
     >
       {/* Top row */}
-      <div className="page-container flex items-center gap-2 py-2.5 md:gap-3">
+      <div className="flex w-full items-center gap-2 px-3 py-2.5 md:gap-3 md:px-4">
         <Link
           href="/"
           className="flex shrink-0 items-center"
@@ -406,198 +479,36 @@ export function TopBar() {
       </div>
 
       {showMarketplaceChrome && (
-      <>
-      {/* Category nav — single text row */}
-      <nav className="border-t border-[#ececec]">
-        <div className="page-container overflow-x-auto">
-          <div className="flex min-w-max items-center gap-0.5 py-2 md:gap-1 md:py-2.5">
-            {NAV_CATEGORIES.map((category) => {
-              const isActive = activeNavCategory === category.label && isMenuOpen;
-              const NavIcon = getNavIcon(category.label);
-
-              return (
-                <button
-                  key={category.label}
-                  type="button"
-                  onMouseEnter={() => openCategoryMenu(category.label)}
-                  onClick={() => {
-                    setIsMenuOpen(false);
-                    router.push(browseUrlForNavLabel(category.label));
-                  }}
-                  className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm font-medium transition md:px-3 md:text-[15px] ${
-                    isActive
-                      ? "bg-[#f4f4f4] text-[#1d2a2f] shadow-[0_1px_4px_rgba(24,39,52,0.08)]"
-                      : "text-[#4a5861] hover:bg-[#f7f7f7] hover:shadow-[0_1px_3px_rgba(24,39,52,0.06)]"
-                  }`}
-                >
-                  <NavIcon className="h-4 w-4 shrink-0 text-[#6b7a84]" />
-                  {category.label}
-                </button>
-              );
-            })}
-            <Link
-              href={browseUrlForNavLabel("Insurance")}
-              onClick={() => setIsMenuOpen(false)}
-              className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm font-medium text-[#4a5861] transition hover:bg-[#f7f7f7] hover:shadow-[0_1px_3px_rgba(24,39,52,0.06)] md:px-3 md:text-[15px]"
+      <nav className="border-t border-[#ececec] bg-white">
+        <div className="w-full overflow-x-auto px-3 md:px-4">
+          <div className="flex min-w-max items-center gap-0.5 py-1">
+            <button
+              type="button"
+              onClick={() => {
+                setMenuPanel(null);
+                setIsMenuOpen((open) => !open);
+              }}
+              className="inline-flex items-center gap-1.5 rounded-md px-2 py-1.5 text-sm font-bold text-[#1d2a2f] hover:bg-[#f7f7f7]"
+              aria-expanded={isMenuOpen}
             >
-              <ShieldCheck className="h-4 w-4 shrink-0 text-[#6b7a84]" />
-              Insurance
-            </Link>
+              <Menu className="h-5 w-5" />
+              All
+            </button>
+            {STORE_NAV.map((item) => (
+              <Link
+                key={item.href}
+                href={item.href}
+                onClick={closeMenu}
+                className="whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm font-medium text-[#4a5861] hover:bg-[#f7f7f7]"
+              >
+                {item.label}
+              </Link>
+            ))}
           </div>
         </div>
       </nav>
-
-      {/* Mega menu */}
-      {isMenuOpen && (
-        <div className="border-t border-[#ececec] bg-white shadow-[0_12px_32px_rgba(15,34,87,0.08)]">
-          <div className="page-container py-6 md:py-8">
-            {showBackendPicker ? (
-              <div>
-                <h3 className="mb-4 text-lg font-semibold text-[#1d2a2f]">{activeNavCategory}</h3>
-                <div className="grid gap-x-10 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-3">
-                  <Link
-                    href={browseLink([activeNavCategory])}
-                    className="flex items-center gap-2.5 text-[15px] font-medium text-primary transition hover:underline"
-                    onClick={() => setIsMenuOpen(false)}
-                  >
-                    <AllIcon className="h-[18px] w-[18px] shrink-0" />
-                    All {activeNavCategory}
-                  </Link>
-                  {backendKeys.map((backendKey) => {
-                    const BackendIcon = getCategoryIcon(backendKey);
-                    return (
-                      <button
-                        key={backendKey}
-                        type="button"
-                        onClick={() => selectBackendKey(backendKey)}
-                        className="flex items-center gap-2.5 text-left text-[15px] text-[#4b5d68] transition hover:text-primary hover:underline"
-                      >
-                        <BackendIcon className="h-[18px] w-[18px] shrink-0 text-[#8a969e]" />
-                        {backendKey}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : (
-              <div className="grid gap-6 md:grid-cols-[260px_1fr]">
-                <div className="space-y-0.5 border-r border-[#ececec] pr-4">
-                  <button
-                    type="button"
-                    onMouseEnter={() => setActiveSubgroup(ALL_SUBGROUP)}
-                    onClick={() => setActiveSubgroup(ALL_SUBGROUP)}
-                    className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[15px] transition ${
-                      isAllSubgroup
-                        ? "bg-[#f5f8fb] font-semibold text-[#1d2a2f] shadow-[0_1px_4px_rgba(24,39,52,0.06)]"
-                        : "text-[#5a6973] hover:bg-[#fafafa] hover:text-[#1d2a2f]"
-                    }`}
-                  >
-                    <AllIcon
-                      className={`h-[18px] w-[18px] shrink-0 ${isAllSubgroup ? "text-primary" : "text-[#8a969e]"}`}
-                    />
-                    <span className="flex-1">{ALL_SUBGROUP}</span>
-                    {isAllSubgroup && (
-                      <ChevronRight className="h-4 w-4 shrink-0 text-primary" />
-                    )}
-                  </button>
-
-                  {subgroups.map((subgroup) => {
-                    const SubgroupIcon = getSubgroupIcon(subgroup);
-                    const isSelected = activeSubgroup === subgroup;
-
-                    return (
-                      <button
-                        key={subgroup}
-                        type="button"
-                        onMouseEnter={() => setActiveSubgroup(subgroup)}
-                        onClick={() => setActiveSubgroup(subgroup)}
-                        className={`flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-[15px] transition ${
-                          isSelected
-                            ? "bg-[#f5f8fb] font-semibold text-[#1d2a2f] shadow-[0_1px_4px_rgba(24,39,52,0.06)]"
-                            : "text-[#5a6973] hover:bg-[#fafafa] hover:text-[#1d2a2f]"
-                        }`}
-                      >
-                        <SubgroupIcon
-                          className={`h-[18px] w-[18px] shrink-0 ${isSelected ? "text-primary" : "text-[#8a969e]"}`}
-                        />
-                        <span className="flex-1">{subgroup}</span>
-                        {isSelected && (
-                          <ChevronRight className="h-4 w-4 shrink-0 text-primary" />
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div>
-                  {isAllSubgroup ? (
-                    <>
-                      <h3 className="mb-4 text-lg font-semibold text-[#1d2a2f]">
-                        All {activeNavCategory}
-                      </h3>
-                      <Link
-                        href={browseLink([activeNavCategory, resolvedBackendKey])}
-                        className="mb-5 inline-flex items-center gap-2.5 text-[15px] font-medium text-primary transition hover:underline"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        <AllIcon className="h-[18px] w-[18px] shrink-0" />
-                        View all {activeNavCategory}
-                      </Link>
-                      <div className="grid gap-x-10 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
-                        {subgroups.map((subgroup) => {
-                          const SubgroupIcon = getSubgroupIcon(subgroup);
-                          return (
-                            <Link
-                              key={subgroup}
-                              href={browseLink([activeNavCategory, resolvedBackendKey, subgroup])}
-                              className="flex items-center gap-2.5 text-[15px] text-[#4b5d68] transition hover:text-primary hover:underline"
-                              onClick={() => setIsMenuOpen(false)}
-                            >
-                              <SubgroupIcon className="h-[18px] w-[18px] shrink-0 text-[#8a969e]" />
-                              {subgroup}
-                            </Link>
-                          );
-                        })}
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <h3 className="mb-4 text-lg font-semibold text-[#1d2a2f]">{activeSubgroup}</h3>
-                      <div className="grid gap-x-10 gap-y-2.5 sm:grid-cols-2 lg:grid-cols-3">
-                        <Link
-                          href={browseLink([activeNavCategory, resolvedBackendKey, activeSubgroup])}
-                          className="flex items-center gap-2.5 text-[15px] font-medium text-primary transition hover:underline"
-                          onClick={() => setIsMenuOpen(false)}
-                        >
-                          <AllIcon className="h-[18px] w-[18px] shrink-0" />
-                          All {activeSubgroup}
-                        </Link>
-                        {activeItems.map((item) => (
-                          <Link
-                            key={item}
-                            href={browseLink([
-                              activeNavCategory,
-                              resolvedBackendKey,
-                              activeSubgroup,
-                              item,
-                            ])}
-                            className="text-[15px] text-[#4b5d68] transition hover:text-primary hover:underline"
-                            onClick={() => setIsMenuOpen(false)}
-                          >
-                            {item}
-                          </Link>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
       )}
-      </>
-      )}
+      {allMenu}
     </header>
   );
 }

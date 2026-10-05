@@ -405,88 +405,66 @@ const Browse = () => {
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
-  // Mobile filter sheet content
-  const FilterContent = (
-    <div className="space-y-6">
-      {/* Price Range */}
-      <div>
-        <h3 className="text-sm font-semibold text-headline mb-4">Price Range</h3>
-        <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-          <span>£{priceRange[0].toLocaleString()}</span>
-          <span>£{priceRange[1].toLocaleString()}</span>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <TopBar />
 
       <div className="flex flex-1 flex-col min-h-0">
-        <div className="relative z-30 shrink-0 bg-background">
-          <div className="page-container pt-6 md:pt-8">
-            <div className="mb-6 animate-slide-up">
-              <div className="mb-4 flex items-center justify-between gap-4">
-                <h1 className="text-[2.2rem] font-bold tracking-[-0.04em] text-headline">
-                  {pageTitle}
-                </h1>
-
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="outline" className="lg:hidden">
-                      <SlidersHorizontal className="mr-2 h-4 w-4" />
-                      Filters
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="left" className="w-80">
-                    <SheetHeader>
-                      <SheetTitle>Filters</SheetTitle>
-                    </SheetHeader>
-                    {FilterContent}
-                  </SheetContent>
-                </Sheet>
-              </div>
-
-              {categoryFilter ? (
-                <p className="mb-5 text-sm text-muted-foreground">
-                  {categoryFilter.label.split(" / ").map((part, index, parts) => (
-                    <span key={`${part}-${index}`}>
-                      {index > 0 && <span className="mx-1.5 text-[#b8c4cc]">/</span>}
-                      <span className={index === parts.length - 1 ? "font-medium text-[#1d2a2f]" : ""}>
-                        {part}
-                      </span>
-                    </span>
-                  ))}
-                </p>
-              ) : (
-                <p className="mb-5 max-w-2xl text-[1.05rem] text-muted-foreground">
-                  Discover everything maritime. Browse our curated selection of products and services.
-                </p>
-              )}
-
-              {selectedEntities.length > 0 && (
-                <div className="mb-4 flex flex-wrap gap-2">
-                  {selectedEntities.map((e) => (
-                    <span key={e} className="inline-flex items-center rounded-full bg-[#f4f5f7] px-3 py-1.5 text-xs font-medium text-[#4a5564]">
-                      {e}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <FilterBar activeFilters={activeFilters} onFiltersChange={handleFiltersChange} />
-          </div>
-        </div>
-
         <main className="flex-1 overflow-y-auto pb-24 md:pb-0">
-          <div className="page-container pb-8 pt-2">
+          <div className="flex w-full items-start gap-4 px-3 py-4 md:px-4">
+            <aside className="sticky top-4 hidden w-[250px] shrink-0 self-start lg:block">
+              <FilterBar activeFilters={activeFilters} onFiltersChange={handleFiltersChange} />
+            </aside>
+
+            <div className="min-w-0 flex-1">
             {searchQuery.trim() && !searchError && totalFound > 0 && (
               <p className="mb-4 text-sm text-muted-foreground">
                 Found {totalFound} results for &ldquo;{searchQuery}&rdquo;
               </p>
             )}
+
+            <div className="mb-4 flex items-start justify-between gap-3">
+              <div>
+                <h1 className="text-2xl font-bold text-[#0f1111]">{pageTitle}</h1>
+                {categoryFilter && (
+                  <p className="mt-1 text-sm text-[#565959]">
+                    {categoryFilter.label.split(" / ").map((part, index, parts) => (
+                      <span key={`${part}-${index}`}>
+                        {index > 0 && <span className="mx-1.5">/</span>}
+                        <span className={index === parts.length - 1 ? "font-medium text-[#0f1111]" : ""}>
+                          {part}
+                        </span>
+                      </span>
+                    ))}
+                  </p>
+                )}
+                {selectedEntities.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {selectedEntities.map((e) => (
+                      <span key={e} className="inline-flex items-center rounded-full bg-[#f4f5f7] px-3 py-1.5 text-xs font-medium text-[#4a5564]">
+                        {e}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="lg:hidden">
+                    <SlidersHorizontal className="mr-2 h-4 w-4" />
+                    Filters
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[300px] overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle>Filters</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-4">
+                    <FilterBar activeFilters={activeFilters} onFiltersChange={handleFiltersChange} />
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
 
             {isLoading ? (
               <div className="flex items-center justify-center py-20">
@@ -516,7 +494,7 @@ const Browse = () => {
                     </span>
                   )}
                 </p>
-                <div className="relative z-0 isolate grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                <div className="relative z-0 isolate grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
                   {paginatedProducts.map((product, index) => (
                     <ProductCard key={product.id} product={product} index={index} />
                   ))}
@@ -580,6 +558,7 @@ const Browse = () => {
                 )}
               </>
             )}
+            </div>
           </div>
         </main>
       </div>

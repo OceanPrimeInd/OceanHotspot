@@ -23,7 +23,7 @@ interface Product {
   seller_company?: string | null;
 }
 
-export function ProductGrid() {
+export function ProductGrid({ variant = "default" }: { variant?: "default" | "storefront" }) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const shopOpen = isShopOpen();
@@ -50,7 +50,7 @@ export function ProductGrid() {
 
   if (loading) {
     return (
-      <section className="section-shell mb-16">
+      <section className={variant === "storefront" ? "w-full px-3 py-6 md:px-4" : "section-shell mb-16"}>
         <div className="flex items-center justify-center py-16">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -62,19 +62,28 @@ export function ProductGrid() {
     return null;
   }
 
+  const storefront = variant === "storefront";
+
   return (
-    <section className="section-shell mb-16">
-      <div className="mb-6 flex items-end justify-between gap-4">
+    <section className={storefront ? "w-full px-3 pt-4 md:px-4" : "section-shell mb-16"}>
+      <div className={storefront ? "bg-white p-4 shadow-sm md:p-5" : ""}>
+      <div className={storefront ? "mb-4 flex items-baseline justify-between gap-4" : "mb-6 flex items-end justify-between gap-4"}>
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Featured products</p>
-          <h2 className="mt-2 text-3xl font-black tracking-[-0.05em] text-slate-900">Built for serious marine buyers</h2>
+          {storefront ? (
+            <h2 className="text-xl font-bold text-[#0f1111]">Featured marine products</h2>
+          ) : (
+            <>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary">Featured products</p>
+              <h2 className="mt-2 text-3xl font-black tracking-[-0.05em] text-slate-900">Built for serious marine buyers</h2>
+            </>
+          )}
         </div>
-        <Link href="/browse" className="hidden text-sm font-semibold text-primary hover:text-primary/90 md:inline-flex">
-          Explore all products →
+        <Link href="/browse" className="text-sm font-semibold text-primary hover:text-[#c9521a] hover:underline">
+          {storefront ? "See all products" : "Explore all products →"}
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4">
+      <div className={storefront ? "grid grid-cols-2 gap-3 md:grid-cols-4" : "grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-4"}>
         {products.map((product) => {
           const allImages = [
             ...(product.image_url ? [product.image_url] : []),
@@ -87,7 +96,11 @@ export function ProductGrid() {
           return (
             <div
               key={product.id}
-              className="group flex flex-col overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_18px_40px_-30px_rgba(15,34,87,0.35)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_40px_-20px_rgba(15,34,87,0.55)]"
+              className={
+                storefront
+                  ? "group flex flex-col overflow-hidden border border-[#e3e6e6] bg-white"
+                  : "group flex flex-col overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_18px_40px_-30px_rgba(15,34,87,0.35)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_40px_-20px_rgba(15,34,87,0.55)]"
+              }
             >
               <Link href={`/product/${product.id}`} className="block">
                 <div className="relative aspect-square overflow-hidden bg-[radial-gradient(circle_at_top,_rgba(17,63,186,0.08),_rgba(255,255,255,0.5)_60%)]">
@@ -156,6 +169,7 @@ export function ProductGrid() {
             </div>
           );
         })}
+      </div>
       </div>
     </section>
   );

@@ -30,6 +30,7 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
   const [activeGroup, setActiveGroup] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [navPath, setNavPath] = useState<string[]>([]);
+  const [partsPath, setPartsPath] = useState<string[]>([]);
   const popoverRef = useRef<HTMLDivElement | null>(null);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const buttonRefs = useRef<Record<string, HTMLButtonElement | null>>({});
@@ -79,7 +80,6 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
     const label = buildCategoryLabel(path);
     const value = path.join(">").toLowerCase();
     addFilter(group, label, value);
-    closeDropdown();
   };
 
   const commitCategoryFromNavPath = () => {
@@ -147,10 +147,12 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
 
   const renderSelectionIndicator = (selected: boolean) => (
     <span
-      className={`h-4 w-4 rounded-full border-[2px] ${
-        selected ? "border-primary bg-primary" : "border-[#7a838b] bg-white"
+      className={`flex h-4 w-4 shrink-0 items-center justify-center border ${
+        selected ? "border-[#0f1111] bg-[#0f1111] text-white" : "border-[#888] bg-white"
       }`}
-    />
+    >
+      {selected ? <span className="text-[10px] leading-none">✓</span> : null}
+    </span>
   );
 
   const AllIcon = getAllMenuIcon();
@@ -162,7 +164,7 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
           <button
             type="button"
             onClick={() => selectNestedFilter("Category", ["All categories"])}
-            className="flex w-full items-center gap-2.5 border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9]"
+            className="flex w-full items-center gap-2.5  px-0.5 py-1 text-left text-[13px] text-[#1d2a2f] transition hover:bg-[#f3f7f9]"
           >
             <AllIcon className="h-[18px] w-[18px] shrink-0 text-[#5c6b74]" />
             <span className="flex-1">All</span>
@@ -175,7 +177,7 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
                 key={category.label}
                 type="button"
                 onClick={() => setNavPath([category.label])}
-                className="flex w-full items-center gap-2.5 border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
+                className="flex w-full items-center gap-2.5  px-0.5 py-1 text-left text-[13px] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
               >
                 <NavIcon className="h-[18px] w-[18px] shrink-0 text-[#5c6b74]" />
                 <span className="flex-1">{category.label}</span>
@@ -199,7 +201,7 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
           <button
             type="button"
             onClick={() => selectNestedFilter("Category", [navLabel, "All"])}
-            className="flex w-full items-center gap-2.5 border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9]"
+            className="flex w-full items-center gap-2.5  px-0.5 py-1 text-left text-[13px] text-[#1d2a2f] transition hover:bg-[#f3f7f9]"
           >
             <AllIcon className="h-[18px] w-[18px] shrink-0 text-[#5c6b74]" />
             <span className="flex-1">All</span>
@@ -214,7 +216,7 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
                 key={key}
                 type="button"
                 onClick={() => setNavPath([navLabel, key])}
-                className="flex w-full items-center gap-2.5 border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
+                className="flex w-full items-center gap-2.5  px-0.5 py-1 text-left text-[13px] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
               >
                 <BackendIcon className="h-[18px] w-[18px] shrink-0 text-[#5c6b74]" />
                 <span className="flex-1">{key}</span>
@@ -245,7 +247,7 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
                   : [navLabel, "All"]
               )
             }
-            className="flex w-full items-center gap-2.5 border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9]"
+            className="flex w-full items-center gap-2.5  px-0.5 py-1 text-left text-[13px] text-[#1d2a2f] transition hover:bg-[#f3f7f9]"
           >
             <AllIcon className="h-[18px] w-[18px] shrink-0 text-[#5c6b74]" />
             <span className="flex-1">All</span>
@@ -280,7 +282,7 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
                   }
                   selectNestedFilter("Category", [...nextPath]);
                 }}
-                className="flex w-full items-center gap-2.5 border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
+                className="flex w-full items-center gap-2.5  px-0.5 py-1 text-left text-[13px] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
               >
                 <SubgroupIcon className="h-[18px] w-[18px] shrink-0 text-[#5c6b74]" />
                 <span className="flex-1">{subgroup}</span>
@@ -312,7 +314,7 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
         <button
           type="button"
           onClick={() => selectNestedFilter("Category", [...itemBasePath, "All"])}
-          className="flex w-full items-center gap-2.5 border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9]"
+          className="flex w-full items-center gap-2.5  px-0.5 py-1 text-left text-[13px] text-[#1d2a2f] transition hover:bg-[#f3f7f9]"
         >
           <AllIcon className="h-[18px] w-[18px] shrink-0 text-[#5c6b74]" />
           <span className="flex-1">All</span>
@@ -325,7 +327,7 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
             key={item}
             type="button"
             onClick={() => selectNestedFilter("Category", [...itemBasePath, item])}
-            className="flex w-full items-center justify-between border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
+            className="flex w-full items-center justify-between  px-0.5 py-1 text-left text-[13px] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
           >
             <span>{item}</span>
             {renderSelectionIndicator(
@@ -341,13 +343,13 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
   };
 
   const renderPartsPanel = () => {
-    if (navPath.length === 0) {
+    if (partsPath.length === 0) {
       return Object.keys(FIND_PARTS_TREE).map((partGroup) => (
         <button
           key={partGroup}
           type="button"
-          onClick={() => setNavPath([partGroup])}
-          className="flex w-full items-center justify-between border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
+          onClick={() => setPartsPath([partGroup])}
+          className="flex w-full items-center justify-between  px-0.5 py-1 text-left text-[13px] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
         >
           <span>{partGroup}</span>
           <ChevronRight className="h-4 w-4 text-[#7a838b]" />
@@ -355,7 +357,7 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
       ));
     }
 
-    const partGroup = navPath[0];
+    const partGroup = partsPath[0];
     const items = FIND_PARTS_TREE[partGroup] ?? [];
 
     return (
@@ -363,7 +365,7 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
         <button
           type="button"
           onClick={() => selectNestedFilter("Find Parts", [partGroup, "All"])}
-          className="flex w-full items-center justify-between border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9]"
+          className="flex w-full items-center justify-between  px-0.5 py-1 text-left text-[13px] text-[#1d2a2f] transition hover:bg-[#f3f7f9]"
         >
           <span>All</span>
           {renderSelectionIndicator(
@@ -375,7 +377,7 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
             key={item}
             type="button"
             onClick={() => selectNestedFilter("Find Parts", [partGroup, item])}
-            className="flex w-full items-center justify-between border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
+            className="flex w-full items-center justify-between  px-0.5 py-1 text-left text-[13px] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
           >
             <span>{item}</span>
             {renderSelectionIndicator(
@@ -387,11 +389,11 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
     );
   };
 
-  const renderCheckboxPanel = () => {
-    const options = activeGroupConfig?.options ?? [];
+  const renderCheckboxPanelFor = (groupLabel: string) => {
+    const options = FILTER_GROUPS.find((group) => group.label === groupLabel)?.options ?? [];
 
     return options.map((option) => {
-      const selected = isOptionSelected(activeGroup!, option.value);
+      const selected = isOptionSelected(groupLabel, option.value);
 
       return (
         <button
@@ -399,17 +401,17 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
           type="button"
           onClick={() => {
             if (selected) {
-              removeFilter(buildFilterId(activeGroup!, option.value));
+              removeFilter(buildFilterId(groupLabel, option.value));
               return;
             }
-            addFilter(activeGroup!, option.label, option.value);
+            addFilter(groupLabel, option.label, option.value);
           }}
-          className={`flex w-full items-center justify-between border-b border-[#edf1f4] px-4 py-3.5 text-left text-[0.98rem] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0 ${
-            selected ? "bg-primary/10" : "bg-white"
+          className={`flex w-full items-center gap-2 px-0.5 py-1 text-left text-[13px] text-[#1d2a2f] hover:text-primary ${
+            selected ? "font-medium" : ""
           }`}
         >
-          <span>{option.label}</span>
           {renderSelectionIndicator(selected)}
+          <span>{option.label}</span>
         </button>
       );
     });
@@ -418,7 +420,7 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
   const renderPanelContent = () => {
     if (activeGroupConfig?.type === "category") return renderCategoryPanel();
     if (activeGroupConfig?.type === "parts") return renderPartsPanel();
-    return renderCheckboxPanel();
+    return renderCheckboxPanelFor(activeGroup ?? "");
   };
 
   const getDropdownTitle = () => {
@@ -443,123 +445,62 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
   };
 
 
+  const renderGroupBody = (groupLabel: string) => {
+    if (groupLabel === "Category") return renderCategoryPanel();
+    if (groupLabel === "Find Parts") return renderPartsPanel();
+    return renderCheckboxPanelFor(groupLabel);
+  };
+
   return (
-    <div className="relative z-50 mb-5 border-b border-border bg-background pb-3">
-      <div className="flex flex-wrap items-center gap-3">
-        {FILTER_GROUPS.map((group) => {
-          const isActive = activeGroup === group.label;
-          const isGroupOpen = isOpen && isActive;
-          const selectionCount = getGroupSelectionCount(group.label);
-
-          return (
-            <div key={group.label} className="relative">
-              <button
-                ref={(node) => {
-                  buttonRefs.current[group.label] = node;
-                }}
-                type="button"
-                onClick={() => openGroup(group.label)}
-                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[1.05rem] font-medium transition-all duration-200 ${
-                  isActive || selectionCount > 0
-                    ? "border-primary bg-primary/10 text-[#1d2a2f] shadow-[0_0_0_1px_hsl(var(--primary)/0.08)]"
-                    : "border-[#d2d9df] bg-white text-[#1d2a2f] hover:border-[#b8c4cc]"
-                }`}
-              >
-                <span className="leading-none">
-                  {group.label}
-                  {selectionCount > 0 ? ` (${selectionCount})` : ""}
-                </span>
-                <ChevronDown
-                  className={`h-4 w-4 transition-transform duration-200 ${
-                    isGroupOpen ? "rotate-180" : "rotate-0"
-                  }`}
-                />
-              </button>
-
-              {isGroupOpen && (
-                <div
-                  ref={popoverRef}
-                  className="absolute left-0 top-full z-[100] mt-2 w-[320px] overflow-hidden rounded-[20px] border border-[#dfe7eb] bg-white shadow-[0_18px_36px_rgba(15,23,42,0.16)]"
-                >
-                  <div className="flex items-center gap-2 border-b border-[#edf1f4] bg-[#f3f7f9] px-3 py-3">
-                    {isNestedPanel && navPath.length > 0 && (
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setNavPath((current) => current.slice(0, current.length - 1))
-                        }
-                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-primary bg-white text-primary transition hover:bg-primary/10"
-                        aria-label="Go back"
-                      >
-                        <ArrowLeft className="h-4 w-4" />
-                      </button>
-                    )}
-                    <div className="min-w-0 flex-1 px-1 text-sm font-medium text-[#1d2a2f] md:text-base">
-                      {getDropdownTitle()}
-                    </div>
-                  </div>
-
-                  <div
-                    ref={scrollRef}
-                    className="max-h-[320px] overflow-y-auto bg-white"
-                  >
-                    {renderPanelContent()}
-                  </div>
-
-                  <div className="border-t border-[#edf1f4] bg-white p-3.5">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (activeGroup === "Category" && navPath.length > 0) {
-                          commitCategoryFromNavPath();
-                          return;
-                        }
-                        closeDropdown();
-                      }}
-                      className="w-full rounded-[12px] bg-primary px-4 py-3 text-center text-sm font-semibold text-primary-foreground shadow-[0_8px_20px_hsl(var(--primary)/0.22)] transition hover:bg-primary/90 md:text-base"
-                    >
-                      Show results
-                    </button>
-                  </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
-
-        {hasActiveFilters && (
+    <aside className="w-full text-[#0f1111]">
+      {hasActiveFilters && (
+        <div className="mb-3 border-b border-[#e3e6e6] pb-3">
           <button
             type="button"
             onClick={clearAllFilters}
-            className="ml-auto text-[0.95rem] font-medium text-primary underline-offset-2 hover:underline"
+            className="text-sm text-primary hover:underline"
           >
             Clear filters
           </button>
-        )}
-      </div>
-
-      {hasActiveFilters && (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {activeFilters.map((filter) => (
-            <span
-              key={filter.id}
-              className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1.5 text-xs font-medium text-primary"
-            >
-              <span className="max-w-[280px] truncate">
-                {filter.group}: {filter.label}
+          <div className="mt-2 flex flex-col gap-1.5">
+            {activeFilters.map((filter) => (
+              <span key={filter.id} className="inline-flex items-center gap-1 text-xs text-[#0f1111]">
+                <button
+                  type="button"
+                  onClick={() => removeFilter(filter.id)}
+                  aria-label={`Remove ${filter.label} filter`}
+                  className="text-[#565959] hover:text-[#0f1111]"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+                <span className="truncate">{filter.label}</span>
               </span>
-              <button
-                type="button"
-                onClick={() => removeFilter(filter.id)}
-                className="rounded-full p-0.5 text-primary transition hover:bg-primary/15"
-                aria-label={`Remove ${filter.label} filter`}
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-            </span>
-          ))}
+            ))}
+          </div>
         </div>
       )}
-    </div>
+
+      {FILTER_GROUPS.map((group) => {
+        const path = group.label === "Category" ? navPath : group.label === "Find Parts" ? partsPath : [];
+        const setPath = group.label === "Category" ? setNavPath : setPartsPath;
+
+        return (
+          <section key={group.label} className="border-b border-[#e3e6e6] py-3">
+            <h2 className="mb-2 text-[15px] font-bold">{group.label}</h2>
+            {path.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setPath((current) => current.slice(0, -1))}
+                className="mb-1 flex items-center gap-1 text-[13px] font-bold text-[#0f1111] hover:text-primary hover:underline"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+                {path[path.length - 1]}
+              </button>
+            )}
+            <div className="max-h-64 overflow-y-auto pr-1">{renderGroupBody(group.label)}</div>
+          </section>
+        );
+      })}
+    </aside>
   );
 }
