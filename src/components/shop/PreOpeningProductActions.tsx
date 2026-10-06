@@ -1,12 +1,15 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Heart } from "lucide-react";
+import { Heart, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { CONTACT_EMAIL } from "@/config/contact";
 import { useWishlist } from "@/contexts/WishlistContext";
 import { isShopOpen } from "@/config/shop";
 import { WhatsAppLink } from "@/components/shop/WhatsAppButton";
 import { buildProductWhatsAppMessage, isWhatsAppConfigured } from "@/lib/whatsapp";
+import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 
 type Props = {
@@ -23,24 +26,26 @@ type Props = {
 };
 
 export function PreOpeningProductActions(props: Props) {
-  if (isShopOpen()) return null;
-
   const { toggleItem, isInWishlist } = useWishlist();
   const { toast } = useToast();
   const inList = isInWishlist(props.productId);
-  const productUrl =
-    typeof window !== "undefined" ? `${window.location.origin}/product/${props.productId}` : undefined;
+  const [productUrl, setProductUrl] = useState("");
+
+  useEffect(() => {
+    setProductUrl(`${window.location.origin}/product/${props.productId}`);
+  }, [props.productId]);
+
+  if (isShopOpen()) return null;
 
   const waMessage = buildProductWhatsAppMessage({
     title: props.title,
     partNumber: props.partNumber,
-    supplierName: props.supplierName,
+    priceLabel: props.price > 0 ? `${formatPrice(props.currency, props.price)} ex VAT` : null,
     productUrl,
   });
 
   return (
-    <div className={`flex flex-col gap-2 ${props.compact ? "" : "mt-2"}`} onClick={(e) => e.preventDefault()}>
-      <p className="text-xs font-medium text-[#b3161c]">Order when we open</p>
+    <div className={`flex flex-col gap-2 ${props.compact ? "" : "mt-2"}`} onClick={(e) => e.stopPropagation()}>
       <div className="flex flex-wrap gap-2">
         <Button
           type="button"
@@ -80,8 +85,11 @@ export function PreOpeningProductActions(props: Props) {
             Ask on WhatsApp
           </WhatsAppLink>
         ) : (
-          <Button type="button" size="sm" variant="outline" className="border-[#128C7E] text-[#128C7E]" asChild>
-            <Link href="/contact">Contact us</Link>
+          <Button type="button" size="sm" variant="outline" className="border-primary text-primary" asChild>
+            <a href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(props.title)}`}>
+              <Mail className="mr-1.5 h-4 w-4" />
+              Email us
+            </a>
           </Button>
         )}
       </div>

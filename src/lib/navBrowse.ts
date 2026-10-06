@@ -11,6 +11,7 @@ const NAV_LABEL_TO_CAT: Record<string, string> = {
   Safety: "safety",
   Leisure: "leisure",
   Insurance: "services",
+  "Finance & insurance": "services",
 };
 
 export function navLabelToCategorySlug(label: string): string | null {

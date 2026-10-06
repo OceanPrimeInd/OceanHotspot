@@ -8,6 +8,8 @@ export interface CartItem {
   vat_treatment: string | null;
   vat_rate: number;
   quantity: number;
+  part_number?: string | null;
+  supplier_name?: string | null;
 }
 
 export interface WishlistItem {

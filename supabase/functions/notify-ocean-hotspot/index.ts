@@ -33,6 +33,25 @@ type WishlistPayload = {
   }>;
 };
 
+type FollowupPayload = {
+  type: "customer_followup";
+  requestId?: string;
+  kind?: "purchase" | "question" | "basket";
+  customerName: string;
+  email: string;
+  phone?: string;
+  deliveryAddress?: string;
+  items: Array<{
+    title: string;
+    part_number?: string | null;
+    supplier_name?: string | null;
+    price?: number;
+    currency?: string;
+    quantity?: number;
+    product_url?: string;
+  }>;
+};
+
 type SupplierPayload = {
   type: "supplier_application";
   applicationId: string;
@@ -111,6 +130,52 @@ serve(async (req) => {
       const send = await sendEmailDetailed({
         to: alertTo,
         subject: `Supplier application: ${b.companyName}`,
+        html,
+        replyTo: b.email,
+      });
+      return new Response(JSON.stringify({ ok: send.ok, emailAdmin: send }), {
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    if (body.type === "customer_followup") {
+      const b = body as FollowupPayload;
+      if (!b.email || !b.customerName) {
+        return new Response(JSON.stringify({ error: "Invalid payload" }), {
+          status: 400,
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+      const heading =
+        b.kind === "question"
+          ? "Product question"
+          : b.kind === "basket"
+            ? "Basket purchase request"
+            : "Purchase request";
+      const itemsHtml = (b.items || [])
+        .map((item, i) => {
+          const qty = item.quantity && item.quantity > 0 ? item.quantity : 1;
+          const total =
+            item.price != null ? `${item.currency || ""} ${(item.price * qty).toFixed(2)}`.trim() : "";
+          return `<li><strong>${i + 1}. ${item.title}</strong> × ${qty}<br/>
+            Product code: ${item.part_number || "—"}<br/>
+            Supplier: ${item.supplier_name || "—"}<br/>
+            Price: ${item.price != null ? `${item.currency || ""} ${item.price}`.trim() : "—"}<br/>
+            Total: ${total || "—"}<br/>
+            ${item.product_url || ""}</li>`;
+        })
+        .join("");
+      const html = `
+        <h2>${heading}</h2>
+        <p><strong>${b.customerName}</strong> — ${b.email}</p>
+        <p>Phone: ${b.phone || "—"}<br/>
+        Delivery address: ${b.deliveryAddress || "—"}<br/>
+        Saved request: ${b.requestId || "—"}</p>
+        <ul>${itemsHtml}</ul>
+      `;
+      const send = await sendEmailDetailed({
+        to: alertTo,
+        subject: `${heading} from ${b.customerName}`,
         html,
         replyTo: b.email,
       });

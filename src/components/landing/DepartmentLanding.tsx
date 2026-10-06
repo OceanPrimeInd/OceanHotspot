@@ -3,6 +3,7 @@ import { Layout } from "@/components/layout/Layout";
 
 export function DepartmentLanding({
   kicker,
+  comingSoon = false,
   title,
   intro,
   points,
@@ -12,6 +13,7 @@ export function DepartmentLanding({
   secondaryLabel,
 }: {
   kicker: string;
+  comingSoon?: boolean;
   title: string;
   intro: string;
   points: { title: string; text: string; id?: string }[];
@@ -25,7 +27,10 @@ export function DepartmentLanding({
       <div className="bg-[#eaeded] py-6 md:py-8">
         <div className="page-container">
           <article className="bg-white p-6 shadow-sm md:p-10">
-            <p className="text-sm font-semibold text-primary">{kicker}</p>
+            <p className="text-sm font-semibold text-primary">
+              {kicker}
+              {comingSoon ? " · Coming soon" : ""}
+            </p>
             <h1 className="mt-2 max-w-3xl text-3xl font-bold text-[#0f1111] md:text-4xl">{title}</h1>
             <p className="mt-4 max-w-3xl text-base leading-relaxed text-[#333]">{intro}</p>
             <div className="mt-8 grid gap-4 sm:grid-cols-2">

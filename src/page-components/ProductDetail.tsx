@@ -18,8 +18,8 @@ import { useToast } from "@/hooks/use-toast";
 import { formatPrice } from "@/lib/utils";
 import { getProductCategoryLabel } from "@/config/productCategories";
 import { isShopOpen } from "@/config/shop";
-import { WhatsAppLink } from "@/components/shop/WhatsAppButton";
-import { buildProductWhatsAppMessage } from "@/lib/whatsapp";
+import { openProductRequest } from "@/lib/purchaseRequest";
+import { cleanListingCopy } from "@/lib/listingCopy";
 import { ProductReviews } from "@/components/ProductReviews";
 import { ProductImageGallery } from "@/components/product/ProductImageGallery";
 import {
@@ -90,7 +90,7 @@ const ProductDetail = () => {
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [showEnquiryForm, setShowEnquiryForm] = useState(false);
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { addItem, items } = useCart();
   const { toggleItem, isInWishlist } = useWishlist();
   const { addItem: addToRecentlyViewed } = useRecentlyViewed();
@@ -146,6 +146,37 @@ const ProductDetail = () => {
     });
   };
 
+  const customerName =
+    profile?.full_name?.trim() || profile?.company_name?.trim() || "A customer";
+
+  const currentProductLine = () => {
+    if (!product) return null;
+    return {
+      productId: product.id,
+      title: cleanListingCopy(product.title),
+      partNumber: product.part_number,
+      supplierName: supplierLabel,
+      currency: product.currency,
+      unitPrice: product.price,
+      quantity: 1,
+      productUrl: `${window.location.origin}/product/${product.id}`,
+    };
+  };
+
+  const handleBuyNow = () => {
+    const line = currentProductLine();
+    if (!line) return;
+    openProductRequest({ kind: "purchase", customerName, lines: [line] });
+    router.push("/request");
+  };
+
+  const handleMoreInformation = () => {
+    const line = currentProductLine();
+    if (!line) return;
+    openProductRequest({ kind: "question", customerName, lines: [line] });
+    router.push("/request");
+  };
+
   const handleAddToCart = () => {
     if (!product) return;
     addItem({
@@ -157,11 +188,13 @@ const ProductDetail = () => {
       seller_id: product.seller_id,
       vat_treatment: product.vat_treatment,
       vat_rate: product.vat_rate ?? 20,
+      part_number: product.part_number,
+      supplier_name: supplierLabel,
     });
     setAddedToCart(true);
     toast({
-      title: "Added to cart!",
-      description: `${product.title} has been added to your cart.`,
+      title: "Added to basket",
+      description: `${product.title} has been added to your basket.`,
     });
     // Reset button state after 2 seconds
     setTimeout(() => setAddedToCart(false), 2000);
@@ -355,7 +388,7 @@ const ProductDetail = () => {
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link href="/browse">Browse</Link>
+                <Link href="/browse">Products</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
             {product.domain_category && (
@@ -409,7 +442,7 @@ const ProductDetail = () => {
             </div>
 
             <h1 className="text-3xl font-bold text-headline mb-2">
-              {product.title}
+              {cleanListingCopy(product.title)}
             </h1>
             {product.part_number && (
               <p className="text-sm font-medium text-muted-foreground mb-2">
@@ -435,8 +468,8 @@ const ProductDetail = () => {
               </div>
             ) : product.pricing_type === "contact_us" ? (
               <div className="mb-6">
-                <p className="text-2xl font-bold text-primary">Contact Us</p>
-                <p className="text-sm text-muted-foreground mt-1">Get in touch for more information and pricing</p>
+                <p className="text-2xl font-bold text-primary">Message us</p>
+                <p className="text-sm text-muted-foreground mt-1">Email us or message us on WhatsApp for price and availability</p>
               </div>
             ) : product.pricing_type === "coming_soon" ? (
               <div className="mb-6">
@@ -457,14 +490,8 @@ const ProductDetail = () => {
               </>
             )}
 
-            {(product.availability_status || product.lead_time_text || product.ships_from) && (
+            {(product.lead_time_text || product.ships_from) && (
               <div className="mb-6 rounded-lg border border-border bg-muted/30 p-4 text-sm space-y-1">
-                {product.availability_status && (
-                  <p>
-                    <span className="font-semibold text-foreground">Stock: </span>
-                    {product.availability_status.replace(/_/g, " ")}
-                  </p>
-                )}
                 {product.lead_time_text && (
                   <p>
                     <span className="font-semibold text-foreground">Delivery: </span>
@@ -478,12 +505,6 @@ const ProductDetail = () => {
                   </p>
                 )}
               </div>
-            )}
-
-            {!checkoutLive && !isOwner && (
-              <p className="mb-4 text-sm text-muted-foreground">
-                Catalogue is live for browsing. Checkout opens soon — use wish list or WhatsApp to enquire.
-              </p>
             )}
 
             {/* Actions */}
@@ -513,32 +534,26 @@ const ProductDetail = () => {
             ) : (
               <div className="space-y-4">
                 {!checkoutLive && (
-                  <div className="space-y-3 rounded-xl border border-[rgba(214,31,38,0.35)] bg-[#fff7f7] p-5">
-                    <p className="text-sm font-semibold text-[#b3161c]">Order when we open</p>
-                    <div className="flex flex-wrap gap-3">
+                  <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-5">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      <Button variant="o42Primary" className="h-12 w-full px-3 text-sm" onClick={handleBuyNow}>
+                        Buy now
+                      </Button>
+                      <Button variant="outline" className="h-12 w-full px-3 text-sm" onClick={handleAddToCart}>
+                        <ShoppingCart className="mr-2 h-4 w-4" />
+                        Add to Basket
+                      </Button>
                       <Button
-                        variant={inWishlist ? "secondary" : "o42Primary"}
-                        size="lg"
-                        className="flex-1"
+                        variant={inWishlist ? "secondary" : "outline"}
+                        className="h-12 w-full px-3 text-sm"
                         onClick={handleToggleWishlist}
                       >
-                        <Heart className={`mr-2 h-5 w-5 ${inWishlist ? "fill-red-500 text-red-500" : ""}`} />
-                        {inWishlist ? "On your wish list" : "Add to wish list"}
+                        <Heart className={`mr-2 h-4 w-4 ${inWishlist ? "fill-red-500 text-red-500" : ""}`} />
+                        {inWishlist ? "On your wish list" : "Add to Wish list"}
                       </Button>
-                      <WhatsAppLink
-                        message={buildProductWhatsAppMessage({
-                          title: product.title,
-                          partNumber: product.part_number,
-                          supplierName: supplierLabel,
-                          productUrl:
-                            typeof window !== "undefined"
-                              ? `${window.location.origin}/product/${product.id}`
-                              : undefined,
-                        })}
-                        className="inline-flex h-14 flex-1 items-center justify-center rounded-md border-2 border-[#128C7E] bg-[#128C7E]/10 px-4 text-base font-semibold text-[#128C7E] hover:bg-[#128C7E]/20"
-                      >
-                        Ask on WhatsApp
-                      </WhatsAppLink>
+                      <Button variant="outline" className="h-12 w-full px-3 text-sm" onClick={handleMoreInformation}>
+                        More information
+                      </Button>
                     </div>
                   </div>
                 )}
@@ -624,7 +639,7 @@ const ProductDetail = () => {
                         {product.pricing_type === "poa"
                           ? "Request a Price"
                           : product.pricing_type === "contact_us"
-                          ? "Contact Us for More Information"
+                          ? "Message us"
                           : "Register Your Interest"}
                       </p>
                     </div>
@@ -770,7 +785,7 @@ const ProductDetail = () => {
                 <div className="prose prose-slate max-w-none">
                   <h2 className="text-lg font-semibold text-headline mb-3">Description</h2>
                   <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
-                    {product.description || "No description provided."}
+                    {cleanListingCopy(product.description) || "No description provided."}
                   </p>
                 </div>
               )}
@@ -837,7 +852,7 @@ const ProductDetail = () => {
         </div>
 
         {/* Seller Showroom Card */}
-        {sellerShowroom && !isOwner && (
+        {sellerShowroom && !isOwner && !/jpc\s*direct/i.test(`${sellerShowroom.brand_name} ${sellerShowroom.company_name ?? ""}`) && (
           <div className="mt-12 rounded-xl border border-border bg-linear-to-r from-primary/5 to-secondary/5 p-6">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5">
               {/* Logo */}
@@ -857,7 +872,7 @@ const ProductDetail = () => {
               {/* Info */}
               <div className="flex-1 text-center sm:text-left">
                 <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
-                  Sold by
+                  Listed on Ocean Hotspot
                 </p>
                 <h3 className="text-xl font-bold text-headline">
                   {sellerShowroom.brand_name}

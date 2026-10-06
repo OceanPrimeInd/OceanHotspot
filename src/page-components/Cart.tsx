@@ -7,7 +7,6 @@ import { Layout } from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/hooks/use-toast";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatPrice } from "@/lib/utils";
 import { getPlaceholderSvg } from "@/lib/productPlaceholders";
@@ -24,24 +23,37 @@ import {
   ArrowRight,
   Package,
   ShieldCheck,
-  LogIn,
 } from "lucide-react";
 import { isShopOpen } from "@/config/shop";
-import { CheckoutClosedPlaceholder } from "@/components/shop/CheckoutClosedPlaceholder";
+import { openProductRequest } from "@/lib/purchaseRequest";
 
 const Cart = () => {
   const { items, removeItem, updateQuantity, clearCart, total } = useCart();
-  const { user } = useAuth();
+  const { profile } = useAuth();
   const router = useRouter();
-  const { toast } = useToast();
 
   const handleCheckout = () => {
     router.push("/cart-checkout");
   };
 
-  if (!isShopOpen()) {
-    return <CheckoutClosedPlaceholder />;
-  }
+  const handleBuyNow = () => {
+    const customerName = profile?.full_name?.trim() || profile?.company_name?.trim() || "A customer";
+    openProductRequest({
+      kind: "basket",
+      customerName,
+      lines: items.map((item) => ({
+        productId: item.id,
+        title: item.title,
+        partNumber: item.part_number,
+        supplierName: item.supplier_name,
+        currency: item.currency,
+        unitPrice: item.price,
+        quantity: item.quantity,
+        productUrl: `${window.location.origin}/product/${item.id}`,
+      })),
+    });
+    router.push("/request");
+  };
 
   if (items.length === 0) {
     return (
@@ -63,7 +75,7 @@ const Cart = () => {
         <div className="flex items-center justify-between mb-8">
           <h1 className="text-2xl font-bold text-headline flex items-center gap-2">
             <ShoppingCart className="h-6 w-6" />
-            Your Cart ({items.length} {items.length === 1 ? "item" : "items"})
+            Your basket ({items.length} {items.length === 1 ? "item" : "items"})
           </h1>
           <Button variant="ghost" size="sm" onClick={clearCart}>
             Clear Cart
@@ -211,24 +223,25 @@ const Cart = () => {
                 </p>
               </div>
 
-              <Button
-                variant="o42Primary"
-                className="w-full h-12"
-                onClick={handleCheckout}
-              >
-                <>
+              {isShopOpen() ? (
+                <Button variant="o42Primary" className="w-full h-12" onClick={handleCheckout}>
                   Continue to Checkout
                   <ArrowRight className="ml-2 h-4 w-4" />
-                </>
-              </Button>
+                </Button>
+              ) : (
+                <Button variant="o42Primary" className="w-full h-12" onClick={handleBuyNow}>
+                  Buy now
+                </Button>
+              )}
 
-              {/* Trust Badges */}
+              {isShopOpen() && (
               <div className="mt-4 pt-4 border-t border-border">
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <ShieldCheck className="h-4 w-4 text-green-500" />
                   <span>Secure card payment via Stripe</span>
                 </div>
               </div>
+              )}
             </div>
           </div>
         </div>

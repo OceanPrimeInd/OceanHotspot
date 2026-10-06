@@ -44,6 +44,7 @@ export const NAV_CATEGORIES: NavCategory[] = [
   { label: "Pumps", backendKeys: ["Plumbing, Pumps & Ventilation"] },
   { label: "Maintenance", backendKeys: ["Maintenance & Consumables"] },
   { label: "Safety", backendKeys: ["Safety, Security & Response"] },
+  { label: "Finance & insurance", backendKeys: ["Finance, Insurance & Legal"] },
   {
     label: "Leisure",
     backendKeys: [
@@ -74,9 +75,9 @@ export const CATEGORY_TREE: Record<string, Record<string, string[]>> = {
     "Mooring & Docking": ["Dock Lines", "Fenders", "Cleats", "Buoys", "Mooring Accessories"],
   },
   "Boats & Vessels": {
-    "Leisure Boats": ["Motorboats", "Sailboats", "RIBs", "Catamarans", "Yachts", "Fishing Boats", "Canal Boats"],
+    "Leisure Boats": ["Luxury yachts", "Commercial vessels", "Motorboats", "Sailboats", "RIBs", "Catamarans", "Canal Boats"],
     "Commercial Vessels": ["Workboats", "Passenger Vessels", "Fishing Vessels", "Support & Survey Vessels"],
-    "Small Craft & Tenders": ["Tenders", "Dinghies", "Inflatables"],
+    "Small Craft & Tenders": ["Tenders", "Dinghies", "Inflatables", "Kayaks", "Canoes"],
     "Floating Assets": ["Pontoons & Floating Docks", "Barges", "Houseboats", "Berths & Moorings"],
   },
   "Cabin, Galley & Comfort": {
@@ -229,8 +230,6 @@ export const FILTER_GROUPS: {
   },
   { label: "Brand", type: "checkbox", options: BRAND_OPTIONS },
   { label: "Boat Type", type: "checkbox", options: BOAT_TYPE_OPTIONS },
-  { label: "Find Parts", type: "parts" },
-  { label: "Eco & Compliance", type: "checkbox", options: ECO_COMPLIANCE_OPTIONS },
 ];
 
 export const PRICE_RANGE_MAP: Record<string, [number, number]> = {

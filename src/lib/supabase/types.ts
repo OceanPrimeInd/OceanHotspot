@@ -141,6 +141,96 @@ export type Database = {
         }
         Relationships: []
       }
+      customer_requests: {
+        Row: {
+          id: string
+          created_at: string
+          updated_at: string
+          user_id: string | null
+          kind: string
+          status: string
+          customer_name: string
+          email: string
+          phone: string | null
+          delivery_address: string | null
+          whatsapp_message: string | null
+          items: Json
+          notes: string | null
+        }
+        Insert: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          user_id?: string | null
+          kind: string
+          status?: string
+          customer_name: string
+          email: string
+          phone?: string | null
+          delivery_address?: string | null
+          whatsapp_message?: string | null
+          items?: Json
+          notes?: string | null
+        }
+        Update: {
+          id?: string
+          created_at?: string
+          updated_at?: string
+          user_id?: string | null
+          kind?: string
+          status?: string
+          customer_name?: string
+          email?: string
+          phone?: string | null
+          delivery_address?: string | null
+          whatsapp_message?: string | null
+          items?: Json
+          notes?: string | null
+        }
+        Relationships: []
+      }
+      customer_request_items: {
+        Row: {
+          id: string
+          request_id: string
+          product_id: string | null
+          title: string
+          part_number: string | null
+          supplier_name: string | null
+          currency: string | null
+          unit_price: number | null
+          quantity: number
+          total_price: number | null
+          product_url: string | null
+        }
+        Insert: {
+          id?: string
+          request_id: string
+          product_id?: string | null
+          title: string
+          part_number?: string | null
+          supplier_name?: string | null
+          currency?: string | null
+          unit_price?: number | null
+          quantity?: number
+          total_price?: number | null
+          product_url?: string | null
+        }
+        Update: {
+          id?: string
+          request_id?: string
+          product_id?: string | null
+          title?: string
+          part_number?: string | null
+          supplier_name?: string | null
+          currency?: string | null
+          unit_price?: number | null
+          quantity?: number
+          total_price?: number | null
+          product_url?: string | null
+        }
+        Relationships: []
+      }
       disputes: {
         Row: {
           buyer_evidence: Json | null

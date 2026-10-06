@@ -100,6 +100,8 @@ const Browse = () => {
   const [priceRange, setPriceRange] = useState<[number, number]>([0, 100000]);
   const [maxPrice, setMaxPrice] = useState(100000);
   const prevBrowseQueryRef = useRef<string | null>(null);
+  const latestFilterQueryRef = useRef<string | null>(null);
+  const supersededFilterQueriesRef = useRef<Set<string>>(new Set());
 
   const goToPage = useCallback(
     (page: number) => {
@@ -113,6 +115,7 @@ const Browse = () => {
   useEffect(() => {
     const raw = searchParams.toString();
     const withoutPage = searchParamsWithoutPage(raw);
+    if (supersededFilterQueriesRef.current.has(withoutPage)) return;
     if (
       prevBrowseQueryRef.current !== null &&
       searchParamsWithoutPage(prevBrowseQueryRef.current) === withoutPage
@@ -151,7 +154,11 @@ const Browse = () => {
 
       const slug = (cat || domain).toLowerCase();
       const label = params.get("label") || navLabelFromCategorySlug(slug);
-      const value = `${slug}>all`;
+      const labelParts = label
+        .split(" / ")
+        .map((part) => part.trim())
+        .filter(Boolean);
+      const value = labelParts.length > 1 ? labelParts.join(">").toLowerCase() : `${slug}>all`;
       const chip: ActiveFilterChip = {
         id: buildFilterId("Category", value),
         group: "Category",
@@ -172,14 +179,12 @@ const Browse = () => {
       if (slug) params.set("cat", slug);
       params.set("label", category.label);
       params.delete("q");
-      const pathParts = category.value
-        .split(">")
+      const labelParts = category.label
+        .split(" / ")
         .map((part) => part.trim())
         .filter((part) => part && !/^all(\s+categories)?$/i.test(part));
-      const tail = pathParts[pathParts.length - 1];
-      if (pathParts.length > 1 && tail && tail !== slug) {
-        const labelParts = category.label.split(" / ").map((part) => part.trim());
-        params.set("refine", labelParts[labelParts.length - 1] ?? tail);
+      if (labelParts.length > 1) {
+        params.set("refine", labelParts[labelParts.length - 1]);
       } else {
         params.delete("refine");
       }
@@ -189,6 +194,11 @@ const Browse = () => {
       params.delete("refine");
     }
     const qs = params.toString();
+    const previous = latestFilterQueryRef.current;
+    if (previous && previous !== qs) {
+      supersededFilterQueriesRef.current.add(searchParamsWithoutPage(previous));
+    }
+    latestFilterQueryRef.current = qs;
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
@@ -386,7 +396,7 @@ const Browse = () => {
     ? categoryFilter.label.split(" / ").pop() ?? categoryFilter.label
     : categoryName
       ? categoryName
-      : "All Maritime Products & Services";
+      : "Products";
 
   const handleClearFilters = () => {
     setSelectedEntities([]);
@@ -425,6 +435,15 @@ const Browse = () => {
 
             <div className="mb-4 flex items-start justify-between gap-3">
               <div>
+                <nav aria-label="Breadcrumb" className="mb-2 text-sm text-[#565959]">
+                  <Link href="/" className="hover:text-primary hover:underline">Home</Link>
+                  <span className="mx-1.5">/</span>
+                  {categoryName ? (
+                    <Link href="/browse" className="hover:text-primary hover:underline">Products</Link>
+                  ) : (
+                    <span className="text-[#0f1111]">Products</span>
+                  )}
+                </nav>
                 <h1 className="text-2xl font-bold text-[#0f1111]">{pageTitle}</h1>
                 {categoryFilter && (
                   <p className="mt-1 text-sm text-[#565959]">

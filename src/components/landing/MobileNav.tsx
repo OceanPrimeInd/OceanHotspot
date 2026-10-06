@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { Home, Search, ShoppingCart, User, Shield, Store, Package, Mail, Heart } from "lucide-react";
+import { Home, Search, ShoppingCart, User, Shield, Store, Package, Heart } from "lucide-react";
 import { isShopOpen } from "@/config/shop";
 import { useAuth } from "@/contexts/AuthContext";
 import { useCart } from "@/contexts/CartContext";
@@ -60,8 +60,8 @@ export function MobileNav() {
     if (!isShopOpen()) {
       return [
         ...baseItems,
+        { icon: ShoppingCart, label: "Basket", path: "/cart", badge: itemCount },
         { icon: Heart, label: "Wish list", path: "/wishlist", badge: wishlistCount },
-        { icon: Mail, label: "Contact", path: "/contact", badge: 0 },
         { icon: User, label: "Account", path: user ? "/account/settings" : "/login", badge: 0 },
       ];
     }
@@ -92,7 +92,7 @@ export function MobileNav() {
               <div className="relative">
                 <item.icon className="w-6 h-6 mb-0.5" />
                 {item.badge > 0 && (
-                  <span className="absolute -top-2 -right-2 w-4 h-4 bg-primary text-primary-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                  <span className="absolute -top-2 -right-2 flex h-4 w-4 items-center justify-center rounded-full bg-red-600 text-[10px] font-bold text-white">
                     {item.badge > 9 ? "9+" : item.badge}
                   </span>
                 )}

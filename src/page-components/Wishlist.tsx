@@ -46,10 +46,8 @@ const Wishlist = () => {
   const [postcode, setPostcode] = useState("");
   const [boat, setBoat] = useState("");
   const [boatLocation, setBoatLocation] = useState("");
-  const [contactPref, setContactPref] = useState("email");
   const [extraNotes, setExtraNotes] = useState("");
   const [consentContact, setConsentContact] = useState(false);
-  const [consentOpening, setConsentOpening] = useState(false);
   const [honeypot, setHoneypot] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -102,9 +100,9 @@ const Wishlist = () => {
         deliveryPostcode: postcode.trim(),
         boatDescription: boat.trim(),
         boatLocation: boatLocation.trim(),
-        contactPreference: contactPref,
+        contactPreference: mobile.trim() ? "both" : "email",
         extraNotes: extraNotes.trim(),
-        consentOpeningAnnounce: consentOpening,
+        consentOpeningAnnounce: false,
         items: payloadItems,
       },
     });
@@ -140,7 +138,7 @@ const Wishlist = () => {
           <EmptyState
             icon={Heart}
             title="Your wish list is empty"
-            description="Save items from the catalogue — they appear here with quantity and notes."
+            description="Save products here, then send the list to us. We confirm price, availability and delivery."
             actionLabel="Browse products"
             actionHref="/browse"
             secondaryActionLabel="Go home"
@@ -174,10 +172,15 @@ const Wishlist = () => {
     <Layout>
       <div className="container max-w-5xl py-12">
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
-          <h1 className="flex items-center gap-2 text-2xl font-bold text-headline">
-            <Heart className="h-6 w-6 fill-red-500 text-red-500" />
-            Items ({items.length})
-          </h1>
+          <div>
+            <h1 className="flex items-center gap-2 text-2xl font-bold text-headline">
+              <Heart className="h-6 w-6 fill-red-500 text-red-500" />
+              Your wish list ({items.length})
+            </h1>
+            <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+              These are the products you saved. Change the quantity, then send the list and we will confirm price, availability and delivery.
+            </p>
+          </div>
           <Button variant="ghost" size="sm" onClick={clearWishlist}>
             Clear wish list
           </Button>
@@ -332,19 +335,6 @@ const Wishlist = () => {
                 <Input id="wl-kept" value={boatLocation} onChange={(e) => setBoatLocation(e.target.value)} />
               </div>
               <div>
-                <Label htmlFor="wl-contact">How should we contact you?</Label>
-                <select
-                  id="wl-contact"
-                  className="mt-1 flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-                  value={contactPref}
-                  onChange={(e) => setContactPref(e.target.value)}
-                >
-                  <option value="email">Email</option>
-                  <option value="whatsapp">WhatsApp</option>
-                  <option value="both">Email and WhatsApp</option>
-                </select>
-              </div>
-              <div>
                 <Label htmlFor="wl-extra">Anything else we should know? (optional)</Label>
                 <Textarea id="wl-extra" rows={3} value={extraNotes} onChange={(e) => setExtraNotes(e.target.value)} />
               </div>
@@ -355,13 +345,6 @@ const Wishlist = () => {
                   Contact me about the items on this list (required)
                 </label>
               </div>
-              <div className="flex items-start gap-2">
-                <Checkbox id="wl-open" checked={consentOpening} onCheckedChange={(c) => setConsentOpening(!!c)} />
-                <label htmlFor="wl-open" className="text-sm leading-snug cursor-pointer">
-                  Tell me when Ocean Hotspot opens (optional)
-                </label>
-              </div>
-
               <div className="flex flex-wrap gap-3 pt-2">
                 <Button type="submit" variant="o42Primary" disabled={submitting}>
                   {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send us your wish list"}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { ArrowLeft, ChevronDown, ChevronRight, X } from "lucide-react";
 import {
   ActiveFilterChip,
@@ -123,28 +123,6 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
   const getGroupSelectionCount = (group: string) =>
     activeFilters.filter((filter) => filter.group === group).length;
 
-  useEffect(() => {
-    if (isOpen) {
-      if (scrollRef.current) scrollRef.current.scrollTop = 0;
-    }
-  }, [isOpen, activeGroup, navPath]);
-
-  useEffect(() => {
-    const handlePointerDown = (event: MouseEvent) => {
-      const target = event.target as Node;
-      const activeButton = activeGroup ? buttonRefs.current[activeGroup] : null;
-      const insidePopover = popoverRef.current?.contains(target);
-      const insideButton = activeButton?.contains(target);
-
-      if (!insideButton && !insidePopover) {
-        closeDropdown();
-      }
-    };
-
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, [activeGroup]);
-
   const renderSelectionIndicator = (selected: boolean) => (
     <span
       className={`flex h-4 w-4 shrink-0 items-center justify-center border ${
@@ -176,7 +154,10 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
               <button
                 key={category.label}
                 type="button"
-                onClick={() => setNavPath([category.label])}
+                onClick={() => {
+                  setNavPath([category.label]);
+                  selectNestedFilter("Category", [category.label, "All"]);
+                }}
                 className="flex w-full items-center gap-2.5  px-0.5 py-1 text-left text-[13px] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
               >
                 <NavIcon className="h-[18px] w-[18px] shrink-0 text-[#5c6b74]" />
@@ -215,7 +196,10 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
               <button
                 key={key}
                 type="button"
-                onClick={() => setNavPath([navLabel, key])}
+                onClick={() => {
+                  setNavPath([navLabel, key]);
+                  selectNestedFilter("Category", [navLabel, key, "All"]);
+                }}
                 className="flex w-full items-center gap-2.5  px-0.5 py-1 text-left text-[13px] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
               >
                 <BackendIcon className="h-[18px] w-[18px] shrink-0 text-[#5c6b74]" />
@@ -276,11 +260,11 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
                 key={subgroup}
                 type="button"
                 onClick={() => {
-                  if (hasItems) {
-                    setNavPath(nextPath);
-                    return;
-                  }
-                  selectNestedFilter("Category", [...nextPath]);
+                  if (hasItems) setNavPath(nextPath);
+                  selectNestedFilter(
+                    "Category",
+                    hasItems ? [...nextPath, "All"] : [...nextPath],
+                  );
                 }}
                 className="flex w-full items-center gap-2.5  px-0.5 py-1 text-left text-[13px] text-[#1d2a2f] transition hover:bg-[#f3f7f9] last:border-b-0"
               >
@@ -490,7 +474,16 @@ export function FilterBar({ activeFilters, onFiltersChange }: FilterBarProps) {
             {path.length > 0 && (
               <button
                 type="button"
-                onClick={() => setPath((current) => current.slice(0, -1))}
+                onClick={() => {
+                  const next = path.slice(0, -1);
+                  setPath(next);
+                  if (group.label !== "Category") return;
+                  if (next.length === 0) {
+                    onFiltersChange(activeFilters.filter((filter) => filter.group !== "Category"));
+                    return;
+                  }
+                  selectNestedFilter("Category", [...next, "All"]);
+                }}
                 className="mb-1 flex items-center gap-1 text-[13px] font-bold text-[#0f1111] hover:text-primary hover:underline"
               >
                 <ArrowLeft className="h-3.5 w-3.5" />

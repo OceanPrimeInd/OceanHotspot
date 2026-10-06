@@ -40,7 +40,13 @@ export function WhatsAppLink({ message = DEFAULT_MSG, className = "", children }
   if (!href) return null;
 
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className={className}
+      onClick={(event) => event.stopPropagation()}
+    >
       {children ?? "WhatsApp us"}
     </a>
   );

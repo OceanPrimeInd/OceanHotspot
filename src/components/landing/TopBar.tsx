@@ -47,18 +47,12 @@ import {
 import { NAV_CATEGORIES, getNavBackendKeys, getSubgroupsForBackend } from "@/components/browse/filterConfig";
 import { browseUrlForNavLabel, navLabelToCategorySlug } from "@/lib/navBrowse";
 import { STORE_NAV } from "@/lib/storefront";
-import { isShopOpen } from "@/config/shop";
-
 interface SearchSuggestion {
   id: string;
   title: string;
   price: number;
   currency: string;
 }
-
-const BRAND = {
-  orange: "#f26d2a",
-};
 
 function isPortalPath(pathname: string | null) {
   if (!pathname) return false;
@@ -169,6 +163,18 @@ export function TopBar() {
   const subgroupsFor = (label: string) =>
     getNavBackendKeys(label).flatMap((key) => getSubgroupsForBackend(key));
 
+  const isRepeatAllLabel = (subgroup: string, panel: string) => {
+    const norm = subgroup.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+    const panelNorm = panel.toLowerCase();
+    return (
+      norm === "all" ||
+      norm === `all ${panelNorm}` ||
+      norm === `view all ${panelNorm}` ||
+      norm === "view all" ||
+      norm.startsWith("view all ")
+    );
+  };
+
   const helloLabel = user ? `Hello, ${user.email?.split("@")[0]}` : "Hello, sign in";
 
   const allMenu =
@@ -218,7 +224,9 @@ export function TopBar() {
                     >
                       All {menuPanel}
                     </Link>
-                    {subgroupsFor(menuPanel).map((subgroup) => {
+                    {subgroupsFor(menuPanel)
+                      .filter((subgroup) => !isRepeatAllLabel(subgroup, menuPanel))
+                      .map((subgroup) => {
                       const slug = navLabelToCategorySlug(menuPanel);
                       const href = slug
                         ? `/browse?cat=${encodeURIComponent(slug)}&label=${encodeURIComponent(`${menuPanel} / ${subgroup}`)}`
@@ -433,18 +441,16 @@ export function TopBar() {
             </div>
           )}
 
-          {showMarketplaceChrome && isShopOpen() && (
+          {showMarketplaceChrome && (
           <Link
             href="/cart"
             className="relative flex items-center justify-center rounded-lg border border-[#e0e0e0] bg-white p-2 text-[#2e3d44] transition hover:border-[#c8c8c8]"
+            aria-label={itemCount > 0 ? `Basket, ${itemCount} items` : "Basket"}
             onClick={() => setIsMenuOpen(false)}
           >
             <ShoppingCart className="h-5 w-5" />
             {mounted && itemCount > 0 && (
-              <span
-                className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
-                style={{ backgroundColor: BRAND.orange }}
-              >
+              <span className="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
                 {itemCount > 9 ? "9+" : itemCount}
               </span>
             )}
@@ -457,16 +463,15 @@ export function TopBar() {
               className="relative inline-flex items-center gap-1.5 rounded-lg border-2 border-primary bg-white px-2.5 py-1.5 text-sm font-semibold text-primary transition hover:bg-primary/10 md:px-3"
               onClick={() => setIsMenuOpen(false)}
             >
-              <Heart className="h-4 w-4" />
+              <span className="relative inline-flex">
+                <Heart className="h-4 w-4" />
+                {mounted && wishlistCount > 0 && (
+                  <span className="absolute -right-2 -top-2 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-bold text-white">
+                    {wishlistCount > 9 ? "9+" : wishlistCount}
+                  </span>
+                )}
+              </span>
               <span className="hidden sm:inline">Wish list</span>
-              {mounted && wishlistCount > 0 && (
-                <span
-                  className="flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white"
-                  style={{ backgroundColor: BRAND.orange }}
-                >
-                  {wishlistCount > 9 ? "9+" : wishlistCount}
-                </span>
-              )}
             </Link>
           )}
 

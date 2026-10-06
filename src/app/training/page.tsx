@@ -10,6 +10,7 @@ export default function TrainingPage() {
   return (
     <DepartmentLanding
       kicker="Training"
+      comingSoon
       title="Zero-emission training, booked online."
       intro="Safety courses for hydrogen, methanol, solar, and electric power are being built with marine lecturers. You will be able to book them from Ocean Hotspot."
       points={[

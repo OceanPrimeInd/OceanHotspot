@@ -1,83 +1,40 @@
 import Link from "next/link";
-import {
-  Anchor,
-  BadgeCheck,
-  Building2,
-  ClipboardList,
-  Cog,
-  Flame,
-  FlaskConical,
-  Fuel,
-  Heart,
-  LifeBuoy,
-  Map,
-  MapPin,
-  Package,
-  Radio,
-  Receipt,
-  Scale,
-  Shield,
-  Ship,
-  Sparkles,
-  Store,
-  Sun,
-  User,
-  Users,
-  Wrench,
-  Zap,
-} from "lucide-react";
-import type { HomeCard } from "@/lib/storefront";
+import { Flame, Fuel, Map, Package, Scale } from "lucide-react";
+import type { HomeBox } from "@/lib/storefront";
 
 const ICONS = {
-  anchor: Anchor,
-  badge: BadgeCheck,
-  building: Building2,
-  clipboard: ClipboardList,
-  cog: Cog,
   flame: Flame,
-  flask: FlaskConical,
   fuel: Fuel,
-  heart: Heart,
-  life: LifeBuoy,
   map: Map,
   package: Package,
-  pin: MapPin,
-  radio: Radio,
-  receipt: Receipt,
   scale: Scale,
-  shield: Shield,
-  ship: Ship,
-  spark: Sparkles,
-  store: Store,
-  sun: Sun,
-  user: User,
-  users: Users,
-  wrench: Wrench,
-  zap: Zap,
 } as const;
 
-export function HomeCategoryCard({ card }: { card: HomeCard }) {
+export function HomeCategoryCard({ card }: { card: HomeBox }) {
+  const Icon = ICONS[card.icon as keyof typeof ICONS] ?? Package;
+  const large = card.size === "large";
+
   return (
-    <article className="flex h-full flex-col bg-white p-4 shadow-sm md:p-5">
-      <h2 className="mb-3 text-xl font-bold leading-tight text-[#0f1111]">{card.title}</h2>
-      <div className="grid flex-1 grid-cols-2 gap-3">
-        {card.tiles.map((tile) => {
-          const Icon = ICONS[tile.icon as keyof typeof ICONS] ?? Package;
-          return (
-            <Link key={tile.label} href={tile.href} className="group min-w-0">
-              <div className={`flex aspect-[4/3] items-center justify-center ${tile.tone}`}>
-                <Icon className="h-8 w-8 text-[#0c2340]" strokeWidth={1.75} />
-              </div>
-              <p className="mt-1 truncate text-xs text-[#0f1111] group-hover:text-primary group-hover:underline">
-                {tile.label}
-              </p>
-            </Link>
-          );
-        })}
+    <Link
+      href={card.href}
+      className={`group flex h-full flex-col bg-white p-4 shadow-sm ${
+        large ? "sm:col-span-2 sm:row-span-2 md:p-5" : ""
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <h2 className={`font-bold leading-tight text-[#0f1111] ${large ? "text-2xl" : "text-lg"}`}>
+          {card.title}
+        </h2>
+        {card.comingSoon && (
+          <span className="shrink-0 rounded bg-[#0c2340] px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+            Coming soon
+          </span>
+        )}
       </div>
-      <Link href={card.href} className="mt-4 text-sm text-primary hover:text-[#c9521a] hover:underline">
-        {card.linkLabel}
-      </Link>
-    </article>
+      <p className={`mt-2 text-[#333] ${large ? "text-base" : "text-sm"}`}>{card.message}</p>
+      <div className={`mt-3 flex flex-1 items-center justify-center ${card.tone} ${large ? "min-h-48" : "min-h-28"}`}>
+        <Icon className={`text-[#0c2340] ${large ? "h-16 w-16" : "h-10 w-10"}`} strokeWidth={1.75} />
+      </div>
+    </Link>
   );
 }

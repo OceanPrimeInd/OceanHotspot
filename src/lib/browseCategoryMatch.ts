@@ -11,7 +11,7 @@ const SLUG_TO_NAV_LABEL: Record<string, string> = {
   maintenance: "Maintenance",
   safety: "Safety",
   leisure: "Leisure",
-  services: "Insurance",
+  services: "Finance & insurance",
 };
 
 export function categorySlugFromNavLabel(label: string): string | null {
@@ -68,7 +68,21 @@ export function domainSlugFromFilterValue(filterValue: string): string | null {
 
 /** Title/brand keywords when domain_category is missing or coarse (e.g. bulk import). */
 const SLUG_KEYWORDS: Record<string, string[]> = {
-  vessels: ["yacht", "boat", "rib", "catamaran", "tender", "dinghy", "vessel", "pontoon"],
+  vessels: [
+    "yacht",
+    "motorboat",
+    "sailboat",
+    "rib",
+    "catamaran",
+    "tender",
+    "dinghy",
+    "kayak",
+    "canoe",
+    "houseboat",
+    "barge",
+    "workboat",
+    "pontoon",
+  ],
   engines: [
     "webasto",
     "heater",
@@ -127,9 +141,21 @@ export function inferDomainSlugFromProduct(product: CategoryMatchable): string |
   return normalizeDomainCategory(product.domain_category || "") || null;
 }
 
+const VESSEL_LISTING =
+  /\b(yachts?|motorboats?|sailboats?|ribs?|catamarans?|tenders?|dingh(?:y|ies)|kayaks?|canoes?|houseboats?|barges?|workboats?|pontoons?|narrowboats?|canal boats?|fishing boats?|passenger vessels?)\b/i;
+
+/** A listing counts as a vessel only when the title is a boat, not a part for a boat. */
+export function isVesselListing(product: CategoryMatchable): boolean {
+  return VESSEL_LISTING.test(`${product.title} ${product.entity_type ?? ""}`);
+}
+
 export function matchesDomainSlug(product: CategoryMatchable, slug: string): boolean {
   if (!slug) return true;
+  if (slug === "vessels") return isVesselListing(product);
   const productCat = normalizeDomainCategory(product.domain_category || "").toLowerCase();
+  // A product already filed under another department stays there.
+  // This keeps parts and accessories out of Vessels.
+  if (productCat && productCat in SLUG_KEYWORDS) return productCat === slug;
   if (productCat === slug) return true;
 
   const text = productSearchText(product);

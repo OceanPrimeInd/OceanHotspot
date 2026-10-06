@@ -47,6 +47,7 @@ export const NAV_ICONS: Record<string, ElementType> = {
   Maintenance: Wrench,
   Safety: LifeBuoy,
   Leisure: Waves,
+  "Finance & insurance": Banknote,
 };
 
 export const CATEGORY_ICONS: Record<string, ElementType> = {

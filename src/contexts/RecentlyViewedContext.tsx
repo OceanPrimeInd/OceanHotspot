@@ -26,19 +26,29 @@ const RECENTLY_VIEWED_STORAGE_KEY = "ocean_hotspot_recently_viewed";
 const MAX_ITEMS = 12; // Maximum number of items to store
 
 export function RecentlyViewedProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<RecentlyViewedItem[]>(() => {
-    try {
-      const saved = localStorage.getItem(RECENTLY_VIEWED_STORAGE_KEY);
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [items, setItems] = useState<RecentlyViewedItem[]>([]);
+  const [ready, setReady] = useState(false);
 
-  // Persist to localStorage
+  // Each visit starts empty. History lives only for this browser tab.
   useEffect(() => {
-    localStorage.setItem(RECENTLY_VIEWED_STORAGE_KEY, JSON.stringify(items));
-  }, [items]);
+    try {
+      localStorage.removeItem(RECENTLY_VIEWED_STORAGE_KEY);
+      const saved = sessionStorage.getItem(RECENTLY_VIEWED_STORAGE_KEY);
+      if (saved) setItems(JSON.parse(saved));
+    } catch {
+      setItems([]);
+    }
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    if (!ready) return;
+    try {
+      sessionStorage.setItem(RECENTLY_VIEWED_STORAGE_KEY, JSON.stringify(items));
+    } catch {
+      // Ignore private-mode storage failures.
+    }
+  }, [items, ready]);
 
   const addItem = useCallback((item: Omit<RecentlyViewedItem, "viewedAt">) => {
     setItems((current) => {

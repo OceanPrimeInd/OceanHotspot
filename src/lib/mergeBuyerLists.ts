@@ -14,6 +14,8 @@ export function mergeCartItems(local: CartItem[], remote: CartItem[]): CartItem[
         title: item.title || existing.title,
         price: item.price ?? existing.price,
         image_url: item.image_url ?? existing.image_url,
+        part_number: item.part_number ?? existing.part_number,
+        supplier_name: item.supplier_name ?? existing.supplier_name,
       });
     } else {
       map.set(item.id, { ...item });
