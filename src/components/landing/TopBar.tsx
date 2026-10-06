@@ -160,6 +160,11 @@ export function TopBar() {
     setMenuPanel(null);
   };
 
+  const openFromMenu = (href: string) => {
+    router.push(href);
+    closeMenu();
+  };
+
   const subgroupsFor = (label: string) =>
     getNavBackendKeys(label).flatMap((key) => getSubgroupsForBackend(key));
 
@@ -201,7 +206,10 @@ export function TopBar() {
                 ) : (
                   <Link
                     href={user ? getDashboardLink() : "/login"}
-                    onClick={closeMenu}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      openFromMenu(user ? getDashboardLink() : "/login");
+                    }}
                     className="inline-flex items-center gap-3 text-lg font-bold"
                   >
                     <User className="h-6 w-6" />
@@ -219,7 +227,10 @@ export function TopBar() {
                     <h2 className="px-6 py-3 text-lg font-bold">{menuPanel}</h2>
                     <Link
                       href={browseUrlForNavLabel(menuPanel)}
-                      onClick={closeMenu}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        openFromMenu(browseUrlForNavLabel(menuPanel));
+                      }}
                       className="block px-6 py-2.5 text-sm hover:bg-[#eee]"
                     >
                       All {menuPanel}
@@ -235,7 +246,10 @@ export function TopBar() {
                         <Link
                           key={subgroup}
                           href={href}
-                          onClick={closeMenu}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            openFromMenu(href);
+                          }}
                           className="block px-6 py-2.5 text-sm hover:bg-[#eee]"
                         >
                           {subgroup}
@@ -266,7 +280,10 @@ export function TopBar() {
                           <Link
                             key={category.label}
                             href={browseUrlForNavLabel(category.label)}
-                            onClick={closeMenu}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              openFromMenu(browseUrlForNavLabel(category.label));
+                            }}
                             className="block px-6 py-2.5 text-sm hover:bg-[#eee]"
                           >
                             {category.label}
@@ -280,7 +297,10 @@ export function TopBar() {
                         <Link
                           key={item.href}
                           href={item.href}
-                          onClick={closeMenu}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            openFromMenu(item.href);
+                          }}
                           className="flex items-center justify-between px-6 py-2.5 text-sm hover:bg-[#eee]"
                         >
                           {item.label}
