@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Layout } from "@/components/layout/Layout";
 import { supabase } from "@/lib/supabase/client";
+import { shopperBrandName, shopperLogoUrl } from "@/lib/publicBrand";
 import { Loader2, Store, MapPin, Package, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
@@ -136,10 +137,10 @@ const Showrooms = () => {
                     <div className="px-5 pb-5">
                       {/* Logo overlapping banner */}
                       <div className="-mt-8 mb-3">
-                        {showroom.logo_url ? (
+                        {shopperLogoUrl(showroom.brand_name, showroom.logo_url) ? (
                           <img
-                            src={showroom.logo_url}
-                            alt={showroom.brand_name}
+                            src={shopperLogoUrl(showroom.brand_name, showroom.logo_url) || ""}
+                            alt={shopperBrandName(showroom.brand_name, showroom.logo_url)}
                             className="h-16 w-16 rounded-xl object-contain border-2 border-background bg-white p-1 shadow-md"
                           />
                         ) : (
@@ -150,7 +151,7 @@ const Showrooms = () => {
                       </div>
 
                       <h3 className="font-bold text-lg text-headline group-hover:text-primary transition-colors line-clamp-1">
-                        {showroom.brand_name}
+                        {shopperBrandName(showroom.brand_name, showroom.logo_url)}
                       </h3>
 
                       {showroom.tagline && (

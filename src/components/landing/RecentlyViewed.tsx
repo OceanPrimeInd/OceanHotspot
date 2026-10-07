@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useRecentlyViewed } from "@/contexts/RecentlyViewedContext";
-import { Package, Clock, ChevronRight } from "lucide-react";
+import { Clock, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { formatPrice } from "@/lib/utils";
+import { isMissingProductImage, PRODUCT_IMAGE_UNAVAILABLE } from "@/lib/productImage";
 
 export function RecentlyViewed() {
   const { items, clearHistory } = useRecentlyViewed();
@@ -18,7 +19,7 @@ export function RecentlyViewed() {
   }
 
   return (
-    <section className="w-full px-3 pt-4 md:px-4">
+    <section className="mx-auto w-full max-w-[1500px] px-3 pt-3 md:px-4">
       <div className="bg-white p-4 shadow-sm md:p-5">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -49,7 +50,7 @@ export function RecentlyViewed() {
                 <div className="rounded-lg border border-border bg-card overflow-hidden shadow-sm hover:shadow-md transition-all hover:-translate-y-1">
                   {/* Image */}
                   <div className="aspect-square bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center relative overflow-hidden">
-                    {item.image_url ? (
+                    {item.image_url && !isMissingProductImage(item.image_url) ? (
                       <img
                         src={item.image_url}
                         alt={item.title}
@@ -57,7 +58,7 @@ export function RecentlyViewed() {
                         loading="lazy"
                       />
                     ) : (
-                      <Package className="h-10 w-10 text-primary/50" />
+                      <span className="px-3 text-center text-xl font-semibold leading-tight text-[#374151]">{PRODUCT_IMAGE_UNAVAILABLE}</span>
                     )}
                   </div>
 

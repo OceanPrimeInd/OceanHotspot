@@ -1,11 +1,12 @@
 /** Top navigation. Text links only — the All button opens departments. */
 export const STORE_NAV = [
-  { label: "Products", href: "/browse" },
-  { label: "Services", href: "/services" },
-  { label: "Training", href: "/training" },
-  { label: "Fuel", href: "/fuel" },
-  { label: "Regulations", href: "/regulations" },
-  { label: "Ports & marinas", href: "/ports" },
+  { label: "Shop Marketplace", href: "/browse" },
+  { label: "Regulations Check", href: "/regulations" },
+  { label: "Find Services", href: "/services" },
+  { label: "Get Training", href: "/training" },
+  { label: "Fuel and Electricity", href: "/fuel" },
+  { label: "Find Ports and Marinas", href: "/ports" },
+  { label: "Find Clubs and Organisations", href: "/organisations" },
 ] as const;
 
 /** One message per box. Change the text here when Dave’s copy arrives. */

@@ -1,9 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ImageIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getPlaceholderSvg } from "@/lib/productPlaceholders";
+import { isMissingProductImage, PRODUCT_IMAGE_UNAVAILABLE } from "@/lib/productImage";
 
 interface ProductImageGalleryProps {
   images: string[];
@@ -21,7 +20,7 @@ export function ProductImageGallery({ images, title }: ProductImageGalleryProps)
   const [failedUrls, setFailedUrls] = useState<Set<string>>(() => new Set());
 
   const galleryImages = useMemo(
-    () => [...new Set(images.map(normalizeImageUrl).filter(Boolean))],
+    () => [...new Set(images.map(normalizeImageUrl).filter((url) => url && !isMissingProductImage(url)))],
     [images],
   );
 
@@ -42,7 +41,6 @@ export function ProductImageGallery({ images, title }: ProductImageGalleryProps)
   }, [loadableImages.length, selectedIndex]);
 
   const selectedImage = loadableImages[selectedIndex] ?? null;
-  const placeholder = getPlaceholderSvg(title);
 
   const markFailed = (url: string) => {
     setFailedUrls((prev) => {
@@ -63,12 +61,9 @@ export function ProductImageGallery({ images, title }: ProductImageGalleryProps)
             referrerPolicy="no-referrer"
             onError={() => markFailed(selectedImage)}
           />
-        ) : placeholder ? (
-          <div className="w-full h-full">{placeholder}</div>
         ) : (
-          <div className="flex flex-col items-center justify-center text-muted-foreground">
-            <ImageIcon className="h-16 w-16 mb-2" />
-            <span className="text-sm">No image</span>
+          <div className="flex flex-col items-center justify-center text-[#6b7280]">
+            <span className="px-6 text-center text-4xl font-semibold leading-tight text-[#374151]">{PRODUCT_IMAGE_UNAVAILABLE}</span>
           </div>
         )}
       </div>

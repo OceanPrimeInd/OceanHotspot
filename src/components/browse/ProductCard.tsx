@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { ImageIcon } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
-import { getPlaceholderSvg } from "@/lib/productPlaceholders";
 import { isShopOpen } from "@/config/shop";
 import { PreOpeningProductActions } from "@/components/shop/PreOpeningProductActions";
 import { cleanListingCopy } from "@/lib/listingCopy";
+import { isHiddenSupplierBrand } from "@/lib/publicBrand";
+import { isMissingProductImage, PRODUCT_IMAGE_UNAVAILABLE } from "@/lib/productImage";
 
 interface Product {
   id: string;
@@ -33,11 +33,10 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
   const allImages = [
     ...(product.image_url ? [product.image_url] : []),
     ...(product.images || []),
-  ].filter((img, idx, arr) => arr.indexOf(img) === idx);
+  ].filter((img, idx, arr) => arr.indexOf(img) === idx && !isMissingProductImage(img));
 
   const hasImage = allImages.length > 0;
   const imageCount = allImages.length;
-  const placeholder = getPlaceholderSvg(product.title);
 
   const renderPrice = () => {
     switch (product.pricing_type) {
@@ -61,7 +60,7 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
 
   return (
     <div
-      className="group block overflow-hidden rounded-[18px] border border-[#e7e7e7] bg-white"
+      className="group flex h-full flex-col overflow-hidden rounded-[18px] border border-[#c5ced6] bg-white"
       style={{ animationDelay: `${index * 30}ms` }}
     >
       <Link href={`/product/${product.id}`} className="block">
@@ -79,12 +78,9 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
                 </span>
               )}
             </>
-          ) : placeholder ? (
-            <div className="h-full w-full">{placeholder}</div>
           ) : (
-            <div className="flex h-full flex-col items-center justify-center text-muted-foreground">
-              <ImageIcon className="mb-1 h-8 w-8" />
-              <span className="text-xs">No image</span>
+            <div className="flex h-full items-center justify-center px-4 text-center text-3xl font-semibold leading-tight text-[#374151]">
+              {PRODUCT_IMAGE_UNAVAILABLE}
             </div>
           )}
           {product.pricing_type === "coming_soon" && (
@@ -97,31 +93,33 @@ export function ProductCard({ product, index = 0 }: ProductCardProps) {
         </div>
       </Link>
 
-      <div className="space-y-1 px-3 pb-3 pt-2">
+      <div className="flex flex-1 flex-col px-3 pb-3 pt-2">
         <Link href={`/product/${product.id}`}>
-          <h3 className="line-clamp-2 text-[15px] font-medium leading-snug text-[#1f2a37] hover:text-primary">
+          <h3 className="line-clamp-2 min-h-[2.6em] text-[15px] font-medium leading-snug text-[#1f2a37] hover:text-primary">
             {cleanListingCopy(product.title)}
           </h3>
         </Link>
         {product.part_number && (
-          <p className="text-xs text-muted-foreground">Part no. {product.part_number}</p>
+          <p className="mt-1 text-xs text-muted-foreground">Part no. {product.part_number}</p>
         )}
-        {product.seller_company && (
-          <p className="text-xs text-[#53616d]">{product.seller_company}</p>
+        {product.seller_company && !isHiddenSupplierBrand(product.seller_company) && (
+          <p className="mt-1 text-xs text-[#53616d]">{product.seller_company}</p>
         )}
-        <div className="pt-0.5">{renderPrice()}</div>
+        <div className="mt-1">{renderPrice()}</div>
         {shopClosed && (
-          <PreOpeningProductActions
-            compact
-            productId={product.id}
-            title={product.title}
-            price={product.price}
-            currency={product.currency || "GBP"}
-            image_url={product.image_url}
-            partNumber={product.part_number}
-            supplierName={product.seller_company}
-            sellerId={product.seller_id}
-          />
+          <div className="mt-auto w-full pt-2">
+            <PreOpeningProductActions
+              compact
+              productId={product.id}
+              title={product.title}
+              price={product.price}
+              currency={product.currency || "GBP"}
+              image_url={product.image_url}
+              partNumber={product.part_number}
+              supplierName={product.seller_company}
+              sellerId={product.seller_id}
+            />
+          </div>
         )}
       </div>
     </div>

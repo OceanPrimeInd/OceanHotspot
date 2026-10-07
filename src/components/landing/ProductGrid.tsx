@@ -4,11 +4,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import { formatPrice } from "@/lib/utils";
-import { Package, Loader2, Star } from "lucide-react";
-import { getPlaceholderSvg } from "@/lib/productPlaceholders";
+import { Loader2 } from "lucide-react";
 import { PreOpeningProductActions } from "@/components/shop/PreOpeningProductActions";
 import { isShopOpen } from "@/config/shop";
 import { attachSellerCompanies } from "@/lib/attachSellerCompanies";
+import { isMissingProductImage, PRODUCT_IMAGE_UNAVAILABLE } from "@/lib/productImage";
 
 interface Product {
   id: string;
@@ -65,7 +65,7 @@ export function ProductGrid({ variant = "default" }: { variant?: "default" | "st
   const storefront = variant === "storefront";
 
   return (
-    <section className={storefront ? "w-full px-3 pt-4 md:px-4" : "section-shell mb-16"}>
+    <section className={storefront ? "w-full px-3 pt-4 md:px-4" : "mx-auto mb-10 mt-3 w-full max-w-[1500px] px-3 md:px-4"}>
       <div className={storefront ? "bg-white p-4 shadow-sm md:p-5" : ""}>
       <div className={storefront ? "mb-4 flex items-baseline justify-between gap-4" : "mb-6 flex items-end justify-between gap-4"}>
         <div>
@@ -88,18 +88,17 @@ export function ProductGrid({ variant = "default" }: { variant?: "default" | "st
           const allImages = [
             ...(product.image_url ? [product.image_url] : []),
             ...(product.images || []),
-          ].filter((img, idx, arr) => arr.indexOf(img) === idx);
+          ].filter((img, idx, arr) => arr.indexOf(img) === idx && !isMissingProductImage(img));
           const hasImage = allImages.length > 0;
           const imageCount = allImages.length;
-          const placeholder = getPlaceholderSvg(product.title);
 
           return (
             <div
               key={product.id}
               className={
                 storefront
-                  ? "group flex flex-col overflow-hidden border border-[#e3e6e6] bg-white"
-                  : "group flex flex-col overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-[0_18px_40px_-30px_rgba(15,34,87,0.35)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_40px_-20px_rgba(15,34,87,0.55)]"
+                  ? "group flex h-full flex-col overflow-hidden border border-[#c5ced6] bg-white"
+                  : "group flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-[#c5ced6] bg-white shadow-[0_18px_40px_-30px_rgba(15,34,87,0.35)] transition-all duration-200 hover:-translate-y-1 hover:shadow-[0_18px_40px_-20px_rgba(15,34,87,0.55)]"
               }
             >
               <Link href={`/product/${product.id}`} className="block">
@@ -117,25 +116,20 @@ export function ProductGrid({ variant = "default" }: { variant?: "default" | "st
                         </span>
                       )}
                     </>
-                  ) : placeholder ? (
-                    <div className="h-full w-full transition-transform duration-300 group-hover:scale-105">
-                      {placeholder}
-                    </div>
                   ) : (
-                    <div className="flex h-full flex-col items-center justify-center text-slate-500">
-                      <Package className="mb-2 h-8 w-8" />
-                      <span className="text-xs uppercase tracking-[0.15em]">Product</span>
+                    <div className="flex h-full items-center justify-center px-4 text-center text-3xl font-semibold leading-tight text-[#374151]">
+                      {PRODUCT_IMAGE_UNAVAILABLE}
                     </div>
                   )}
                 </div>
               </Link>
 
               <div className="flex flex-1 flex-col space-y-2 p-4">
-                {product.seller_company && (
+                {product.seller_company && !/jpc\s*direct/i.test(product.seller_company) && (
                   <p className="text-xs font-medium text-[#53616d]">{product.seller_company}</p>
                 )}
                 <Link href={`/product/${product.id}`}>
-                  <h3 className="line-clamp-2 text-base font-semibold leading-snug text-slate-900 group-hover:text-primary">
+                  <h3 className="line-clamp-2 min-h-[2.75em] text-base font-semibold leading-snug text-slate-900 group-hover:text-primary">
                     {product.title}
                   </h3>
                 </Link>
@@ -153,17 +147,19 @@ export function ProductGrid({ variant = "default" }: { variant?: "default" | "st
                   )}
                 </div>
                 {!shopOpen && (
-                  <PreOpeningProductActions
-                    compact
-                    productId={product.id}
-                    title={product.title}
-                    price={product.price}
-                    currency={product.currency}
-                    image_url={product.image_url}
-                    partNumber={product.part_number}
-                    supplierName={product.seller_company}
-                    sellerId={product.seller_id}
-                  />
+                  <div className="mt-auto w-full pt-2">
+                    <PreOpeningProductActions
+                      compact
+                      productId={product.id}
+                      title={product.title}
+                      price={product.price}
+                      currency={product.currency}
+                      image_url={product.image_url}
+                      partNumber={product.part_number}
+                      supplierName={product.seller_company}
+                      sellerId={product.seller_id}
+                    />
+                  </div>
                 )}
               </div>
             </div>

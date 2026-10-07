@@ -13,6 +13,8 @@ import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { getProductCategoryLabel } from "@/config/productCategories";
 import { CONTACT_EMAIL } from "@/config/contact";
+import { shopperBrandName, shopperCopy, shopperLogoUrl } from "@/lib/publicBrand";
+import { isMissingProductImage, PRODUCT_IMAGE_UNAVAILABLE } from "@/lib/productImage";
 import { isCustomerCheckoutEnabled } from "@/config/launch";
 import { OpeningSoonWatermark } from "@/components/launch/OpeningSoonWatermark";
 import {
@@ -238,11 +240,11 @@ const ShowroomPublic = () => {
           <div className="relative container py-16 md:py-20 flex flex-col md:flex-row items-center md:items-end gap-6 md:gap-8">
             {/* Logo card */}
             <div className="shrink-0 w-24 h-24 md:w-32 md:h-32 rounded-2xl shadow-2xl overflow-hidden bg-white flex items-center justify-center border-4 border-white/30">
-              {showroom.logo_url ? (
-                <img src={showroom.logo_url} alt={showroom.brand_name} className="w-full h-full object-contain p-2" />
+              {shopperLogoUrl(showroom.brand_name, showroom.logo_url) ? (
+                <img src={shopperLogoUrl(showroom.brand_name, showroom.logo_url)} alt={shopperBrandName(showroom.brand_name, showroom.logo_url)} className="w-full h-full object-contain p-2" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-4xl font-black text-white" style={{ background: `linear-gradient(135deg, ${S}, ${S}99)` }}>
-                  {showroom.brand_name.charAt(0)}
+                  {shopperBrandName(showroom.brand_name, showroom.logo_url).charAt(0)}
                 </div>
               )}
             </div>
@@ -253,11 +255,11 @@ const ShowroomPublic = () => {
                 <Award className="h-3 w-3" /> Verified Maritime Vendor
               </div>
               <h1 className="text-4xl md:text-6xl font-black text-white leading-tight drop-shadow-lg">
-                {showroom.brand_name}
+                {shopperBrandName(showroom.brand_name, showroom.logo_url)}
               </h1>
               {showroom.tagline && (
                 <p className="mt-3 text-lg md:text-xl max-w-2xl" style={{ color: "rgba(255,255,255,0.82)" }}>
-                  {showroom.tagline}
+                  {shopperCopy(showroom.tagline, showroom.brand_name, showroom.logo_url)}
                 </p>
               )}
             </div>
@@ -311,7 +313,7 @@ const ShowroomPublic = () => {
                 <h2 className="text-2xl font-black text-headline">About Us</h2>
               </div>
               {showroom.about_text ? (
-                <p className="text-gray-600 leading-relaxed whitespace-pre-line text-[15px]">{showroom.about_text}</p>
+                <p className="text-gray-600 leading-relaxed whitespace-pre-line text-[15px]">{shopperCopy(showroom.about_text, showroom.brand_name, showroom.logo_url)}</p>
               ) : (
                 <p className="text-muted-foreground italic">No about information provided yet.</p>
               )}
@@ -322,7 +324,7 @@ const ShowroomPublic = () => {
               <h3 className="text-lg font-black mb-5" style={{ color: S }}>Get in Touch</h3>
               <div className="space-y-3">
                 <a
-                  href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`Order enquiry — ${showroom.brand_name} showroom`)}`}
+                  href={`mailto:${CONTACT_EMAIL}?subject=${encodeURIComponent(`Order enquiry — ${shopperBrandName(showroom.brand_name, showroom.logo_url)} showroom`)}`}
                   className="flex items-center gap-3 text-white/85 hover:text-white transition-colors"
                 >
                   <div
@@ -419,12 +421,12 @@ const ShowroomPublic = () => {
                   <Link key={product.id} href={`/product/${product.id}`}
                     className="group rounded-2xl bg-white border border-gray-100 overflow-hidden shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
                     <div className="aspect-4/3 overflow-hidden relative bg-gray-50">
-                      {product.image_url ? (
+                      {product.image_url && !isMissingProductImage(product.image_url) ? (
                         <img src={product.image_url} alt={product.title}
                           className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${P}12, ${S}12)` }}>
-                          <Package className="h-12 w-12 text-gray-300" />
+                        <div className="flex h-full w-full items-center justify-center px-4 text-center text-3xl font-semibold leading-tight text-[#374151]">
+                          {PRODUCT_IMAGE_UNAVAILABLE}
                         </div>
                       )}
                       {product.domain_category && (
@@ -440,7 +442,7 @@ const ShowroomPublic = () => {
                         {product.title}
                       </h3>
                       {product.description && (
-                        <p className="text-xs text-gray-400 line-clamp-2 mb-3">{product.description}</p>
+                        <p className="text-xs text-gray-400 line-clamp-2 mb-3">{shopperCopy(product.description, showroom.brand_name, showroom.logo_url)}</p>
                       )}
                       <div className="flex items-center justify-between">
                         <p className="text-base font-black" style={{ color: P }}>
@@ -535,7 +537,7 @@ const ShowroomPublic = () => {
               <div className="mt-6 rounded-2xl bg-white border-2 p-10 text-center shadow-sm" style={{ borderColor: S }}>
                 <CheckCircle2 className="mx-auto h-14 w-14 mb-4" style={{ color: S }} />
                 <h3 className="text-xl font-black text-headline mb-2">Enquiry Sent!</h3>
-                <p className="text-gray-500 mb-6">Thank you. {showroom.brand_name} will be in touch shortly.</p>
+                <p className="text-gray-500 mb-6">Thank you. {shopperBrandName(showroom.brand_name, showroom.logo_url)} will be in touch shortly.</p>
                 <button onClick={() => { setEnquirySent(false); setEnquiryOpen(false); }}
                   className="text-sm font-semibold underline" style={{ color: P }}>
                   Send another enquiry
@@ -543,7 +545,7 @@ const ShowroomPublic = () => {
               </div>
             ) : enquiryOpen ? (
               <div className="mt-6 rounded-2xl bg-white border border-gray-100 p-8 shadow-sm">
-                <h3 className="text-xl font-black text-headline mb-6">Contact {showroom.brand_name}</h3>
+                <h3 className="text-xl font-black text-headline mb-6">Contact {shopperBrandName(showroom.brand_name, showroom.logo_url)}</h3>
                 <form onSubmit={handleEnquiry} className="space-y-5">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <div className="space-y-2">
@@ -591,8 +593,8 @@ const ShowroomPublic = () => {
         <div className="mt-12 border-t border-gray-200 bg-white">
           <div className="container py-6 flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              {showroom.logo_url && <img src={showroom.logo_url} alt={showroom.brand_name} className="h-7 w-auto object-contain" />}
-              <span className="font-bold text-gray-800 text-sm">{showroom.brand_name}</span>
+              {shopperLogoUrl(showroom.brand_name, showroom.logo_url) && <img src={shopperLogoUrl(showroom.brand_name, showroom.logo_url)} alt={shopperBrandName(showroom.brand_name, showroom.logo_url)} className="h-7 w-auto object-contain" />}
+              <span className="font-bold text-gray-800 text-sm">{shopperBrandName(showroom.brand_name, showroom.logo_url)}</span>
               <span className="text-gray-400 text-xs">· Verified Hotspot Vendor</span>
             </div>
             <div className="flex items-center gap-2">

@@ -9,7 +9,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatPrice } from "@/lib/utils";
-import { getPlaceholderSvg } from "@/lib/productPlaceholders";
+import { isMissingProductImage, PRODUCT_IMAGE_UNAVAILABLE } from "@/lib/productImage";
 import {
   Tooltip,
   TooltipContent,
@@ -21,7 +21,6 @@ import {
   Plus,
   Minus,
   ArrowRight,
-  Package,
   ShieldCheck,
 } from "lucide-react";
 import { isShopOpen } from "@/config/shop";
@@ -101,19 +100,15 @@ const Cart = () => {
                 >
                   {/* Image */}
                   <Link href={`/product/${item.id}`} className="flex-shrink-0">
-                    {item.image_url ? (
+                    {item.image_url && !isMissingProductImage(item.image_url) ? (
                       <img
                         src={item.image_url}
                         alt={item.title}
                         className="w-24 h-24 object-cover rounded-lg border"
                       />
-                    ) : getPlaceholderSvg(item.title) ? (
-                      <div className="w-24 h-24 rounded-lg overflow-hidden">
-                        {getPlaceholderSvg(item.title)}
-                      </div>
                     ) : (
-                      <div className="w-24 h-24 bg-muted rounded-lg flex items-center justify-center">
-                        <Package className="h-8 w-8 text-muted-foreground" />
+                      <div className="flex h-24 w-24 items-center justify-center rounded-lg border bg-[#f4f6f8] px-1.5 text-center text-base font-semibold leading-tight text-[#374151]">
+                        {PRODUCT_IMAGE_UNAVAILABLE}
                       </div>
                     )}
                   </Link>

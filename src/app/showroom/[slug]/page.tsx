@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { createClient } from "@supabase/supabase-js";
 import ShowroomPublic from "@/page-components/ShowroomPublic";
+import { shopperBrandName } from "@/lib/publicBrand";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -18,7 +19,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     .eq("is_published", true)
     .maybeSingle();
 
-  const name = showroom?.brand_name || normalizedSlug.replace(/-/g, " ");
+  const name = shopperBrandName(showroom?.brand_name, null) || normalizedSlug.replace(/-/g, " ");
   const title = `${name} | Verified Vendor Showroom on Ocean Hotspot`;
   const description = showroom?.tagline
     ? showroom.tagline.slice(0, 160)

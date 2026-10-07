@@ -15,7 +15,7 @@ import { useCart } from "@/contexts/CartContext";
 import { useToast } from "@/hooks/use-toast";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatPrice } from "@/lib/utils";
-import { getPlaceholderSvg } from "@/lib/productPlaceholders";
+import { isMissingProductImage, PRODUCT_IMAGE_UNAVAILABLE } from "@/lib/productImage";
 import { isShopOpen } from "@/config/shop";
 import { WhatsAppLink } from "@/components/shop/WhatsAppButton";
 import { isWhatsAppConfigured } from "@/lib/whatsapp";
@@ -26,7 +26,6 @@ import {
   Heart,
   Trash2,
   ShoppingCart,
-  Package,
   ArrowRight,
   Loader2,
   Minus,
@@ -193,13 +192,11 @@ const Wishlist = () => {
               className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 sm:flex-row"
             >
               <Link href={`/product/${item.id}`} className="shrink-0">
-                {item.image_url ? (
+                {item.image_url && !isMissingProductImage(item.image_url) ? (
                   <img src={item.image_url} alt={item.title} className="h-28 w-28 rounded-lg border object-cover" />
-                ) : getPlaceholderSvg(item.title) ? (
-                  <div className="h-28 w-28 overflow-hidden rounded-lg">{getPlaceholderSvg(item.title)}</div>
                 ) : (
-                  <div className="flex h-28 w-28 items-center justify-center rounded-lg bg-muted">
-                    <Package className="h-10 w-10 text-muted-foreground" />
+                  <div className="flex h-28 w-28 items-center justify-center rounded-lg border bg-[#f4f6f8] px-2 text-center text-base font-semibold leading-tight text-[#374151]">
+                    {PRODUCT_IMAGE_UNAVAILABLE}
                   </div>
                 )}
               </Link>
@@ -263,7 +260,7 @@ const Wishlist = () => {
                   <div className="mt-3 flex gap-2">
                     <Button size="sm" variant="o42Primary" onClick={() => handleAddToCart(item)}>
                       <ShoppingCart className="mr-2 h-4 w-4" />
-                      Add to basket
+                      Add to cart
                     </Button>
                   </div>
                 )}

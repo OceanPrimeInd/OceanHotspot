@@ -170,13 +170,6 @@ const ProductDetail = () => {
     router.push("/request");
   };
 
-  const handleMoreInformation = () => {
-    const line = currentProductLine();
-    if (!line) return;
-    openProductRequest({ kind: "question", customerName, lines: [line] });
-    router.push("/request");
-  };
-
   const handleAddToCart = () => {
     if (!product) return;
     addItem({
@@ -193,8 +186,8 @@ const ProductDetail = () => {
     });
     setAddedToCart(true);
     toast({
-      title: "Added to basket",
-      description: `${product.title} has been added to your basket.`,
+      title: "Added to cart",
+      description: `${product.title} has been added to your cart.`,
     });
     // Reset button state after 2 seconds
     setTimeout(() => setAddedToCart(false), 2000);
@@ -452,7 +445,7 @@ const ProductDetail = () => {
 
             {/* Product meta */}
             <div className="flex flex-wrap gap-2 mb-4 text-sm text-muted-foreground">
-              {product.brand && <span>By {product.brand}</span>}
+              {product.brand && !/jpc\s*direct/i.test(product.brand) && <span>By {product.brand}</span>}
               {product.condition && (
                 <>
                   <span>•</span>
@@ -535,24 +528,25 @@ const ProductDetail = () => {
               <div className="space-y-4">
                 {!checkoutLive && (
                   <div className="space-y-3 rounded-xl border border-border bg-muted/30 p-5">
-                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                      <Button variant="o42Primary" className="h-12 w-full px-3 text-sm" onClick={handleBuyNow}>
+                    <div className="grid grid-cols-3 items-stretch gap-2">
+                      <Button variant="o42Primary" className="h-10 min-w-0 px-3 text-sm" onClick={handleBuyNow}>
                         Buy now
                       </Button>
-                      <Button variant="outline" className="h-12 w-full px-3 text-sm" onClick={handleAddToCart}>
-                        <ShoppingCart className="mr-2 h-4 w-4" />
-                        Add to Basket
+                      <Button
+                        variant="outline"
+                        className={`h-10 min-w-0 gap-1.5 px-3 text-sm ${isInCart ? "border-[#9ed9b0] bg-[#d9f5e3] text-[#166534] hover:bg-[#c9efd8] hover:text-[#166534]" : ""}`}
+                        onClick={handleAddToCart}
+                      >
+                        <ShoppingCart className="h-4 w-4 shrink-0" />
+                        Add to cart
                       </Button>
                       <Button
                         variant={inWishlist ? "secondary" : "outline"}
-                        className="h-12 w-full px-3 text-sm"
+                        className="h-10 min-w-0 gap-1.5 px-3 text-sm"
                         onClick={handleToggleWishlist}
                       >
-                        <Heart className={`mr-2 h-4 w-4 ${inWishlist ? "fill-red-500 text-red-500" : ""}`} />
-                        {inWishlist ? "On your wish list" : "Add to Wish list"}
-                      </Button>
-                      <Button variant="outline" className="h-12 w-full px-3 text-sm" onClick={handleMoreInformation}>
-                        More information
+                        <Heart className={`h-4 w-4 shrink-0 ${inWishlist ? "fill-red-500 text-red-500" : ""}`} />
+                        {inWishlist ? "On your wish list" : "Add to wish list"}
                       </Button>
                     </div>
                   </div>

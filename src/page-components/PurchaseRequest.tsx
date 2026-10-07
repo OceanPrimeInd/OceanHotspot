@@ -58,7 +58,7 @@ export default function PurchaseRequest() {
       <Layout>
         <div className="container max-w-xl py-16">
           <h1 className="text-2xl font-bold text-headline">Nothing to send yet</h1>
-          <p className="mt-3 text-muted-foreground">Choose a product, then press Buy now or More information.</p>
+          <p className="mt-3 text-muted-foreground">Choose a product, then press Buy now.</p>
           <Button variant="o42Primary" className="mt-6" asChild>
             <Link href="/browse">Browse products</Link>
           </Button>
