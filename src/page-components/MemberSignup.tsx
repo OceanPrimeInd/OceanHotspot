@@ -30,6 +30,11 @@ const MemberSignup = () => {
   useEffect(() => {
     if (authLoading) return;
     if (user) {
+      const regulationsReturn = new URLSearchParams(window.location.search).get("redirect");
+      if (regulationsReturn?.startsWith("/regulations") && !regulationsReturn.startsWith("//")) {
+        router.push(regulationsReturn);
+        return;
+      }
       router.push("/");
     }
   }, [user, authLoading, router]);

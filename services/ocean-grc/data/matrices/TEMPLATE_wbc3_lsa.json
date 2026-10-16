@@ -1,0 +1,82 @@
+{
+  "_README": [
+    "TEMPLATE — copy to wbc3_lsa.json and fill in real values before use.",
+    "",
+    "Every row is IGNORED until both verified_by and verified_on are set. That is",
+    "deliberate. A wrong number here becomes a fabricated statutory requirement",
+    "delivered with an authoritative citation, which is more dangerous than any",
+    "retrieval error, because it is indistinguishable from ground truth.",
+    "",
+    "HOW TO FILL THIS IN:",
+    "1. Open the published Code at the table named in table_reference.",
+    "2. For each row of that table, add one entry below with its exact scope",
+    "   bounds and its exact values.",
+    "3. length_min is INCLUSIVE, length_max is EXCLUSIVE. A row covering",
+    "   '15m and over but under 24m' is length_min 15, length_max 24.",
+    "4. Rows must not overlap — the loader warns at startup if they do, because a",
+    "   vessel matching two rows means the transcription is ambiguous.",
+    "5. Set verified_by to the name of the person who checked the values against",
+    "   the Code, and verified_on to the date they checked (YYYY-MM-DD).",
+    "",
+    "Leave a row's verified fields blank and it simply will not be served. The",
+    "system falls back to retrieval and says the table needs visual confirmation."
+  ],
+
+  "matrix_id": "wbc3_lsa_TEMPLATE",
+  "code_id": "wbc3",
+  "code_name": "MCA Workboat Code Edition 3",
+  "title": "Life-saving appliances by length and area category",
+  "table_reference": "REPLACE WITH THE ACTUAL TABLE REFERENCE, e.g. Table 14.11.2",
+
+  "topic_keywords": [
+    "liferaft",
+    "life raft",
+    "lifejacket",
+    "life jacket",
+    "lifebuoy",
+    "epirb",
+    "sart",
+    "life-saving",
+    "life saving",
+    "lsa"
+  ],
+
+  "rows": [
+    {
+      "scope_label": "EXAMPLE ROW — replace entirely",
+      "length_min": null,
+      "length_max": 15.0,
+      "categories": [3, 4, 5, 6],
+      "passengers_min": null,
+      "passengers_max": null,
+      "clause": "REPLACE",
+      "page": null,
+      "requirements": {
+        "Liferafts": "REPLACE with the value read from the table",
+        "Lifejackets": "REPLACE",
+        "Lifebuoys": "REPLACE",
+        "EPIRB": "REPLACE"
+      },
+      "verified_by": "",
+      "verified_on": ""
+    },
+    {
+      "scope_label": "EXAMPLE ROW — replace entirely",
+      "length_min": 15.0,
+      "length_max": null,
+      "categories": [0, 1, 2],
+      "passengers_min": null,
+      "passengers_max": null,
+      "clause": "REPLACE",
+      "page": null,
+      "requirements": {
+        "Liferafts": "REPLACE",
+        "Lifejackets": "REPLACE",
+        "Lifebuoys": "REPLACE",
+        "EPIRB": "REPLACE"
+      },
+      "verified_by": "",
+      "verified_on": ""
+    }
+  ]
+}

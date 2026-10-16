@@ -297,7 +297,13 @@ export function TopBar() {
                         <Link
                           key={item.href}
                           href={item.href}
+                          target={"newTab" in item && item.newTab ? "_blank" : undefined}
+                          rel={"newTab" in item && item.newTab ? "noopener noreferrer" : undefined}
                           onClick={(event) => {
+                            if ("newTab" in item && item.newTab) {
+                              closeMenu();
+                              return;
+                            }
                             event.preventDefault();
                             openFromMenu(item.href);
                           }}
@@ -523,6 +529,8 @@ export function TopBar() {
               <Link
                 key={item.href}
                 href={item.href}
+                target={"newTab" in item && item.newTab ? "_blank" : undefined}
+                rel={"newTab" in item && item.newTab ? "noopener noreferrer" : undefined}
                 onClick={closeMenu}
                 className="whitespace-nowrap rounded-md px-2.5 py-1.5 text-sm font-medium text-[#4a5861] hover:bg-[#f7f7f7]"
               >

@@ -3,4 +3,6 @@ node_modules/
 .DS_Store
 backups/
 .env.local
+services/ocean-grc/.env
+services/ocean-grc/data/processed/*.db
 data/jpc-direct-products.json

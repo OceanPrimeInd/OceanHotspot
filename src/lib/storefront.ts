@@ -1,7 +1,7 @@
 /** Top navigation. Text links only — the All button opens departments. */
 export const STORE_NAV = [
   { label: "Shop Marketplace", href: "/browse" },
-  { label: "Regulations Check", href: "/regulations" },
+  { label: "Regulations", href: "/regulations" },
   { label: "Find Services", href: "/services" },
   { label: "Get Training", href: "/training" },
   { label: "Fuel and Electricity", href: "/fuel" },

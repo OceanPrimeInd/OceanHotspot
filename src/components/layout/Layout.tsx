@@ -8,12 +8,24 @@ import { WhatsAppFloatingButton } from "@/components/shop/WhatsAppButton";
 
 interface LayoutProps {
   children: ReactNode;
+  /** Chat workspace: header only, so the tool can fill the screen. */
+  workspace?: boolean;
 }
 
 /**
  * Storefront layout. Categories open from the All button in the header.
  */
-export function Layout({ children }: LayoutProps) {
+export function Layout({ children, workspace = false }: LayoutProps) {
+  if (workspace) {
+    return (
+      <div className="flex h-dvh flex-col overflow-hidden bg-background">
+        <PageTracker />
+        <TopBar />
+        <main className="min-h-0 flex-1 overflow-hidden">{children}</main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <PageTracker />
@@ -22,7 +34,7 @@ export function Layout({ children }: LayoutProps) {
       <main className="flex-1 overflow-y-auto pb-24 md:pb-0">
         {children}
       </main>
-      
+
       <Footer />
       <MobileNav />
       <CookieConsent />

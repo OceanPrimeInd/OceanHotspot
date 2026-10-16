@@ -26,6 +26,12 @@ const Login = () => {
   // Redirect if already logged in
   useEffect(() => {
     if (authLoading || !user) return;
+
+    const regulationsReturn = new URLSearchParams(window.location.search).get("redirect");
+    if (regulationsReturn?.startsWith("/regulations") && !regulationsReturn.startsWith("//")) {
+      router.replace(regulationsReturn);
+      return;
+    }
     
     const checkRoleAndRedirect = async () => {
       // Check for checkout return URL first (guest trying to buy)

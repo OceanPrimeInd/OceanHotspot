@@ -8,17 +8,21 @@ function Frame({
   href,
   background,
   title,
+  newTab = false,
   children,
 }: {
   href: string;
   background: string;
   title: string;
+  newTab?: boolean;
   children: ReactNode;
 }) {
   return (
     <Link
       href={href}
-      className="flex h-full min-h-[220px] snap-start flex-col overflow-hidden rounded-[14px] p-2.5 shadow-sm transition hover:brightness-[0.98] lg:min-h-0"
+      target={newTab ? "_blank" : undefined}
+      rel={newTab ? "noopener noreferrer" : undefined}
+      className="flex h-auto min-h-0 snap-start flex-col overflow-hidden rounded-[14px] p-2.5 shadow-sm transition hover:brightness-[0.98] lg:h-full"
       style={{ background }}
     >
       <h2 className="px-1 text-center text-base font-bold leading-none tracking-wide text-white sm:text-lg">{title}</h2>
@@ -43,12 +47,12 @@ function PhotoTile({
   return (
     <Link
       href={href}
-      className="flex h-full min-h-[168px] flex-col overflow-hidden rounded-[12px] p-1.5 shadow-sm transition hover:brightness-[0.98] lg:min-h-0"
+      className="flex h-auto min-h-0 flex-col overflow-hidden rounded-[12px] p-1.5 shadow-sm transition hover:brightness-[0.98] lg:h-full"
       style={{ background }}
     >
       <h2 className="text-center text-[11px] font-bold tracking-wide text-headline sm:text-sm">{title}</h2>
       <p className="text-center text-[10px] font-bold text-[#e06a28] sm:text-xs">Coming Soon</p>
-      <div className="mt-1 min-h-0 flex-1 overflow-hidden rounded-[0.9rem] bg-white">
+      <div className="mt-1 h-24 overflow-hidden rounded-[0.9rem] bg-white lg:h-auto lg:min-h-0 lg:flex-1">
         <img src={image} alt={alt} className="h-full w-full object-cover" />
       </div>
     </Link>
@@ -89,7 +93,7 @@ function TopRail({ children }: { children: ReactNode }) {
     "absolute top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-black/10 bg-white text-[#111] shadow-md hover:bg-[#f7f7f7] md:flex [&[hidden]]:!hidden";
 
   return (
-    <div className="relative h-full min-h-[240px]">
+    <div className="relative min-h-0 lg:h-full">
       <button type="button" aria-label="Previous" className={`${arrowClass} left-1`} hidden={atStart} onClick={() => page(-1)}>
         <ChevronLeft className="h-5 w-5" />
       </button>
@@ -110,15 +114,15 @@ export function HomeBoxes() {
   return (
     <section className="mx-auto w-full max-w-[1500px] px-3 pt-4 md:px-4" aria-label="Ocean Hotspot">
       <div className="grid grid-cols-1 gap-3 lg:h-[640px] lg:grid-cols-[360px_minmax(0,1fr)]">
-        <div className="flex min-h-[420px] flex-col rounded-[14px] bg-[#f25a4a] p-4 text-white shadow-sm lg:min-h-0 lg:p-5">
-          <h2 className="text-4xl font-bold leading-none">Hotspot Deals</h2>
-          <p className="mt-2 text-xl font-medium text-white/95">Save more today</p>
-          <div className="mt-4 flex min-h-0 flex-1 items-center justify-center overflow-hidden rounded-[1.4rem] bg-white p-4">
+        <div className="flex min-h-0 flex-col rounded-[14px] bg-[#f25a4a] p-4 text-white shadow-sm lg:h-full lg:p-5">
+          <h2 className="text-3xl font-bold leading-none lg:text-4xl">Hotspot Deals</h2>
+          <p className="mt-2 text-lg font-medium text-white/95 lg:text-xl">Save more today</p>
+          <div className="mt-3 flex h-40 items-center justify-center overflow-hidden rounded-[1.4rem] bg-white p-3 lg:mt-4 lg:h-auto lg:min-h-0 lg:flex-1 lg:p-4">
             <img src="/banner/sailproof.png" alt="SailProof SP88S marine tablet" className="h-[88%] w-auto max-w-[92%] object-contain" />
           </div>
         </div>
 
-        <div className="grid min-h-0 grid-rows-[minmax(240px,1.45fr)_minmax(150px,0.9fr)] gap-3">
+        <div className="grid min-h-0 grid-rows-[auto_auto] gap-3 lg:grid-rows-[minmax(240px,1.45fr)_minmax(150px,0.9fr)]">
           <TopRail>
             <Frame href="/browse" background="#2f74c4" title="PRODUCTS">
               <div className="flex h-full flex-col items-center justify-center px-3 py-3">
@@ -142,7 +146,7 @@ export function HomeBoxes() {
             <Frame href="/services" background="#1c8f9c" title="SERVICES">
               <div className="flex h-full flex-col items-center justify-center px-3 py-3 text-center">
                 <p className="text-sm font-bold text-[#e06a28] sm:text-base">Coming Soon</p>
-                <p className="mt-3 text-xl font-black leading-tight text-[#111] sm:text-2xl">
+                <p className="mt-2 text-sm font-bold leading-snug text-[#111] lg:mt-3 lg:text-2xl lg:font-black lg:leading-tight">
                   Naval Architects
                   <br />
                   Marine Engineers
@@ -159,14 +163,14 @@ export function HomeBoxes() {
             <Frame href="/training" background="#3a78c0" title="TRAINING">
               <div className="flex h-full flex-col items-center justify-center px-3 text-center">
                 <p className="text-sm font-bold text-[#e06a28] sm:text-base">Coming Soon</p>
-                <p className="mt-3 text-2xl font-black leading-tight text-[#111] sm:text-3xl">Get Training</p>
+                <p className="mt-2 text-lg font-black leading-tight text-[#111] lg:mt-3 lg:text-3xl">Get Training</p>
               </div>
             </Frame>
 
             <Frame href="/fuel" background="#1f8a52" title="FUEL">
               <div className="flex h-full flex-col items-center justify-center bg-[#28a864] px-3 text-center text-white">
-                <p className="text-2xl font-black leading-tight sm:text-3xl">Low Prices</p>
-                <p className="mt-3 text-2xl font-black leading-tight sm:text-3xl">Low Emissions</p>
+                <p className="text-lg font-black leading-tight lg:text-3xl">Low Prices</p>
+                <p className="mt-2 text-lg font-black leading-tight lg:mt-3 lg:text-3xl">Low Emissions</p>
               </div>
             </Frame>
 
@@ -179,7 +183,7 @@ export function HomeBoxes() {
             <Frame href="/organisations" background="#e07030" title="ORGANISATIONS">
               <div className="flex h-full flex-col items-center justify-center px-3 text-center">
                 <p className="text-sm font-bold text-[#e06a28] sm:text-base">Coming Soon</p>
-                <p className="mt-3 text-xl font-black leading-tight text-[#111] sm:text-2xl">Find Clubs and Organisations</p>
+                <p className="mt-2 text-base font-black leading-tight text-[#111] lg:mt-3 lg:text-2xl">Find Clubs and Organisations</p>
               </div>
             </Frame>
           </TopRail>
