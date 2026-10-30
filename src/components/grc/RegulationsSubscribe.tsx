@@ -1,22 +1,7 @@
 "use client";
 
 import { useState, type ReactNode } from "react";
-import Link from "next/link";
 import { GRC_PLANS } from "@/lib/oceanGrc";
-
-const FREE = {
-  name: "Free",
-  priceLabel: "£0",
-  period: "",
-  tagline: "Fifteen questions, so you can check the answers.",
-  features: [
-    "15 questions",
-    "SPVC 2025 and Workboat Code Edition 3",
-    "Clause number and page",
-    "1 boat",
-    "No card",
-  ],
-};
 
 export function RegulationsSubscribe({
   subscribed = false,
@@ -80,21 +65,6 @@ export function RegulationsSubscribe({
           )}
 
           <div className="mt-8 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <Plan
-              name={FREE.name}
-              price={FREE.priceLabel}
-              period={FREE.period}
-              tagline={FREE.tagline}
-              features={FREE.features}
-              action={
-                <Link
-                  href="/regulations/ask"
-                  className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary text-sm font-semibold text-white"
-                >
-                  Ask a question
-                </Link>
-              }
-            />
             {GRC_PLANS.map((plan) => (
               <Plan
                 key={plan.id}
@@ -103,11 +73,10 @@ export function RegulationsSubscribe({
                 period={plan.period}
                 tagline={plan.tagline}
                 features={plan.features}
-                highlight={plan.highlight}
                 action={
                   plan.contact ? (
                     <a
-                      href="mailto:oceanhotspotservices@gmail.com?subject=Regulations%20Consultancy"
+                      href="mailto:oceanhotspotservices@gmail.com?subject=Regulations%20Enterprise"
                       className="inline-flex h-10 w-full items-center justify-center rounded-md border border-[#c5ced6] text-sm font-semibold text-[#0f1111]"
                     >
                       Talk to us
@@ -117,11 +86,9 @@ export function RegulationsSubscribe({
                       type="button"
                       disabled={pending === plan.id}
                       onClick={() => subscribe(plan.id)}
-                      className={`inline-flex h-10 w-full items-center justify-center rounded-md text-sm font-semibold text-white disabled:opacity-60 ${
-                        plan.highlight ? "bg-secondary" : "bg-primary"
-                      }`}
+                      className="inline-flex h-10 w-full items-center justify-center rounded-md bg-primary text-sm font-semibold text-white disabled:opacity-60"
                     >
-                      {pending === plan.id ? "Opening checkout…" : `Subscribe · ${plan.priceLabel}/year`}
+                      {pending === plan.id ? "Opening checkout…" : plan.buttonLabel}
                     </button>
                   )
                 }

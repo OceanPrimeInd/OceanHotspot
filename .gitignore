@@ -6,3 +6,4 @@ backups/
 services/ocean-grc/.env
 services/ocean-grc/data/processed/*.db
 data/jpc-direct-products.json
+.gstack/

@@ -20,6 +20,7 @@ function footerSections() {
       links: [
         { label: "Contact us", path: "/contact" },
         { label: "Wish list", path: "/wishlist" },
+        { label: "Investors", path: "/investors" },
         ...(shopOpen ? [{ label: "Checkout", path: "/cart" }] : []),
       ],
     },

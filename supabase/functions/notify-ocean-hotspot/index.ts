@@ -52,6 +52,23 @@ type FollowupPayload = {
   }>;
 };
 
+type InvestorPayload = {
+  type: "investor_interest";
+  name: string;
+  email: string;
+  mobile: string;
+  linkedin: string;
+  company: string;
+};
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
 type SupplierPayload = {
   type: "supplier_application";
   applicationId: string;
@@ -132,6 +149,37 @@ serve(async (req) => {
         subject: `Supplier application: ${b.companyName}`,
         html,
         replyTo: b.email,
+      });
+      return new Response(JSON.stringify({ ok: send.ok, emailAdmin: send }), {
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
+
+    if (body.type === "investor_interest") {
+      const b = body as InvestorPayload;
+      const name = b.name?.trim() || "";
+      const email = b.email?.trim() || "";
+      const mobile = b.mobile?.trim() || "";
+      const linkedin = b.linkedin?.trim() || "";
+      const company = b.company?.trim() || "";
+      if (!name || !email || !mobile || !linkedin || !company) {
+        return new Response(JSON.stringify({ error: "Invalid payload" }), {
+          status: 400,
+          headers: { ...cors, "Content-Type": "application/json" },
+        });
+      }
+      const html = `
+        <h2>Investor enquiry</h2>
+        <p><strong>${escapeHtml(name)}</strong> — ${escapeHtml(email)}</p>
+        <p>Mobile: ${escapeHtml(mobile)}<br/>
+        LinkedIn: ${escapeHtml(linkedin)}<br/>
+        Company name and address / country: ${escapeHtml(company)}</p>
+      `;
+      const send = await sendEmailDetailed({
+        to: CONTACT_EMAIL,
+        subject: `Investor enquiry from ${name.replace(/[\r\n]/g, " ")}`,
+        html,
+        replyTo: email,
       });
       return new Response(JSON.stringify({ ok: send.ok, emailAdmin: send }), {
         headers: { ...cors, "Content-Type": "application/json" },

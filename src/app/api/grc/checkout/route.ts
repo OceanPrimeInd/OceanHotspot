@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
   const plan = grcPlanById(tier);
   if (!plan || plan.contact) {
-    return NextResponse.json({ error: "Choose a Practitioner or Practice subscription." }, { status: 400 });
+    return NextResponse.json({ error: "Choose a Standard, Professional, or SME subscription." }, { status: 400 });
   }
 
   const origin = request.headers.get("origin") || "http://localhost:3000";

@@ -1,61 +1,73 @@
 export type GrcPlan = {
-  id: "practitioner" | "practice" | "consultancy";
+  id: "standard" | "professional" | "sme" | "enterprise";
   name: string;
   priceLabel: string;
-  amountPence: number;
   period: string;
+  amountPence: number;
   tagline: string;
   features: string[];
-  highlight?: boolean;
+  buttonLabel: string;
   contact?: boolean;
 };
 
-/** Prices from the Ocean GRC compliance product: yearly professional seats. */
+/** Plans and ex VAT prices from the Regulations cost-model Website Prices tab. */
 export const GRC_PLANS: GrcPlan[] = [
   {
-    id: "practitioner",
-    name: "Practitioner",
-    priceLabel: "£240",
-    amountPence: 24000,
-    period: "/ year",
-    tagline: "Sole practitioner or one-person design consultancy.",
-    highlight: true,
+    id: "standard",
+    name: "Standard",
+    priceLabel: "£19.75",
+    period: "/ month",
+    amountPence: 23700,
+    tagline: "Ex VAT. 1 user.",
+    buttonLabel: "Subscribe · £237/year",
     features: [
-      "400 questions / month",
-      "Cross-code comparison",
-      "Copy as design note",
-      "Unlimited vessel profiles",
-      "Email support",
+      "1 user",
+      "£237 / year ex VAT",
+      "£23.70 / month inc VAT",
+      "Base",
     ],
   },
   {
-    id: "practice",
-    name: "Practice",
-    priceLabel: "£600",
-    amountPence: 60000,
-    period: "/ year",
-    tagline: "Small design practice, two to three architects.",
+    id: "professional",
+    name: "Professional",
+    priceLabel: "£49.50",
+    period: "/ month",
+    amountPence: 59400,
+    tagline: "Ex VAT. 1 user.",
+    buttonLabel: "Subscribe · £594/year",
     features: [
-      "1,500 questions / month",
-      "3 seats",
-      "Shared vessel profiles",
-      "Priority email support",
+      "1 user",
+      "£594 / year ex VAT",
+      "£59.40 / month inc VAT",
+      "High",
     ],
   },
   {
-    id: "consultancy",
-    name: "Consultancy",
-    priceLabel: "£1,800",
-    amountPence: 180000,
-    period: "/ year",
-    tagline: "Multi-seat consultancy, Certifying Authority or builder.",
+    id: "sme",
+    name: "SME",
+    priceLabel: "£15.50",
+    period: "/ user / month",
+    amountPence: 111600,
+    tagline: "Ex VAT. 6 users.",
+    buttonLabel: "Subscribe · £1,116/year",
+    features: [
+      "6 users",
+      "£186 / user / year ex VAT",
+      "£1,116 / year for the contract, ex VAT",
+      "£18.60 / user / month inc VAT",
+      "High",
+    ],
+  },
+  {
+    id: "enterprise",
+    name: "Enterprise",
+    priceLabel: "POA",
+    period: "",
+    amountPence: 0,
+    tagline: "Price on application.",
+    buttonLabel: "Talk to us",
     contact: true,
-    features: [
-      "6,000 questions / month",
-      "10 seats",
-      "Export and audit trail",
-      "Onboarding session",
-    ],
+    features: ["Price on application"],
   },
 ];
 
