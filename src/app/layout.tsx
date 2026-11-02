@@ -55,6 +55,9 @@ export const metadata: Metadata = {
     creator: "@oceanhotspot",
     images: ["https://www.oceanhotspot.com/og-image.jpg"],
   },
+  verification: {
+    google: "Phkmwi9zONgMWslI0ayGURLtyDno8KRMIlfen8zBGQE",
+  },
   robots: {
     index: true,
     follow: true,
